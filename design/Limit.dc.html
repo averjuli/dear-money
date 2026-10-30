@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Настройка категории «Транспорт»</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Unbounded:wght@500;600&display=swap">
+<style>
+body{margin:0}
+a{color:#1B6B4D}a:hover{color:#14523B}
+</style>
+</helmet>
+<div style="width: 390px; height: 960px; box-sizing: border-box; padding: 56px 20px 24px; background: #EDF1EE; color: #14211B; font-family: 'Golos Text', system-ui, sans-serif; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; align-items: center; gap: 4px">
+<a href="Traty.dc.html" aria-label="Назад к повседневным тратам" style="width: 44px; height: 44px; margin-left: -12px; display: flex; align-items: center; justify-content: center">
+<svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#14211B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+</a>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div style="font-size: 14px; color: #55635C">Повседневные траты · категория</div>
+<h1 style="margin: 0; font-family: 'Unbounded', sans-serif; font-weight: 600; font-size: 24px">Транспорт</h1>
+</div>
+</div>
+
+<div style="background: #FFFFFF; border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<label for="name" style="font-size: 15px; font-weight: 600">Название</label>
+<input id="name" type="text" value="Транспорт" style="height: 52px; box-sizing: border-box; border: none; border-radius: 14px; background: #F4F7F5; padding: 0 14px; font-family: inherit; font-size: 17px; font-weight: 500; color: #14211B; outline: none">
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<label for="limit" style="font-size: 15px; font-weight: 600">Лимит на месяц</label>
+<div style="display: flex; align-items: center; gap: 8px; background: #F4F7F5; border-radius: 14px; padding: 0 14px">
+<input id="limit" type="text" inputmode="numeric" value="4 000" style="flex-grow: 1; min-width: 0; height: 52px; border: none; background: none; font-family: inherit; font-size: 20px; font-weight: 600; color: #14211B; outline: none">
+<span style="font-size: 18px; color: #55635C">₽</span>
+</div>
+</div>
+</div>
+
+<div style="background: #FBEADD; border-radius: 20px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; color: #8A4315">
+<div style="font-size: 15px; font-weight: 600">В сентябре потрачено 6 230 ₽</div>
+<div style="font-size: 14px; line-height: 1.4">Это 7 поездок на такси, на 2 230 ₽ больше лимита.</div>
+</div>
+
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<div style="font-size: 16px; font-weight: 600">Последние траты</div>
+<div style="font-size: 13px; color: #55635C">7 за месяц</div>
+</div>
+
+<div style="background: #FFFFFF; border-radius: 20px; padding: 0 8px 0 16px; display: flex; flex-direction: column">
+<div style="display: flex; align-items: center; gap: 10px; min-height: 60px; border-bottom: 1px solid #E3E9E5">
+<div style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px"><div style="font-size: 15px; font-weight: 600">Такси</div><div style="font-size: 13px; color: #55635C">18 сентября</div></div>
+<div style="font-size: 15px; font-weight: 600; padding-right: 8px">1 640 ₽</div>
+</div>
+<div style="display: flex; align-items: center; gap: 10px; min-height: 60px; border-bottom: 1px solid #E3E9E5">
+<div style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px"><div style="font-size: 15px; font-weight: 600">Такси</div><div style="font-size: 13px; color: #55635C">14 сентября</div></div>
+<div style="font-size: 15px; font-weight: 600; padding-right: 8px">870 ₽</div>
+</div>
+<div style="display: flex; align-items: center; gap: 10px; min-height: 60px">
+<div style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px"><div style="font-size: 15px; font-weight: 600">Такси</div><div style="font-size: 13px; color: #55635C">9 сентября</div></div>
+<div style="font-size: 15px; font-weight: 600; padding-right: 8px">720 ₽</div>
+</div>
+</div>
+
+<div style="flex-grow: 1"></div>
+<a href="Traty.dc.html" style="display: block; text-align: center; text-decoration: none; background: #1B6B4D; color: #FFFFFF; font-size: 17px; font-weight: 600; padding: 17px; border-radius: 16px">Сохранить</a>
+<button style="min-height: 44px; border: none; background: none; font-family: inherit; font-size: 16px; font-weight: 500; color: #A34D14; cursor: pointer">Удалить категорию</button>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":960}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

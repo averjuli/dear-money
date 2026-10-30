@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Новая трата</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Unbounded:wght@500;600&display=swap">
+<style>
+body{margin:0}
+a{color:#1B6B4D}a:hover{color:#14523B}
+</style>
+</helmet>
+<div style="width: 390px; height: 900px; box-sizing: border-box; padding: 56px 20px 24px; background: #EDF1EE; color: #14211B; font-family: 'Golos Text', system-ui, sans-serif; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<h1 style="margin: 0; font-family: 'Unbounded', sans-serif; font-weight: 600; font-size: 24px">Новая трата</h1>
+<a href="Main.dc.html" aria-label="Закрыть" style="width: 44px; height: 44px; margin-right: -10px; display: flex; align-items: center; justify-content: center">
+<svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#14211B" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+</a>
+</div>
+
+<div style="background: #FFFFFF; border-radius: 24px; padding: 20px; display: flex; flex-direction: column; gap: 6px; align-items: center">
+<label for="sum" style="font-size: 14px; color: #55635C">Сумма</label>
+<div style="display: flex; align-items: baseline; gap: 8px">
+<input id="sum" type="text" inputmode="decimal" value="3 900" style="width: 180px; border: none; background: none; text-align: right; font-family: 'Unbounded', sans-serif; font-weight: 600; font-size: 40px; color: #14211B; outline: none; padding: 0">
+<span style="font-family: 'Unbounded', sans-serif; font-weight: 500; font-size: 28px; color: #55635C">₽</span>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 10px">
+<div style="font-size: 15px; font-weight: 600">Откуда списать</div>
+<div role="group" aria-label="Тип траты" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; background: #FFFFFF; border-radius: 14px; padding: 4px">
+<button style="min-height: 44px; border: none; border-radius: 10px; background: none; font-family: inherit; font-size: 15px; color: #55635C; cursor: pointer">Повседневное</button>
+<button aria-pressed="true" style="min-height: 44px; border: none; border-radius: 10px; background: #DCEBE3; font-family: inherit; font-size: 15px; font-weight: 600; color: #14523B; cursor: pointer">Из конверта</button>
+</div>
+<div style="font-size: 13px; color: #55635C">Недавние</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<button aria-pressed="true" style="min-height: 44px; padding: 0 14px; border: 2px solid #1B6B4D; border-radius: 999px; background: #DCEBE3; font-family: inherit; font-size: 15px; font-weight: 600; color: #14523B; cursor: pointer">Маникюр</button>
+<button style="min-height: 44px; padding: 0 14px; border: none; border-radius: 999px; background: #FFFFFF; font-family: inherit; font-size: 15px; color: #14211B; cursor: pointer">Косметика</button>
+<button style="min-height: 44px; padding: 0 14px; border: none; border-radius: 999px; background: #FFFFFF; font-family: inherit; font-size: 15px; color: #14211B; cursor: pointer">Одежда</button>
+<button style="min-height: 44px; padding: 0 14px; border: none; border-radius: 999px; background: #FFFFFF; font-family: inherit; font-size: 15px; color: #14211B; cursor: pointer">Подарки</button>
+<button style="min-height: 44px; padding: 0 14px; border: none; border-radius: 999px; background: #FFFFFF; font-family: inherit; font-size: 15px; color: #14211B; cursor: pointer">Хобби</button>
+<button style="min-height: 44px; padding: 0 14px; border: 2px dashed #9DB5A9; border-radius: 999px; background: none; font-family: inherit; font-size: 15px; color: #14211B; cursor: pointer">Все конверты</button>
+</div>
+</div>
+
+<div style="background: #DCEBE3; border-radius: 16px; padding: 12px 14px; font-size: 14px; line-height: 1.4; color: #14523B">В «Маникюре» станет 8 700 ₽, хватит ещё на 2 раза.</div>
+
+<div style="background: #FFFFFF; border-radius: 20px; padding: 0 16px; display: flex; flex-direction: column">
+<div style="display: flex; align-items: center; gap: 10px; min-height: 56px; border-bottom: 1px solid #E3E9E5">
+<label for="date" style="flex-grow: 1; font-size: 15px; font-weight: 600">Дата</label>
+<input id="date" type="text" value="Сегодня" style="width: 120px; border: none; background: none; text-align: right; font-family: inherit; font-size: 15px; color: #55635C; outline: none">
+</div>
+<div style="display: flex; align-items: center; gap: 10px; min-height: 56px">
+<label for="note" style="flex-grow: 1; font-size: 15px; font-weight: 600">Заметка</label>
+<input id="note" type="text" placeholder="необязательно" style="width: 160px; border: none; background: none; text-align: right; font-family: inherit; font-size: 15px; color: #14211B; outline: none">
+</div>
+</div>
+
+<div style="flex-grow: 1"></div>
+<a href="Main.dc.html" style="display: block; text-align: center; text-decoration: none; background: #1B6B4D; color: #FFFFFF; font-size: 17px; font-weight: 600; padding: 17px; border-radius: 16px">Сохранить</a>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":900}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

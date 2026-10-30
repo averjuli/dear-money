@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Пришли деньги</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Unbounded:wght@500;600&display=swap">
+<style>
+body{margin:0}
+a{color:#1B6B4D}a:hover{color:#14523B}
+</style>
+</helmet>
+<div style="width: 390px; height: 1000px; box-sizing: border-box; padding: 56px 20px 24px; background: #EDF1EE; color: #14211B; font-family: 'Golos Text', system-ui, sans-serif; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; align-items: center; gap: 4px">
+<a href="Main.dc.html" aria-label="Назад к конвертам" style="width: 44px; height: 44px; margin-left: -12px; display: flex; align-items: center; justify-content: center">
+<svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#14211B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+</a>
+<h1 style="margin: 0; font-family: 'Unbounded', sans-serif; font-weight: 600; font-size: 24px">Пришли деньги</h1>
+</div>
+
+<div style="background: #FFFFFF; border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<label for="income" style="font-size: 15px; font-weight: 600">Сколько пришло</label>
+<div style="display: flex; align-items: center; gap: 8px; background: #F4F7F5; border-radius: 14px; padding: 0 14px">
+<input id="income" type="text" inputmode="numeric" value="150 000" style="flex-grow: 1; min-width: 0; height: 56px; border: none; background: none; font-family: 'Unbounded', sans-serif; font-size: 24px; font-weight: 600; color: #14211B; outline: none">
+<span style="font-size: 20px; color: #55635C">₽</span>
+</div>
+</div>
+<div style="display: flex; gap: 8px">
+<button aria-pressed="true" style="min-height: 44px; padding: 0 16px; border: none; border-radius: 999px; background: #1B6B4D; color: #FFFFFF; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer">Зарплата</button>
+<button style="min-height: 44px; padding: 0 16px; border: none; border-radius: 999px; background: #F4F7F5; color: #14211B; font-family: inherit; font-size: 14px; cursor: pointer">Аванс</button>
+<button style="min-height: 44px; padding: 0 16px; border: none; border-radius: 999px; background: #F4F7F5; color: #14211B; font-family: inherit; font-size: 14px; cursor: pointer">Другое</button>
+</div>
+</div>
+
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<div style="font-size: 16px; font-weight: 600">Как я разложу</div>
+<div style="font-size: 13px; color: #55635C">можно поправить</div>
+</div>
+
+<div role="img" aria-label="Из 150 000 рублей: 63 750 в конверты, 86 250 на повседневные траты" style="display: flex; gap: 3px; height: 14px">
+<div style="width: 43%; background: #1B6B4D; border-radius: 6px 2px 2px 6px"></div>
+<div style="width: 57%; background: #C46A2B; border-radius: 2px 6px 6px 2px"></div>
+</div>
+
+<div style="background: #FFFFFF; border-radius: 20px; padding: 4px 16px; display: flex; flex-direction: column">
+<div style="display: flex; align-items: center; gap: 10px; min-height: 52px; border-bottom: 1px solid #E3E9E5">
+<div style="width: 10px; height: 10px; border-radius: 3px; background: #1B6B4D"></div>
+<div style="flex-grow: 1; font-size: 16px; font-weight: 600">В конверты</div>
+<div style="font-size: 16px; font-weight: 600">63 750 ₽</div>
+</div>
+<div style="display: flex; flex-direction: column; padding: 6px 0 8px 20px; font-size: 14px; color: #55635C; border-bottom: 1px solid #E3E9E5">
+<div style="display: flex; min-height: 30px; align-items: center"><div style="flex-grow: 1">Goals WB</div><div>15 600</div></div>
+<div style="display: flex; min-height: 30px; align-items: center"><div style="flex-grow: 1">Miscellaneous</div><div>13 100</div></div>
+<div style="display: flex; min-height: 30px; align-items: center"><div style="flex-grow: 1">Self-care</div><div>11 850</div></div>
+<div style="display: flex; min-height: 30px; align-items: center"><div style="flex-grow: 1">Long term</div><div>11 400</div></div>
+<div style="display: flex; min-height: 30px; align-items: center"><div style="flex-grow: 1">Clothes</div><div>9 600</div></div>
+<div style="display: flex; min-height: 30px; align-items: center"><div style="flex-grow: 1">Запасные</div><div>2 200</div></div>
+</div>
+<div style="display: flex; align-items: center; gap: 10px; min-height: 64px">
+<div style="width: 10px; height: 10px; border-radius: 3px; background: #C46A2B"></div>
+<div style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px"><div style="font-size: 16px; font-weight: 600">На повседневные траты</div><div style="font-size: 13px; color: #55635C">всё, что осталось после конвертов</div></div>
+<div style="font-size: 16px; font-weight: 600">86 250 ₽</div>
+</div>
+</div>
+
+<div style="background: #DCEBE3; border-radius: 16px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; color: #14523B">
+<div style="font-size: 15px; font-weight: 600">Излишек 7 450 ₽ в Self-care</div>
+<div style="font-size: 14px; line-height: 1.4">Четыре конверта уже полные, их взносы уйдут в «Косметологию» по приоритету.</div>
+</div>
+
+<div style="flex-grow: 1"></div>
+<a href="Main.dc.html" style="display: block; text-align: center; text-decoration: none; background: #1B6B4D; color: #FFFFFF; font-size: 17px; font-weight: 600; padding: 17px; border-radius: 16px">Разложить</a></div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1000}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

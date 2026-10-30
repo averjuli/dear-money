@@ -1,0 +1,360 @@
+{
+  "schemaVersion": 1,
+  "note": "Выдуманные демо-данные для тестов и проверки. Суммы в копейках. timesToSave=3 временно (specs/01-продуктовая-идея.md, открытый вопрос 3).",
+  "wallets": [
+    {
+      "id": "w1",
+      "name": "Clothes",
+      "order": 1
+    },
+    {
+      "id": "w2",
+      "name": "Self-care",
+      "order": 2
+    },
+    {
+      "id": "w3",
+      "name": "Запасные",
+      "order": 3
+    },
+    {
+      "id": "w4",
+      "name": "Miscellaneous",
+      "order": 4
+    },
+    {
+      "id": "w5",
+      "name": "Long term",
+      "order": 5
+    },
+    {
+      "id": "w6",
+      "name": "Goals WB",
+      "order": 6
+    }
+  ],
+  "envelopes": [
+    {
+      "id": "w1e1",
+      "walletId": "w1",
+      "name": "Одежда",
+      "priority": 1,
+      "costPerTime": 1800000,
+      "periodN": 2,
+      "periodUnit": "month",
+      "contributionOverride": 900000,
+      "timesToSave": 3,
+      "startBalance": 640000
+    },
+    {
+      "id": "w1e2",
+      "walletId": "w1",
+      "name": "Украшения",
+      "priority": 2,
+      "costPerTime": 1200000,
+      "periodN": 20,
+      "periodUnit": "month",
+      "contributionOverride": 60000,
+      "timesToSave": 3,
+      "startBalance": 2730000
+    },
+    {
+      "id": "w2e1",
+      "walletId": "w2",
+      "name": "Здоровье",
+      "priority": 1,
+      "costPerTime": 600000,
+      "periodN": 2,
+      "periodUnit": "month",
+      "contributionOverride": 300000,
+      "timesToSave": 3,
+      "startBalance": 1800000
+    },
+    {
+      "id": "w2e2",
+      "walletId": "w2",
+      "name": "Косметология",
+      "priority": 2,
+      "costPerTime": 900000,
+      "periodN": 6,
+      "periodUnit": "month",
+      "contributionOverride": 150000,
+      "timesToSave": 3,
+      "startBalance": -2740000
+    },
+    {
+      "id": "w2e3",
+      "walletId": "w2",
+      "name": "Стоматолог",
+      "priority": 3,
+      "costPerTime": 1800000,
+      "periodN": 24,
+      "periodUnit": "month",
+      "contributionOverride": 75000,
+      "timesToSave": 3,
+      "startBalance": 1800000
+    },
+    {
+      "id": "w2e4",
+      "walletId": "w2",
+      "name": "Маникюр",
+      "priority": 4,
+      "costPerTime": 420000,
+      "periodN": 2,
+      "periodUnit": "month",
+      "contributionOverride": 260000,
+      "timesToSave": 3,
+      "startBalance": 1260000
+    },
+    {
+      "id": "w2e5",
+      "walletId": "w2",
+      "name": "Стрижка",
+      "priority": 5,
+      "costPerTime": 450000,
+      "periodN": 10,
+      "periodUnit": "month",
+      "contributionOverride": 45000,
+      "timesToSave": 3,
+      "startBalance": 1350000
+    },
+    {
+      "id": "w2e6",
+      "walletId": "w2",
+      "name": "Косметика",
+      "priority": 6,
+      "costPerTime": 280000,
+      "periodN": 2,
+      "periodUnit": "month",
+      "contributionOverride": 140000,
+      "timesToSave": 3,
+      "startBalance": 840000
+    },
+    {
+      "id": "w2e7",
+      "walletId": "w2",
+      "name": "Педикюр",
+      "priority": 7,
+      "costPerTime": 320000,
+      "periodN": 2,
+      "periodUnit": "month",
+      "contributionOverride": 160000,
+      "timesToSave": 3,
+      "startBalance": 730000
+    },
+    {
+      "id": "w2e8",
+      "walletId": "w2",
+      "name": "Ресницы",
+      "priority": 8,
+      "costPerTime": 330000,
+      "periodN": 8,
+      "periodUnit": "month",
+      "contributionOverride": 40000,
+      "timesToSave": 3,
+      "startBalance": 510000
+    },
+    {
+      "id": "w2e9",
+      "walletId": "w2",
+      "name": "Брови",
+      "priority": 9,
+      "costPerTime": 110000,
+      "periodN": 6,
+      "periodUnit": "month",
+      "contributionOverride": 15000,
+      "timesToSave": 3,
+      "startBalance": -30000
+    },
+    {
+      "id": "w3e1",
+      "walletId": "w3",
+      "name": "Запасные",
+      "priority": 1,
+      "costPerTime": 220000,
+      "periodN": 1,
+      "periodUnit": "month",
+      "contributionOverride": 220000,
+      "timesToSave": 3,
+      "startBalance": 360000
+    },
+    {
+      "id": "w4e1",
+      "walletId": "w4",
+      "name": "Техника",
+      "priority": 1,
+      "costPerTime": 9000000,
+      "periodN": 50,
+      "periodUnit": "month",
+      "contributionOverride": 180000,
+      "timesToSave": 3,
+      "startBalance": 1230000
+    },
+    {
+      "id": "w4e2",
+      "walletId": "w4",
+      "name": "Быт",
+      "priority": 2,
+      "costPerTime": 2800000,
+      "periodN": 12,
+      "periodUnit": "month",
+      "contributionOverride": 230000,
+      "timesToSave": 3,
+      "startBalance": -290000
+    },
+    {
+      "id": "w4e3",
+      "walletId": "w4",
+      "name": "Подарки",
+      "priority": 3,
+      "costPerTime": 900000,
+      "periodN": 2,
+      "periodUnit": "month",
+      "contributionOverride": 450000,
+      "timesToSave": 3,
+      "startBalance": 2450000
+    },
+    {
+      "id": "w4e4",
+      "walletId": "w4",
+      "name": "Развлечения",
+      "priority": 4,
+      "costPerTime": 900000,
+      "periodN": 2,
+      "periodUnit": "month",
+      "contributionOverride": 450000,
+      "timesToSave": 3,
+      "startBalance": 875000
+    },
+    {
+      "id": "w5e1",
+      "walletId": "w5",
+      "name": "Тройка на год",
+      "priority": 1,
+      "costPerTime": 2200000,
+      "periodN": 24,
+      "periodUnit": "month",
+      "contributionOverride": 90000,
+      "timesToSave": 3,
+      "startBalance": 360000
+    },
+    {
+      "id": "w5e2",
+      "walletId": "w5",
+      "name": "Подписки",
+      "priority": 2,
+      "costPerTime": 540000,
+      "periodN": 24,
+      "periodUnit": "month",
+      "contributionOverride": 30000,
+      "timesToSave": 3,
+      "startBalance": 150000
+    },
+    {
+      "id": "w5e3",
+      "walletId": "w5",
+      "name": "Подушка",
+      "priority": 3,
+      "costPerTime": 1100000,
+      "periodN": 2,
+      "periodUnit": "month",
+      "contributionOverride": 550000,
+      "timesToSave": 3,
+      "startBalance": 1700000
+    },
+    {
+      "id": "w5e4",
+      "walletId": "w5",
+      "name": "Непредвиденное",
+      "priority": 4,
+      "costPerTime": 1300000,
+      "periodN": 6,
+      "periodUnit": "month",
+      "contributionOverride": 220000,
+      "timesToSave": 3,
+      "startBalance": 240000
+    },
+    {
+      "id": "w5e5",
+      "walletId": "w5",
+      "name": "Подарки родителям",
+      "priority": 5,
+      "costPerTime": 3500000,
+      "periodN": 20,
+      "periodUnit": "month",
+      "contributionOverride": 180000,
+      "timesToSave": 3,
+      "startBalance": 180000
+    },
+    {
+      "id": "w5e6",
+      "walletId": "w5",
+      "name": "На день рождения",
+      "priority": 6,
+      "costPerTime": 1700000,
+      "periodN": 24,
+      "periodUnit": "month",
+      "contributionOverride": 70000,
+      "timesToSave": 3,
+      "startBalance": 1160000
+    },
+    {
+      "id": "w6e1",
+      "walletId": "w6",
+      "name": "Хобби",
+      "priority": 1,
+      "costPerTime": 1150000,
+      "periodN": 2,
+      "periodUnit": "month",
+      "contributionOverride": 580000,
+      "timesToSave": 3,
+      "startBalance": 3050000
+    },
+    {
+      "id": "w6e2",
+      "walletId": "w6",
+      "name": "Спорт",
+      "priority": 2,
+      "costPerTime": 450000,
+      "periodN": 1,
+      "periodUnit": "month",
+      "contributionOverride": 760000,
+      "timesToSave": 3,
+      "startBalance": 1300000
+    },
+    {
+      "id": "w6e3",
+      "walletId": "w6",
+      "name": "Саморазвитие",
+      "priority": 3,
+      "costPerTime": 4500000,
+      "periodN": 20,
+      "periodUnit": "month",
+      "contributionOverride": 220000,
+      "timesToSave": 3,
+      "startBalance": 1740000
+    }
+  ],
+  "spendCategories": [
+    {
+      "id": "d1",
+      "name": "Транспорт",
+      "monthlyLimit": 400000
+    },
+    {
+      "id": "d2",
+      "name": "Продукты"
+    },
+    {
+      "id": "d3",
+      "name": "Кафе и кофе",
+      "monthlyLimit": 800000
+    },
+    {
+      "id": "d4",
+      "name": "Подписки и сервисы"
+    }
+  ],
+  "expenses": [],
+  "incomes": []
+}

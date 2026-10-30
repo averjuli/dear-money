@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Настройка категории «Косметика»</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Unbounded:wght@500;600&display=swap">
+<style>
+body{margin:0}
+a{color:#1B6B4D}a:hover{color:#14523B}
+</style>
+</helmet>
+<div style="width: 390px; height: 1040px; box-sizing: border-box; padding: 56px 20px 24px; background: #EDF1EE; color: #14211B; font-family: 'Golos Text', system-ui, sans-serif; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; align-items: center; gap: 4px">
+<a href="Koshelek.dc.html" aria-label="Назад к кошельку Self-care" style="width: 44px; height: 44px; margin-left: -12px; display: flex; align-items: center; justify-content: center">
+<svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#14211B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+</a>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div style="font-size: 14px; color: #55635C">Self-care · категория</div>
+<h1 style="margin: 0; font-family: 'Unbounded', sans-serif; font-weight: 600; font-size: 24px">Косметика</h1>
+</div>
+</div>
+
+<div style="background: #FFFFFF; border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<label for="cost" style="font-size: 15px; font-weight: 600">Сколько стоит один раз</label>
+<div style="display: flex; align-items: center; gap: 8px; background: #F4F7F5; border-radius: 14px; padding: 0 14px">
+<input id="cost" type="text" inputmode="numeric" value="2 800" style="flex-grow: 1; min-width: 0; height: 52px; border: none; background: none; font-family: inherit; font-size: 20px; font-weight: 600; color: #14211B; outline: none">
+<span style="font-size: 18px; color: #55635C">₽</span>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<label for="freq" style="font-size: 15px; font-weight: 600">Как часто</label>
+<div style="display: flex; align-items: center; gap: 8px">
+<span style="font-size: 16px; color: #55635C">раз в</span>
+<input id="freq" type="text" inputmode="numeric" value="2" style="width: 60px; height: 52px; box-sizing: border-box; border: none; border-radius: 14px; background: #F4F7F5; text-align: center; font-family: inherit; font-size: 20px; font-weight: 600; color: #14211B; outline: none">
+<div role="group" aria-label="Единица времени" style="flex-grow: 1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; background: #F4F7F5; border-radius: 14px; padding: 4px">
+<button style="min-height: 44px; border: none; border-radius: 10px; background: none; font-family: inherit; font-size: 14px; color: #55635C; cursor: pointer">недели</button>
+<button aria-pressed="true" style="min-height: 44px; border: none; border-radius: 10px; background: #FFFFFF; font-family: inherit; font-size: 14px; font-weight: 600; color: #14211B; cursor: pointer">месяца</button>
+<button style="min-height: 44px; border: none; border-radius: 10px; background: none; font-family: inherit; font-size: 14px; color: #55635C; cursor: pointer">года</button>
+</div>
+</div>
+</div>
+</div>
+
+<div style="background: #1B6B4D; color: #FFFFFF; border-radius: 20px; padding: 16px 18px; display: flex; flex-direction: column; gap: 4px">
+<div style="font-size: 14px; color: #DCEBE3">Откладывать в месяц</div>
+<div style="font-family: 'Unbounded', sans-serif; font-weight: 600; font-size: 30px; line-height: 1.15">1 400 ₽</div>
+<div style="font-size: 14px; color: #DCEBE3">Считается само: 2 800 ₽ ÷ 2 месяца</div>
+</div>
+
+<div style="background: #FFFFFF; border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; align-items: center; gap: 10px">
+<label for="cap" style="flex-grow: 1; font-size: 15px; font-weight: 600">На сколько раз копить</label>
+<button aria-label="Меньше" style="width: 44px; height: 44px; border: none; border-radius: 12px; background: #F4F7F5; font-family: inherit; font-size: 22px; color: #14211B; cursor: pointer">−</button>
+<input id="cap" type="text" inputmode="numeric" value="3" style="width: 44px; height: 44px; box-sizing: border-box; border: none; background: none; text-align: center; font-family: inherit; font-size: 20px; font-weight: 600; color: #14211B; outline: none">
+<button aria-label="Больше" style="width: 44px; height: 44px; border: none; border-radius: 12px; background: #F4F7F5; font-family: inherit; font-size: 22px; color: #14211B; cursor: pointer">+</button>
+</div>
+<div role="img" aria-label="Накоплено 8 400 из 8 400 рублей, категория заполнена" style="height: 8px; background: #E3E9E5; border-radius: 4px"><div style="width: 100%; height: 8px; background: #1B6B4D; border-radius: 4px"></div></div>
+<div style="display: flex; justify-content: space-between; font-size: 14px">
+<div style="color: #55635C">Потолок 8 400 ₽</div>
+<div style="font-weight: 600; color: #1B6B4D">накоплено 8 400 ₽, полная</div>
+</div>
+</div>
+
+<a href="Koshelek.dc.html" style="background: #FFFFFF; border-radius: 20px; padding: 0 16px; min-height: 60px; display: flex; align-items: center; gap: 10px; text-decoration: none; color: #14211B">
+<div style="flex-grow: 1; font-size: 15px; font-weight: 600">Приоритет в кошельке</div>
+<div style="font-size: 15px; color: #55635C">6 из 9</div>
+<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#55635C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+</a>
+
+<div style="background: #DCEBE3; border-radius: 20px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; color: #14523B">
+<div style="font-size: 15px; font-weight: 600">Что будет с излишком</div>
+<div style="font-size: 14px; line-height: 1.45">Категория полная, поэтому её 1 400 ₽ в этом месяце уйдут в «Косметологию». Когда вы потратите из «Косметики», взносы вернутся сюда.</div>
+</div>
+
+<div style="flex-grow: 1"></div>
+<a href="Koshelek.dc.html" style="display: block; text-align: center; text-decoration: none; background: #1B6B4D; color: #FFFFFF; font-size: 17px; font-weight: 600; padding: 17px; border-radius: 16px">Сохранить</a>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1040}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>
