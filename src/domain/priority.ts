@@ -18,3 +18,16 @@ export function moveItem<T>(
   result.splice(to, 0, moved);
   return result;
 }
+
+export const MAIN_ENVELOPES = 3;
+
+/** Envelopes shown on a wallet card: the first few by priority, the rest counted. */
+export function mainEnvelopes<T extends { priority: number }>(
+  envelopes: readonly T[],
+): { shown: T[]; more: number } {
+  const sorted = [...envelopes].sort((a, b) => a.priority - b.priority);
+  return {
+    shown: sorted.slice(0, MAIN_ENVELOPES),
+    more: Math.max(sorted.length - MAIN_ENVELOPES, 0),
+  };
+}

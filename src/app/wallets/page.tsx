@@ -1,7 +1,5 @@
-import Link from "next/link";
-import { Screen, ScreenHeader, Spacer } from "@/components/screen";
+import { Screen, ScreenHeader } from "@/components/screen";
 import { AddLink, SectionTitle } from "@/components/ui-kit";
-import { logout } from "@/server/actions";
 import { requireUserId } from "@/server/auth/current-user";
 import { loadWallets } from "@/server/queries";
 import { WalletOrder } from "./wallet-order";
@@ -29,18 +27,6 @@ export default async function WalletsPage() {
         }))}
       />
       <AddLink href="/wallets/new">Добавить кошелёк</AddLink>
-      <Spacer />
-      <Link href="/install" className="text-center text-sm font-semibold">
-        Как установить на iPhone
-      </Link>
-      <form action={logout} className="flex justify-center">
-        <button
-          type="submit"
-          className="min-h-11 bg-transparent text-sm font-medium text-ink-muted"
-        >
-          Выйти
-        </button>
-      </form>
     </Screen>
   );
 }

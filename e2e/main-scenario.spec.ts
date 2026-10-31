@@ -63,7 +63,7 @@ test("salary 150 000: preview, surplus to «Косметология», allocate
   page,
 }) => {
   await login(page);
-  await page.getByRole("link", { name: /Пришли деньги/ }).click();
+  await page.getByRole("link", { name: "Пришли деньги", exact: true }).click();
   await page.getByLabel("Сколько пришло").fill("150 000");
   await expect(page.getByTestId("to-envelopes")).toHaveText(rub("63 750"));
   await expect(page.getByTestId("to-daily")).toHaveText(rub("86 250"));
@@ -177,4 +177,18 @@ test("drag «Маникюр» from 4th to 1st place", async ({ page }) => {
     "Перетащить «Стоматолог»",
     "Перетащить «Стрижка»",
   ]);
+});
+
+test("settings: gear on the main screen, install guide and logout", async ({
+  page,
+}) => {
+  await login(page);
+  await page.screenshot({ path: test.info().outputPath("main.png") });
+  await page.getByRole("link", { name: "Настройки" }).click();
+  await expect(page).toHaveURL("/settings");
+  await expect(
+    page.getByRole("link", { name: "Как установить на iPhone" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Выйти" }).click();
+  await expect(page).toHaveURL("/login");
 });

@@ -46,6 +46,14 @@ export function dailySummary(input: {
   };
 }
 
+/** What is left for daily life if a daily expense is saved. */
+export function remainingAfterExpense(
+  remaining: number,
+  amount: number,
+): number {
+  return remaining - amount;
+}
+
 export type CategoryStatus =
   | { kind: "none" }
   | { kind: "ok"; left: number; share: number }

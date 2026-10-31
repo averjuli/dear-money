@@ -4,15 +4,19 @@ import { Screen, ScreenHeader, Spacer } from "@/components/screen";
 import { AddLink, Card } from "@/components/ui-kit";
 import { formatMoney } from "@/domain/money";
 import { requireUserId } from "@/server/auth/current-user";
+import { isDesktop } from "@/server/device";
 import { isUuid, loadWallets, toAllocationInput } from "@/server/queries";
 import { EnvelopePriorities } from "./envelope-priorities";
+import { WalletDesktop } from "./wallet-desktop";
 
 export const dynamic = "force-dynamic";
 
 export default async function WalletPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ envelope?: string | string[] }>;
 }) {
   const userId = await requireUserId();
   const { id } = await params;
@@ -20,6 +24,17 @@ export default async function WalletPage({
   const wallets = await loadWallets(userId);
   const wallet = wallets.find((w) => w.id === id);
   if (!wallet) notFound();
+
+  if (await isDesktop()) {
+    const envelope = (await searchParams).envelope;
+    const selected =
+      envelope === "new" ||
+      (isUuid(envelope) && wallet.envelopes.some((e) => e.id === envelope))
+        ? envelope
+        : null;
+    return <WalletDesktop wallet={wallet} selected={selected} />;
+  }
+
   const { envelopes } = toAllocationInput([wallet]);
 
   return (
@@ -65,6 +80,7 @@ export default async function WalletPage({
                 status: e.status,
                 times: e.times,
                 contribution: e.contribution,
+                ceiling: e.ceiling,
               },
             ]),
           )}

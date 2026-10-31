@@ -6,6 +6,7 @@ import { ConfirmButton } from "@/components/confirm-button";
 import { MoneyInput } from "@/components/money-input";
 import { Spacer } from "@/components/screen";
 import { Card, Notice, primaryButtonClass } from "@/components/ui-kit";
+import { remainingAfterExpense } from "@/domain/daily";
 import { expenseHint } from "@/domain/expense";
 import { formatMoney, formatMoneyInput, parseMoney } from "@/domain/money";
 import { countTimes, quoted } from "@/lib/text";
@@ -46,11 +47,14 @@ function Chip({
   onClick,
   children,
   dashed,
+  sunken,
 }: {
   selected?: boolean;
   onClick: () => void;
   children: React.ReactNode;
   dashed?: boolean;
+  /** On a white panel the unselected chip is grey instead of white. */
+  sunken?: boolean;
 }) {
   return (
     <button
@@ -63,7 +67,8 @@ function Chip({
         !dashed &&
           selected &&
           "border-2 border-accent bg-accent-soft font-semibold text-accent-strong",
-        !dashed && !selected && "bg-surface text-ink",
+        !dashed && !selected && (sunken ? "bg-surface-sunken" : "bg-surface"),
+        !dashed && !selected && "text-ink",
       )}
     >
       {children}
@@ -80,6 +85,8 @@ export function ExpenseForm({
   initialMode,
   backHref,
   today,
+  variant = "screen",
+  dailyRemaining = null,
 }: {
   wallets: PickWallet[];
   categories: PickCategory[];
@@ -89,7 +96,12 @@ export function ExpenseForm({
   initialMode: Mode;
   backHref: string;
   today: string;
+  /** "panel": always open on the desktop «Траты» screen, clears itself after saving. */
+  variant?: "screen" | "panel";
+  /** What is left for daily life now; shows the hint for a daily expense. */
+  dailyRemaining?: number | null;
 }) {
+  const panel = variant === "panel";
   const router = useRouter();
   const allEnvelopes = useMemo(
     () => wallets.flatMap((w) => w.envelopes),
@@ -136,6 +148,10 @@ export function ExpenseForm({
           amount,
         )
       : null;
+  const dailyAfter =
+    mode === "daily" && dailyRemaining !== null && amount > 0
+      ? remainingAfterExpense(dailyRemaining, amount)
+      : null;
 
   const recentEnvelopes = recentEnvelopeIds
     .map((id) => envelopeById.get(id))
@@ -167,7 +183,13 @@ export function ExpenseForm({
       envelopeId: mode === "envelope" ? envelopeId : null,
       categoryId: mode === "daily" ? categoryId : null,
     });
-    if (result.ok) {
+    if (result.ok && panel) {
+      setAmountText("");
+      setNote("");
+      setDate(today);
+      setSaving(false);
+      router.refresh();
+    } else if (result.ok) {
       router.push(backHref);
       router.refresh();
     } else {
@@ -178,31 +200,53 @@ export function ExpenseForm({
 
   return (
     <>
-      <div className="flex flex-col items-center gap-1.5 rounded-[24px] bg-surface p-5">
-        <label htmlFor="sum" className="text-sm text-ink-muted">
-          Сумма
-        </label>
-        <div className="flex items-baseline gap-2">
+      {panel ? (
+        <div className="flex items-baseline gap-2 rounded-[14px] bg-surface-sunken px-4 py-1.5">
+          <label htmlFor="sum" className="sr-only">
+            Сумма
+          </label>
           <MoneyInput
             id="sum"
             value={amountText}
             onChange={setAmountText}
-            size="xl"
-            autoFocus={!initial}
-            className="w-[200px] grow-0 text-right"
+            size="lg"
+            autoFocus
+            className="h-[52px] text-[28px]"
           />
-          <span className="font-display text-[28px] font-medium text-ink-muted">
-            ₽
-          </span>
+          <span className="font-display text-[22px] text-ink-muted">₽</span>
         </div>
-      </div>
+      ) : (
+        <div className="flex flex-col items-center gap-1.5 rounded-[24px] bg-surface p-5">
+          <label htmlFor="sum" className="text-sm text-ink-muted">
+            Сумма
+          </label>
+          <div className="flex items-baseline gap-2">
+            <MoneyInput
+              id="sum"
+              value={amountText}
+              onChange={setAmountText}
+              size="xl"
+              autoFocus={!initial}
+              className="w-[200px] grow-0 text-right"
+            />
+            <span className="font-display text-[28px] font-medium text-ink-muted">
+              ₽
+            </span>
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-col gap-2.5">
-        <div className="text-[15px] font-semibold">Откуда списать</div>
+        {!panel && (
+          <div className="text-[15px] font-semibold">Откуда списать</div>
+        )}
         <div
           role="group"
           aria-label="Тип траты"
-          className="grid grid-cols-2 gap-1 rounded-[14px] bg-surface p-1"
+          className={cn(
+            "grid grid-cols-2 gap-1 rounded-[14px] p-1",
+            panel ? "bg-surface-sunken" : "bg-surface",
+          )}
         >
           {(
             [
@@ -217,9 +261,11 @@ export function ExpenseForm({
               onClick={() => setMode(value)}
               className={cn(
                 "min-h-11 rounded-[10px] text-[15px]",
-                mode === value
-                  ? "bg-accent-soft font-semibold text-accent-strong"
-                  : "bg-transparent text-ink-muted",
+                mode === value && panel && "bg-surface font-semibold text-ink",
+                mode === value &&
+                  !panel &&
+                  "bg-accent-soft font-semibold text-accent-strong",
+                mode !== value && "bg-transparent text-ink-muted",
               )}
             >
               {label}
@@ -236,6 +282,7 @@ export function ExpenseForm({
                   key={e.id}
                   selected={envelopeId === e.id}
                   onClick={() => setEnvelopeId(e.id)}
+                  sunken={panel}
                 >
                   {e.name}
                 </Chip>
@@ -245,7 +292,12 @@ export function ExpenseForm({
               </Chip>
             </div>
             {showAll && (
-              <Card className="flex flex-col gap-3 p-4">
+              <div
+                className={cn(
+                  "flex flex-col gap-3 rounded-[20px] p-4",
+                  panel ? "border border-line" : "bg-surface",
+                )}
+              >
                 {wallets.map((w) => (
                   <div key={w.id} className="flex flex-col gap-2">
                     <div className="text-[13px] font-semibold text-ink-muted">
@@ -274,7 +326,7 @@ export function ExpenseForm({
                     </div>
                   </div>
                 ))}
-              </Card>
+              </div>
             )}
           </>
         ) : (
@@ -290,6 +342,7 @@ export function ExpenseForm({
                     key={c.id}
                     selected={categoryId === c.id}
                     onClick={() => setCategoryId(c.id)}
+                    sunken={panel}
                   >
                     {c.name}
                   </Chip>
@@ -320,43 +373,93 @@ export function ExpenseForm({
         </div>
       )}
 
-      <Card className="flex flex-col px-4">
-        <div className="flex min-h-14 items-center gap-2.5 border-b border-line">
-          <label htmlFor="date" className="grow text-[15px] font-semibold">
-            Дата
-          </label>
-          <input
-            id="date"
-            type="date"
-            max={today}
-            value={date}
-            onChange={(e) => setDate(e.target.value || today)}
-            className="bg-transparent text-right text-[15px] text-ink-muted outline-none"
-          />
+      {dailyAfter !== null && (
+        <div
+          data-testid="daily-hint"
+          className={cn(
+            "rounded-[12px] px-3.5 py-2.5 text-sm",
+            dailyAfter < 0
+              ? "bg-warn-soft text-warn"
+              : "bg-accent-soft text-accent-strong",
+          )}
+        >
+          На жизнь останется {formatMoney(dailyAfter)}
         </div>
-        <div className="flex min-h-14 items-center gap-2.5">
-          <label htmlFor="note" className="grow text-[15px] font-semibold">
-            Заметка
-          </label>
-          <input
-            id="note"
-            type="text"
-            maxLength={200}
-            placeholder="необязательно"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            className="w-44 bg-transparent text-right text-[15px] text-ink outline-none placeholder:text-ink-muted"
-          />
+      )}
+
+      {panel ? (
+        <div className="grid grid-cols-2 gap-2.5">
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <label htmlFor="date" className="text-[13px] text-ink-muted">
+              Дата
+            </label>
+            <input
+              id="date"
+              type="date"
+              max={today}
+              value={date}
+              onChange={(e) => setDate(e.target.value || today)}
+              className="h-[42px] min-w-0 rounded-[10px] bg-surface-sunken px-3 text-[15px] text-ink outline-none"
+            />
+          </div>
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <label htmlFor="note" className="text-[13px] text-ink-muted">
+              Заметка
+            </label>
+            <input
+              id="note"
+              type="text"
+              maxLength={200}
+              placeholder="необязательно"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              className="h-[42px] min-w-0 rounded-[10px] bg-surface-sunken px-3 text-[15px] text-ink outline-none placeholder:text-ink-muted"
+            />
+          </div>
         </div>
-      </Card>
+      ) : (
+        <Card className="flex flex-col px-4">
+          <div className="flex min-h-14 items-center gap-2.5 border-b border-line">
+            <label htmlFor="date" className="grow text-[15px] font-semibold">
+              Дата
+            </label>
+            <input
+              id="date"
+              type="date"
+              max={today}
+              value={date}
+              onChange={(e) => setDate(e.target.value || today)}
+              className="bg-transparent text-right text-[15px] text-ink-muted outline-none"
+            />
+          </div>
+          <div className="flex min-h-14 items-center gap-2.5">
+            <label htmlFor="note" className="grow text-[15px] font-semibold">
+              Заметка
+            </label>
+            <input
+              id="note"
+              type="text"
+              maxLength={200}
+              placeholder="необязательно"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              className="w-44 bg-transparent text-right text-[15px] text-ink outline-none placeholder:text-ink-muted"
+            />
+          </div>
+        </Card>
+      )}
 
       {error && <Notice tone="warn" title={error} />}
-      <Spacer />
+      {!panel && <Spacer />}
       <button
         type="button"
         disabled={!canSave}
         onClick={save}
-        className={primaryButtonClass}
+        className={
+          panel
+            ? "min-h-12 rounded-[14px] bg-accent text-base font-semibold text-white disabled:opacity-50"
+            : primaryButtonClass
+        }
       >
         {saving ? "Сохраняю…" : "Сохранить"}
       </button>

@@ -68,7 +68,7 @@ export function MoneyField({
   return (
     <div className="flex items-center gap-2 rounded-[14px] bg-surface-sunken px-3.5">
       {children}
-      <span className="text-lg text-ink-muted">{sign}</span>
+      <span className="whitespace-nowrap text-lg text-ink-muted">{sign}</span>
     </div>
   );
 }

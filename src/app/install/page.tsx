@@ -25,7 +25,7 @@ export default function InstallPage() {
   return (
     <Screen>
       <ScreenHeader
-        backHref="/"
+        backHref="/settings"
         backLabel="Назад"
         title="Установить на iPhone"
       />

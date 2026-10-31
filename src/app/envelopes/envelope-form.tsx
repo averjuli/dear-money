@@ -45,6 +45,23 @@ function formula(cost: number, n: number, unit: PeriodUnit): string {
   return `${price} × 52 недели ÷ ${countMonths(n * 12)}`;
 }
 
+/** A card on the phone screen; a plain block inside the desktop side panel. */
+function Block({
+  panel,
+  className,
+  children,
+}: {
+  panel: boolean;
+  className: string;
+  children: React.ReactNode;
+}) {
+  return panel ? (
+    <div className={cn(className, "p-0")}>{children}</div>
+  ) : (
+    <Card className={className}>{children}</Card>
+  );
+}
+
 export function EnvelopeForm({
   walletId,
   walletName,
@@ -52,6 +69,7 @@ export function EnvelopeForm({
   priority,
   priorityCount,
   surplusReceivers,
+  variant = "screen",
 }: {
   walletId: string;
   walletName: string;
@@ -60,7 +78,14 @@ export function EnvelopeForm({
   priorityCount: number;
   /** Where this envelope's contribution goes this month if it is full. */
   surplusReceivers: string[];
+  /**
+   * "panel": the side panel of the desktop wallet screen;
+   * "wide": the same, full width in two columns (a new envelope on desktop).
+   */
+  variant?: "screen" | "panel" | "wide";
 }) {
+  const panel = variant !== "screen";
+  const wide = variant === "wide";
   const router = useRouter();
   const [name, setName] = useState(envelope?.name ?? "");
   const [costText, setCostText] = useState(
@@ -124,190 +149,207 @@ export function EnvelopeForm({
     }
   }
 
-  return (
-    <>
-      <Card className="flex flex-col gap-4 p-4">
-        <div className="flex flex-col gap-2">
-          <label htmlFor="name" className="text-[15px] font-semibold">
-            Название
-          </label>
-          <input
-            id="name"
-            type="text"
-            maxLength={80}
-            autoFocus={!envelope}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="h-[52px] rounded-[14px] bg-surface-sunken px-3.5 text-[17px] font-medium text-ink outline-none"
-          />
-        </div>
-        <div className="flex flex-col gap-2">
-          <label htmlFor="cost" className="text-[15px] font-semibold">
-            Сколько стоит один раз
-          </label>
-          <MoneyField>
-            <MoneyInput id="cost" value={costText} onChange={setCostText} />
-          </MoneyField>
-        </div>
-        <div className="flex flex-col gap-2">
-          <label htmlFor="freq" className="text-[15px] font-semibold">
-            Как часто
-          </label>
-          <div className="flex items-center gap-2">
-            <span className="text-base text-ink-muted">раз в</span>
-            <input
-              id="freq"
-              type="text"
-              inputMode="numeric"
-              value={periodText}
-              onChange={(e) => {
-                if (/^\d{0,3}$/.test(e.target.value))
-                  setPeriodText(e.target.value);
-              }}
-              onBlur={() => setPeriodText(String(periodN))}
-              className="h-[52px] w-[60px] rounded-[14px] bg-surface-sunken text-center text-xl font-semibold text-ink outline-none"
-            />
-            <div
-              role="group"
-              aria-label="Единица времени"
-              className="grid grow grid-cols-3 gap-1 rounded-[14px] bg-surface-sunken p-1"
-            >
-              {UNITS.map((u) => (
-                <button
-                  key={u.value}
-                  type="button"
-                  aria-pressed={unit === u.value}
-                  onClick={() => setUnit(u.value)}
-                  className={cn(
-                    "min-h-11 rounded-[10px] text-sm",
-                    unit === u.value
-                      ? "bg-surface font-semibold text-ink"
-                      : "bg-transparent text-ink-muted",
-                  )}
-                >
-                  {u.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </Card>
-
-      <div className="flex flex-col gap-1 rounded-[20px] bg-accent px-[18px] py-4 text-white">
-        <div className="text-sm text-accent-soft">Откладывать в месяц</div>
-        <div
-          data-testid="monthly-contribution"
-          className="font-display text-[30px] font-semibold leading-tight"
-        >
-          {formatMoney(contribution)}
-        </div>
-        <div className="text-sm text-accent-soft">
-          {manual
-            ? "Задано вручную"
-            : `Считается само: ${formula(cost, periodN, unit)}`}
-        </div>
-      </div>
-
-      <Card className="flex flex-col gap-3 p-4">
-        <label className="flex items-center gap-3 text-[15px] font-semibold">
-          <input
-            type="checkbox"
-            checked={manual}
-            onChange={(e) => {
-              setManual(e.target.checked);
-              if (e.target.checked && manualText === "")
-                setManualText(formatMoneyInput(contribution));
-            }}
-            className="size-5 accent-[#1b6b4d]"
-          />
-          Задать взнос вручную
+  const mainBlock = (
+    <Block panel={panel} className="flex flex-col gap-4 p-4">
+      <div className="flex flex-col gap-2">
+        <label htmlFor="name" className="text-[15px] font-semibold">
+          Название
         </label>
-        {manual && (
-          <MoneyField sign="₽/мес">
-            <MoneyInput
-              id="manual"
-              ariaLabel="Взнос в месяц вручную"
-              value={manualText}
-              onChange={setManualText}
-            />
-          </MoneyField>
-        )}
-      </Card>
-
-      <Card className="flex flex-col gap-3 p-4">
-        <div className="flex items-center gap-2.5">
-          <label htmlFor="cap" className="grow text-[15px] font-semibold">
-            На сколько раз копить
-          </label>
-          <button
-            type="button"
-            aria-label="Меньше"
-            disabled={times <= 1}
-            onClick={() => setTimes(Math.max(1, times - 1))}
-            className="size-11 rounded-[12px] bg-surface-sunken text-[22px] text-ink disabled:opacity-40"
-          >
-            −
-          </button>
-          <input
-            id="cap"
-            type="text"
-            inputMode="numeric"
-            value={times}
-            onChange={(e) => {
-              const n = Number.parseInt(e.target.value, 10);
-              if (Number.isFinite(n) && n >= 1 && n <= 100) setTimes(n);
-            }}
-            className="size-11 bg-transparent text-center text-xl font-semibold text-ink outline-none"
-          />
-          <button
-            type="button"
-            aria-label="Больше"
-            disabled={times >= 100}
-            onClick={() => setTimes(Math.min(100, times + 1))}
-            className="size-11 rounded-[12px] bg-surface-sunken text-[22px] text-ink disabled:opacity-40"
-          >
-            +
-          </button>
-        </div>
-        <Bar
-          share={cap > 0 ? balance / cap : 0}
-          tone={balance < 0 ? "warn" : "accent"}
-          label={`Накоплено ${formatMoney(balance)} из ${formatMoney(cap)}`}
+        <input
+          id="name"
+          type="text"
+          maxLength={80}
+          autoFocus={!envelope}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="h-[52px] rounded-[14px] bg-surface-sunken px-3.5 text-[17px] font-medium text-ink outline-none"
         />
-        <div className="flex justify-between gap-2 text-sm">
-          <div className="text-ink-muted">Потолок {formatMoney(cap)}</div>
-          <div
-            className={cn(
-              "font-semibold",
-              balance < 0 ? "text-warn" : "text-accent",
-            )}
-          >
-            {full
-              ? `накоплено ${formatMoney(balance)}, полный`
-              : `накоплено ${formatMoney(balance)}, до потолка ${formatMoney(cap - balance)}`}
-          </div>
-        </div>
-      </Card>
-
-      <Card className="flex flex-col gap-2 p-4">
-        <label htmlFor="start" className="text-[15px] font-semibold">
-          Начальный остаток
+      </div>
+      <div className="flex flex-col gap-2">
+        <label htmlFor="cost" className="text-[15px] font-semibold">
+          Сколько стоит один раз
         </label>
         <MoneyField>
+          <MoneyInput id="cost" value={costText} onChange={setCostText} />
+        </MoneyField>
+      </div>
+      <div className="flex flex-col gap-2">
+        <label htmlFor="freq" className="text-[15px] font-semibold">
+          Как часто
+        </label>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="whitespace-nowrap text-base text-ink-muted">
+            раз в
+          </span>
+          <input
+            id="freq"
+            type="text"
+            inputMode="numeric"
+            value={periodText}
+            onChange={(e) => {
+              if (/^\d{0,3}$/.test(e.target.value))
+                setPeriodText(e.target.value);
+            }}
+            onBlur={() => setPeriodText(String(periodN))}
+            className="h-[52px] w-[60px] rounded-[14px] bg-surface-sunken text-center text-xl font-semibold text-ink outline-none"
+          />
+          <div
+            role="group"
+            aria-label="Единица времени"
+            className="grid min-w-[210px] grow grid-cols-3 gap-1 rounded-[14px] bg-surface-sunken p-1"
+          >
+            {UNITS.map((u) => (
+              <button
+                key={u.value}
+                type="button"
+                aria-pressed={unit === u.value}
+                onClick={() => setUnit(u.value)}
+                className={cn(
+                  "min-h-11 rounded-[10px] text-sm",
+                  unit === u.value
+                    ? "bg-surface font-semibold text-ink"
+                    : "bg-transparent text-ink-muted",
+                )}
+              >
+                {u.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </Block>
+  );
+  const contributionCard = (
+    <div
+      className={cn(
+        "flex flex-col gap-1 bg-accent text-white",
+        panel ? "rounded-[16px] px-4 py-3.5" : "rounded-[20px] px-[18px] py-4",
+      )}
+    >
+      <div className="text-sm text-accent-soft">Откладывать в месяц</div>
+      <div
+        data-testid="monthly-contribution"
+        className={cn(
+          "font-display font-semibold leading-tight",
+          panel ? "text-2xl" : "text-[30px]",
+        )}
+      >
+        {formatMoney(contribution)}
+      </div>
+      <div className="text-sm text-accent-soft">
+        {manual
+          ? "Задано вручную"
+          : `Считается само: ${formula(cost, periodN, unit)}`}
+      </div>
+    </div>
+  );
+  const manualBlock = (
+    <Block panel={panel} className="flex flex-col gap-3 p-4">
+      <label className="flex items-center gap-3 text-[15px] font-semibold">
+        <input
+          type="checkbox"
+          checked={manual}
+          onChange={(e) => {
+            setManual(e.target.checked);
+            if (e.target.checked && manualText === "")
+              setManualText(formatMoneyInput(contribution));
+          }}
+          className="size-5 accent-[#1b6b4d]"
+        />
+        Задать взнос вручную
+      </label>
+      {manual && (
+        <MoneyField sign="₽/мес">
           <MoneyInput
-            id="start"
-            value={startText}
-            onChange={setStartText}
-            allowNegative
+            id="manual"
+            ariaLabel="Взнос в месяц вручную"
+            value={manualText}
+            onChange={setManualText}
           />
         </MoneyField>
-        <div className="text-[13px] text-ink-muted">
-          Сколько уже лежит в конверте, например при переносе из таблицы. Может
-          быть отрицательным.
+      )}
+    </Block>
+  );
+  const timesBlock = (
+    <Block panel={panel} className="flex flex-col gap-3 p-4">
+      <div className="flex items-center gap-2.5">
+        <label htmlFor="cap" className="grow text-[15px] font-semibold">
+          На сколько раз копить
+        </label>
+        <button
+          type="button"
+          aria-label="Меньше"
+          disabled={times <= 1}
+          onClick={() => setTimes(Math.max(1, times - 1))}
+          className="size-11 rounded-[12px] bg-surface-sunken text-[22px] text-ink disabled:opacity-40"
+        >
+          −
+        </button>
+        <input
+          id="cap"
+          type="text"
+          inputMode="numeric"
+          value={times}
+          onChange={(e) => {
+            const n = Number.parseInt(e.target.value, 10);
+            if (Number.isFinite(n) && n >= 1 && n <= 100) setTimes(n);
+          }}
+          className="size-11 bg-transparent text-center text-xl font-semibold text-ink outline-none"
+        />
+        <button
+          type="button"
+          aria-label="Больше"
+          disabled={times >= 100}
+          onClick={() => setTimes(Math.min(100, times + 1))}
+          className="size-11 rounded-[12px] bg-surface-sunken text-[22px] text-ink disabled:opacity-40"
+        >
+          +
+        </button>
+      </div>
+      <Bar
+        share={cap > 0 ? balance / cap : 0}
+        tone={balance < 0 ? "warn" : "accent"}
+        label={`Накоплено ${formatMoney(balance)} из ${formatMoney(cap)}`}
+      />
+      <div className="flex justify-between gap-2 text-sm">
+        <div className="text-ink-muted">Потолок {formatMoney(cap)}</div>
+        <div
+          className={cn(
+            "font-semibold",
+            balance < 0 ? "text-warn" : "text-accent",
+          )}
+        >
+          {cap === 0
+            ? `накоплено ${formatMoney(balance)}`
+            : full
+              ? `накоплено ${formatMoney(balance)}, полный`
+              : `накоплено ${formatMoney(balance)}, до потолка ${formatMoney(cap - balance)}`}
         </div>
-      </Card>
-
-      {envelope && (
+      </div>
+    </Block>
+  );
+  const startBlock = (
+    <Block panel={panel} className="flex flex-col gap-2 p-4">
+      <label htmlFor="start" className="text-[15px] font-semibold">
+        Начальный остаток
+      </label>
+      <MoneyField>
+        <MoneyInput
+          id="start"
+          value={startText}
+          onChange={setStartText}
+          allowNegative
+        />
+      </MoneyField>
+      <div className="text-[13px] text-ink-muted">
+        Сколько уже лежит в конверте, например при переносе из таблицы. Может
+        быть отрицательным.
+      </div>
+    </Block>
+  );
+  const rest = (
+    <>
+      {envelope && !panel && (
         <Link
           href={`/wallets/${walletId}`}
           className="flex min-h-[60px] items-center gap-2.5 rounded-[20px] bg-surface px-4 text-ink no-underline"
@@ -337,12 +379,12 @@ export function EnvelopeForm({
       )}
 
       {error && <Notice tone="warn" title={error} />}
-      <Spacer />
+      {!panel && <Spacer />}
       <button
         type="button"
         disabled={!valid || saving}
         onClick={save}
-        className={primaryButtonClass}
+        className={cn(primaryButtonClass, wide && "max-w-[360px] self-center")}
       >
         {saving ? "Сохраняю…" : "Сохранить"}
       </button>
@@ -366,6 +408,35 @@ export function EnvelopeForm({
           }}
         />
       )}
+    </>
+  );
+
+  if (wide) {
+    return (
+      <>
+        <div className="grid items-start gap-x-8 gap-y-5 min-[900px]:grid-cols-2">
+          <div className="flex flex-col gap-5">
+            {mainBlock}
+            {startBlock}
+          </div>
+          <div className="flex flex-col gap-5">
+            {contributionCard}
+            {manualBlock}
+            {timesBlock}
+          </div>
+        </div>
+        {rest}
+      </>
+    );
+  }
+  return (
+    <>
+      {mainBlock}
+      {contributionCard}
+      {manualBlock}
+      {timesBlock}
+      {startBlock}
+      {rest}
     </>
   );
 }

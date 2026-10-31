@@ -56,6 +56,33 @@ export const ArrowUpIcon = (p: IconProps) => (
   </Svg>
 );
 
+export const EnvelopeIcon = (p: IconProps) => (
+  <Svg size={20} strokeWidth={2.2} {...p}>
+    <path d="M4 7h16v11H4z" />
+    <path d="M4 7l8 6 8-6" />
+  </Svg>
+);
+
+export const CardIcon = (p: IconProps) => (
+  <Svg size={20} strokeWidth={2.2} {...p}>
+    <path d="M4 6h16v12H4z" />
+    <path d="M4 10h16" />
+  </Svg>
+);
+
+export const SettingsIcon = (p: IconProps) => (
+  <Svg size={20} strokeWidth={2.2} {...p}>
+    <circle cx="12" cy="12" r="3" />
+    <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1" />
+  </Svg>
+);
+
+export const ArrowDownIcon = (p: IconProps) => (
+  <Svg size={20} strokeWidth={2.2} {...p}>
+    <path d="M12 5v14M6 13l6 6 6-6" />
+  </Svg>
+);
+
 export const HandleIcon = (p: IconProps) => (
   <Svg size={18} strokeWidth={2.2} {...p}>
     <path d="M5 9h14M5 15h14" />
