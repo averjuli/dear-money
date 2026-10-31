@@ -5,17 +5,22 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { SortableList } from "@/components/sortable-list";
 import { Notice, SectionTitle } from "@/components/ui-kit";
-import { planWallet, type AllocationEnvelope } from "@/domain/allocation";
+import {
+  planWallet,
+  type AllocationEnvelope,
+  type WalletSurplus,
+} from "@/domain/allocation";
 import type { EnvelopeStatus } from "@/domain/envelope";
 import { formatMoney } from "@/domain/money";
 import { countEnvelopes, countTimes, quoted } from "@/lib/text";
 import { cn } from "@/lib/utils";
 import { reorderEnvelopes } from "@/server/actions";
 
-interface StatusInfo {
+export interface StatusInfo {
   status: EnvelopeStatus;
   times: number;
   contribution: number;
+  ceiling: number;
 }
 
 function statusText(info: StatusInfo, balance: number): string {
@@ -24,15 +29,11 @@ function statusText(info: StatusInfo, balance: number): string {
   return `копится · на ${countTimes(info.times)}`;
 }
 
-export function EnvelopePriorities({
-  walletId,
-  envelopes,
-  statuses,
-}: {
-  walletId: string;
-  envelopes: AllocationEnvelope[];
-  statuses: Record<string, StatusInfo>;
-}) {
+/** Envelope order on screen, saved on every change; surplus follows the order. */
+export function useEnvelopeOrder(
+  walletId: string,
+  envelopes: AllocationEnvelope[],
+) {
   const router = useRouter();
   const [items, setItems] = useState(envelopes);
   const [error, setError] = useState<string | null>(null);
@@ -61,20 +62,49 @@ export function EnvelopePriorities({
     }
   }
 
+  return { items, reorder, error, surplus, receiverIds };
+}
+
+export function SurplusBanner({
+  surplus,
+}: {
+  surplus: Pick<WalletSurplus, "amount" | "fullEnvelopeNames" | "receivers">;
+}) {
+  return (
+    <>
+      <div className="text-base font-semibold">
+        Излишек в этом месяце: {formatMoney(surplus.amount)}
+      </div>
+      <div className="text-sm leading-snug text-accent-soft">
+        {countEnvelopes(surplus.fullEnvelopeNames.length)} уже{" "}
+        {surplus.fullEnvelopeNames.length === 1 ? "накоплен" : "накоплены"}.{" "}
+        {surplus.receivers.length > 0
+          ? `Их взносы уйдут в ${surplus.receivers.map((r) => quoted(r.name)).join(" и ")}: выше всех по приоритету среди неполных.`
+          : "Неполных конвертов нет, поэтому взносы уйдут на повседневные траты."}
+      </div>
+    </>
+  );
+}
+
+export function EnvelopePriorities({
+  walletId,
+  envelopes,
+  statuses,
+}: {
+  walletId: string;
+  envelopes: AllocationEnvelope[];
+  statuses: Record<string, StatusInfo>;
+}) {
+  const { items, reorder, error, surplus, receiverIds } = useEnvelopeOrder(
+    walletId,
+    envelopes,
+  );
+
   return (
     <>
       {surplus && (
         <div className="flex flex-col gap-1.5 rounded-[20px] bg-accent px-4 py-3.5 text-white">
-          <div className="text-base font-semibold">
-            Излишек в этом месяце: {formatMoney(surplus.amount)}
-          </div>
-          <div className="text-sm leading-snug text-accent-soft">
-            {countEnvelopes(surplus.fullEnvelopeNames.length)} уже{" "}
-            {surplus.fullEnvelopeNames.length === 1 ? "накоплен" : "накоплены"}.{" "}
-            {surplus.receivers.length > 0
-              ? `Их взносы уйдут в ${surplus.receivers.map((r) => quoted(r.name)).join(" и ")}: выше всех по приоритету среди неполных.`
-              : "Неполных конвертов нет, поэтому взносы уйдут на повседневные траты."}
-          </div>
+          <SurplusBanner surplus={surplus} />
         </div>
       )}
 

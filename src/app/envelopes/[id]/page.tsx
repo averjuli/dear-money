@@ -2,18 +2,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Screen, ScreenHeader } from "@/components/screen";
 import { Card, SectionTitle } from "@/components/ui-kit";
-import { planWallet } from "@/domain/allocation";
 import { formatMoney } from "@/domain/money";
 import { formatRelativeDay } from "@/lib/text";
 import { requireUserId } from "@/server/auth/current-user";
-import {
-  isUuid,
-  loadExpenses,
-  loadWallets,
-  toAllocationInput,
-} from "@/server/queries";
+import { isUuid, loadExpenses, loadWallets } from "@/server/queries";
 import { todayIso } from "@/server/today";
 import { EnvelopeForm } from "../envelope-form";
+import { envelopeFormProps } from "../envelope-form-props";
 
 export const dynamic = "force-dynamic";
 
@@ -28,17 +23,11 @@ export default async function EnvelopePage({
   const wallets = await loadWallets(userId);
   const wallet = wallets.find((w) => w.envelopes.some((e) => e.id === id));
   const envelope = wallet?.envelopes.find((e) => e.id === id);
-  if (!wallet || !envelope) notFound();
+  const form = wallet ? envelopeFormProps(wallet, id) : null;
+  if (!wallet || !envelope || !form) notFound();
 
   const today = todayIso();
   const expenses = await loadExpenses(userId, { envelopeId: id, limit: 10 });
-  const plan = planWallet(toAllocationInput([wallet]).envelopes);
-  const ownItem = plan.items.find((i) => i.sourceEnvelopeId === id);
-  const receivers = (ownItem?.destinations ?? [])
-    .filter((d) => d.kind === "surplus" && d.envelopeId !== null)
-    .map(
-      (d) => wallet.envelopes.find((e) => e.id === d.envelopeId)?.name ?? "",
-    );
 
   return (
     <Screen>
@@ -48,25 +37,7 @@ export default async function EnvelopePage({
         caption={`${wallet.name} · конверт`}
         title={envelope.name}
       />
-      <EnvelopeForm
-        walletId={wallet.id}
-        walletName={wallet.name}
-        envelope={{
-          id: envelope.id,
-          name: envelope.name,
-          costPerTime: envelope.costPerTime,
-          periodN: envelope.periodN,
-          periodUnit: envelope.periodUnit,
-          contributionOverride: envelope.contributionOverride,
-          timesToSave: envelope.timesToSave,
-          startBalance: envelope.startBalance,
-          balance: envelope.balance,
-          expenseCount: envelope.expenseCount,
-        }}
-        priority={wallet.envelopes.findIndex((e) => e.id === id) + 1}
-        priorityCount={wallet.envelopes.length}
-        surplusReceivers={receivers}
-      />
+      <EnvelopeForm {...form} />
       {expenses.length > 0 && (
         <>
           <SectionTitle>Последние траты</SectionTitle>

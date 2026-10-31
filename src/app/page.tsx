@@ -14,7 +14,9 @@ import {
   loadWallets,
   periodStart,
 } from "@/server/queries";
+import { isDesktop } from "@/server/device";
 import { todayIso } from "@/server/today";
+import { HomeDesktop } from "./home-desktop";
 
 export const dynamic = "force-dynamic";
 
@@ -40,6 +42,19 @@ export default async function HomePage() {
         nextIncomeDate: income.nextIncomeDate,
       })
     : null;
+  if (await isDesktop()) {
+    return (
+      <HomeDesktop
+        month={monthName(today)}
+        today={today}
+        wallets={wallets}
+        categories={categories}
+        income={income}
+        daily={daily}
+      />
+    );
+  }
+
   const overLimit = categories.flatMap((c) => {
     const status = categoryStatus(c.monthlyLimit, c.spent);
     return status.kind === "over" ? [{ name: c.name, over: status.over }] : [];

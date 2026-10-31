@@ -19,7 +19,17 @@ export default defineConfig({
   projects: [
     {
       name: "iphone",
+      testIgnore: /desktop\.spec\.ts/,
       use: { ...devices["iPhone 13"], browserName: "chromium" },
+    },
+    {
+      name: "desktop",
+      testMatch: /desktop\.spec\.ts/,
+      dependencies: ["iphone"],
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 1440, height: 1000 },
+      },
     },
   ],
   webServer: {

@@ -1,6 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { categoryStatus, daysUntil, dailySummary } from "./daily";
+import {
+  categoryStatus,
+  daysUntil,
+  dailySummary,
+  remainingAfterExpense,
+} from "./daily";
 import { rub } from "./test-fixtures";
+
+describe("remainingAfterExpense", () => {
+  it("66 770 left, daily expense 1 250 → 65 520", () => {
+    expect(remainingAfterExpense(rub(66770), rub(1250))).toBe(rub(65520));
+  });
+
+  it("can go below zero", () => {
+    expect(remainingAfterExpense(rub(500), rub(800))).toBe(rub(-300));
+  });
+});
 
 describe("dailySummary", () => {
   it("mid-month: budget 86 250, spent 19 480 → 66 770 left", () => {

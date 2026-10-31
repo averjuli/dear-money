@@ -3,6 +3,7 @@ import { Screen, ScreenHeader } from "@/components/screen";
 import { requireUserId } from "@/server/auth/current-user";
 import { isUuid, loadWallets } from "@/server/queries";
 import { EnvelopeForm } from "../envelope-form";
+import { envelopeFormProps } from "../envelope-form-props";
 
 export const dynamic = "force-dynamic";
 
@@ -25,14 +26,7 @@ export default async function NewEnvelopePage({
         caption={`${wallet.name} · конверт`}
         title="Новый конверт"
       />
-      <EnvelopeForm
-        walletId={wallet.id}
-        walletName={wallet.name}
-        envelope={null}
-        priority={wallet.envelopes.length + 1}
-        priorityCount={wallet.envelopes.length + 1}
-        surplusReceivers={[]}
-      />
+      <EnvelopeForm {...envelopeFormProps(wallet, null)!} />
     </Screen>
   );
 }

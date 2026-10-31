@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { BackIcon, CloseIcon, PlusIcon } from "./icons";
+import { NavItem, SECTIONS, type SectionKey } from "./nav-sections";
 
 /** Phone-width column with the paddings from the mockups. */
 export function Screen({
@@ -87,36 +88,37 @@ export function Spacer() {
   return <div className="grow" />;
 }
 
-/** Bottom tabs «Конверты» / «Траты» with the round «+» button. */
-export function BottomNav({ active }: { active: "envelopes" | "daily" }) {
-  const tab = (href: string, label: string, isActive: boolean) => (
-    <Link
-      href={href}
-      aria-current={isActive ? "page" : undefined}
-      className={cn(
-        "flex min-h-12 items-center justify-center rounded-[14px] text-[15px] no-underline",
-        isActive
-          ? "bg-accent-soft font-semibold text-accent-strong"
-          : "font-medium text-ink-muted",
-      )}
-    >
-      {label}
-    </Link>
-  );
+/**
+ * Bottom row of the four sections; on «Конверты» and «Траты» the round «+»
+ * for a new expense hangs above it on the right.
+ */
+export function BottomNav({ active }: { active: SectionKey }) {
+  const withPlus = active === "envelopes" || active === "daily";
   const from = active === "daily" ? "/daily" : "/";
   return (
-    <div className="sticky bottom-[max(12px,env(safe-area-inset-bottom))] mt-2 flex items-center gap-2.5">
-      <nav className="grid grow grid-cols-2 gap-1 rounded-[20px] bg-surface p-1.5 shadow-[0_2px_12px_rgba(20,33,27,0.06)]">
-        {tab("/", "Конверты", active === "envelopes")}
-        {tab("/daily", "Траты", active === "daily")}
-      </nav>
-      <Link
-        href={`/expenses/new?from=${encodeURIComponent(from)}`}
-        aria-label="Внести трату"
-        className="flex size-[60px] shrink-0 items-center justify-center rounded-[20px] bg-accent text-white shadow-[0_2px_12px_rgba(20,33,27,0.12)]"
+    <div className="pointer-events-none sticky bottom-[max(12px,env(safe-area-inset-bottom))] mt-2 flex flex-col items-end gap-2.5">
+      {withPlus && (
+        <Link
+          href={`/expenses/new?from=${encodeURIComponent(from)}`}
+          aria-label="Внести трату"
+          className="pointer-events-auto flex size-[60px] shrink-0 items-center justify-center rounded-[20px] bg-accent text-white shadow-[0_2px_12px_rgba(20,33,27,0.12)]"
+        >
+          <PlusIcon />
+        </Link>
+      )}
+      <nav
+        aria-label="Разделы"
+        className="pointer-events-auto grid w-full grid-cols-4 gap-1 rounded-[20px] bg-surface p-1.5 shadow-[0_2px_12px_rgba(20,33,27,0.06)]"
       >
-        <PlusIcon />
-      </Link>
+        {SECTIONS.map((section) => (
+          <NavItem
+            key={section.key}
+            section={section}
+            active={active === section.key}
+            layout="tab"
+          />
+        ))}
+      </nav>
     </div>
   );
 }
