@@ -1,6 +1,6 @@
 import { CloseHeader, Screen } from "@/components/screen";
 import { requireUserId } from "@/server/auth/current-user";
-import { loadLatestIncome, periodStart } from "@/server/queries";
+import { monthStart } from "@/domain/daily";
 import { todayIso } from "@/server/today";
 import { ExpenseForm } from "../expense-form";
 import { loadPickers, safeBackHref } from "../load-pickers";
@@ -14,8 +14,8 @@ export default async function NewExpensePage({
 }) {
   const userId = await requireUserId();
   const backHref = safeBackHref((await searchParams).from);
-  const income = await loadLatestIncome(userId);
-  const pickers = await loadPickers(userId, periodStart(income));
+  const today = todayIso();
+  const pickers = await loadPickers(userId, monthStart(today));
 
   return (
     <Screen>
@@ -25,7 +25,7 @@ export default async function NewExpensePage({
         initial={null}
         initialMode={backHref.startsWith("/daily") ? "daily" : "envelope"}
         backHref={backHref}
-        today={todayIso()}
+        today={today}
       />
     </Screen>
   );

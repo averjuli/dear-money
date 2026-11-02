@@ -89,6 +89,8 @@ export const spendCategories = pgTable(
     monthlyLimit: integer("monthly_limit"),
     position: integer("position").notNull(),
     seedKey: text("seed_key"),
+    /** Hidden from lists and pickers; its expenses stay in the history. */
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
     createdAt: createdAt(),
   },
   (t) => [
@@ -164,7 +166,7 @@ export const expenses = pgTable(
     check("expenses_amount_check", sql`${t.amount} > 0`),
     check(
       "expenses_target_check",
-      sql`(${t.envelopeId} is null) <> (${t.categoryId} is null)`,
+      sql`${t.envelopeId} is not null or ${t.categoryId} is not null`,
     ),
   ],
 );

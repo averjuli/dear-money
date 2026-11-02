@@ -1,3 +1,5 @@
+import { monthStart } from "@/domain/daily";
+
 // Calendar dates are kept as "YYYY-MM-DD" in the user's time zone.
 const TIME_ZONE = process.env.APP_TIME_ZONE ?? "Europe/Moscow";
 
@@ -12,7 +14,7 @@ export function todayIso(now = new Date()): string {
 
 /** First day of the current month, "YYYY-MM-01". */
 export function monthStartIso(now = new Date()): string {
-  return `${todayIso(now).slice(0, 7)}-01`;
+  return monthStart(todayIso(now));
 }
 
 export function isIsoDate(value: unknown): value is string {

@@ -2,17 +2,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Screen, ScreenHeader } from "@/components/screen";
 import { Card, Notice, SectionTitle } from "@/components/ui-kit";
-import { categoryStatus } from "@/domain/daily";
+import { categoryStatus, monthStart } from "@/domain/daily";
 import { formatMoney } from "@/domain/money";
-import { formatRelativeDay } from "@/lib/text";
+import { formatRelativeDay, monthNamePrepositional, quoted } from "@/lib/text";
 import { requireUserId } from "@/server/auth/current-user";
-import {
-  isUuid,
-  loadCategories,
-  loadExpenses,
-  loadLatestIncome,
-  periodStart,
-} from "@/server/queries";
+import { isUuid, loadCategories, loadExpenses } from "@/server/queries";
 import { todayIso } from "@/server/today";
 import { CategoryForm } from "../category-form";
 
@@ -27,19 +21,19 @@ export default async function CategoryPage({
   const { id } = await params;
   if (!isUuid(id)) notFound();
   const today = todayIso();
-  const income = await loadLatestIncome(userId);
-  const categories = await loadCategories(userId, periodStart(income));
+  const categories = await loadCategories(userId, monthStart(today));
   const category = categories.find((c) => c.id === id);
   if (!category) notFound();
   const expenses = await loadExpenses(userId, { categoryId: id, limit: 100 });
   const status = categoryStatus(category.monthlyLimit, category.spent);
+  const inMonth = monthNamePrepositional(today);
 
   return (
     <Screen>
       <ScreenHeader
         backHref="/daily"
         backLabel="Назад к повседневным тратам"
-        caption="Повседневные траты · категория"
+        caption="Траты · категория"
         title={category.name}
       />
       <CategoryForm
@@ -52,7 +46,7 @@ export default async function CategoryPage({
       >
         <Notice
           tone={status.kind === "over" ? "warn" : "accent"}
-          title={`За период потрачено ${formatMoney(category.spent)}`}
+          title={`${inMonth[0].toUpperCase()}${inMonth.slice(1)} потрачено ${formatMoney(category.spent)}`}
         >
           {status.kind === "over" &&
             `Это на ${formatMoney(status.over)} больше лимита.`}
@@ -79,6 +73,7 @@ export default async function CategoryPage({
                     </div>
                     <div className="text-[13px] text-ink-muted">
                       {formatRelativeDay(e.date, today)}
+                      {e.envelopeName && ` · из ${quoted(e.envelopeName)}`}
                     </div>
                   </div>
                   <div className="pr-2 text-[15px] font-semibold">

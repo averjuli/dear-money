@@ -1,12 +1,8 @@
 import { notFound } from "next/navigation";
 import { CloseHeader, Screen } from "@/components/screen";
 import { requireUserId } from "@/server/auth/current-user";
-import {
-  isUuid,
-  loadExpense,
-  loadLatestIncome,
-  periodStart,
-} from "@/server/queries";
+import { monthStart } from "@/domain/daily";
+import { isUuid, loadExpense } from "@/server/queries";
 import { todayIso } from "@/server/today";
 import { ExpenseForm } from "../expense-form";
 import { loadPickers, safeBackHref } from "../load-pickers";
@@ -29,16 +25,24 @@ export default async function EditExpensePage({
   const from = (await searchParams).from;
   const backHref = safeBackHref(
     from ??
-      (expense.categoryId ? "/daily" : `/envelopes/${expense.envelopeId}`),
+      (expense.envelopeId ? `/envelopes/${expense.envelopeId}` : "/daily"),
   );
-  const income = await loadLatestIncome(userId);
-  const pickers = await loadPickers(userId, periodStart(income));
+  const today = todayIso();
+  const pickers = await loadPickers(userId, monthStart(today));
+  // The category of this expense may have been deleted: keep it selectable.
+  const keptCategory =
+    expense.categoryId &&
+    expense.categoryName &&
+    !pickers.categories.some((c) => c.id === expense.categoryId)
+      ? { id: expense.categoryId, name: expense.categoryName }
+      : null;
 
   return (
     <Screen>
       <CloseHeader title="Трата" closeHref={backHref} />
       <ExpenseForm
         {...pickers}
+        keptCategory={keptCategory}
         initial={{
           id: expense.id,
           amount: expense.amount,
@@ -47,9 +51,9 @@ export default async function EditExpensePage({
           envelopeId: expense.envelopeId,
           categoryId: expense.categoryId,
         }}
-        initialMode={expense.categoryId ? "daily" : "envelope"}
+        initialMode={expense.envelopeId ? "envelope" : "daily"}
         backHref={backHref}
-        today={todayIso()}
+        today={today}
       />
     </Screen>
   );

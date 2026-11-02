@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -178,9 +178,16 @@ export async function saveExpense(input: {
     return fail("Введите сумму больше нуля");
   }
   if (!isIsoDate(input.date)) return fail("Неверная дата");
-  if ((input.envelopeId === null) === (input.categoryId === null)) {
-    return fail("Выберите, откуда списать");
+  // A category is always required: for a daily expense it is the source,
+  // for an envelope expense it says what the money was spent on.
+  if (input.categoryId === null) {
+    return fail(
+      input.envelopeId === null
+        ? "Выберите, откуда списать"
+        : "Выберите категорию",
+    );
   }
+  if (!isUuid(input.categoryId)) return fail("Категория не найдена");
   const note =
     typeof input.note === "string" ? input.note.trim().slice(0, 200) : "";
   const db = getDb();
@@ -194,18 +201,30 @@ export async function saveExpense(input: {
         and(eq(envelopes.id, input.envelopeId), eq(envelopes.userId, userId)),
       );
     if (!owned) return fail("Конверт не найден");
-  } else {
-    if (!isUuid(input.categoryId)) return fail("Категория не найдена");
-    const [owned] = await db
-      .select({ id: spendCategories.id })
-      .from(spendCategories)
-      .where(
-        and(
-          eq(spendCategories.id, input.categoryId),
-          eq(spendCategories.userId, userId),
-        ),
-      );
-    if (!owned) return fail("Категория не найдена");
+  }
+
+  const [category] = await db
+    .select({ deletedAt: spendCategories.deletedAt })
+    .from(spendCategories)
+    .where(
+      and(
+        eq(spendCategories.id, input.categoryId),
+        eq(spendCategories.userId, userId),
+      ),
+    );
+  if (!category) return fail("Категория не найдена");
+  if (category.deletedAt) {
+    // A deleted category can stay only on the expense that already has it.
+    const [current] =
+      input.id && isUuid(input.id)
+        ? await db
+            .select({ categoryId: expenses.categoryId })
+            .from(expenses)
+            .where(and(eq(expenses.id, input.id), eq(expenses.userId, userId)))
+        : [];
+    if (current?.categoryId !== input.categoryId) {
+      return fail("Категория не найдена");
+    }
   }
 
   const values = {
@@ -498,6 +517,7 @@ export async function saveCategory(input: {
         and(
           eq(spendCategories.id, input.id),
           eq(spendCategories.userId, userId),
+          isNull(spendCategories.deletedAt),
         ),
       )
       .returning({ id: spendCategories.id });
@@ -519,12 +539,20 @@ export async function saveCategory(input: {
   return { ok: true, id: created.id };
 }
 
+/** Hides the category; its expenses stay in the history and in all sums. */
 export async function deleteCategory(id: string): Promise<ActionResult> {
   const userId = await requireUserId();
   if (!isUuid(id)) return fail("Категория не найдена");
   await getDb()
-    .delete(spendCategories)
-    .where(and(eq(spendCategories.id, id), eq(spendCategories.userId, userId)));
+    .update(spendCategories)
+    .set({ deletedAt: sql`now()` })
+    .where(
+      and(
+        eq(spendCategories.id, id),
+        eq(spendCategories.userId, userId),
+        isNull(spendCategories.deletedAt),
+      ),
+    );
   refresh();
   return { ok: true };
 }

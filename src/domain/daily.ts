@@ -13,6 +13,30 @@ export function daysUntil(today: string, date: string): number {
   return dayNumber(date) - dayNumber(today);
 }
 
+/** First day of the calendar month of the given date, "YYYY-MM-01". */
+export function monthStart(today: string): string {
+  return `${today.slice(0, 7)}-01`;
+}
+
+/** True when the date falls in the same calendar month as today. */
+export function isInMonth(date: string, today: string): boolean {
+  return date.slice(0, 7) === today.slice(0, 7);
+}
+
+/**
+ * Everything spent in the current calendar month under a category: daily
+ * expenses and envelope expenses with a category. An envelope expense
+ * without a category (entered before categories existed) is not included.
+ */
+export function monthSpending(
+  expenses: { amount: number; date: string; categoryId: string | null }[],
+  today: string,
+): number {
+  return expenses
+    .filter((e) => e.categoryId !== null && isInMonth(e.date, today))
+    .reduce((sum, e) => sum + e.amount, 0);
+}
+
 export interface DailySummary {
   budget: number;
   spent: number;

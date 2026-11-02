@@ -5,7 +5,12 @@ import { ChevronIcon } from "@/components/icons";
 import { Bar } from "@/components/ui-kit";
 import type { DailySummary } from "@/domain/daily";
 import { formatMoney } from "@/domain/money";
-import { formatDay, formatRelativeDay } from "@/lib/text";
+import {
+  formatDay,
+  formatRelativeDay,
+  monthNamePrepositional,
+  quoted,
+} from "@/lib/text";
 import type { CategoryView, ExpenseView, IncomeView } from "@/server/queries";
 import { ExpenseForm } from "../expenses/expense-form";
 import type { loadPickers } from "../expenses/load-pickers";
@@ -16,6 +21,7 @@ export function DailyDesktop({
   income,
   summary,
   categories,
+  monthSpent,
   recent,
   pickers,
 }: {
@@ -24,6 +30,7 @@ export function DailyDesktop({
   income: IncomeView | null;
   summary: DailySummary | null;
   categories: CategoryView[];
+  monthSpent: number;
   recent: ExpenseView[];
   pickers: Awaited<ReturnType<typeof loadPickers>>;
 }) {
@@ -61,8 +68,8 @@ export function DailyDesktop({
               />
               <div className="text-sm text-accent-soft">
                 потрачено {formatMoney(summary.spent)} из{" "}
-                {formatMoney(summary.budget)} · траты из конвертов сюда не
-                входят
+                {formatMoney(summary.budget)} · траты из конвертов эту сумму не
+                уменьшают, но видны в категориях
               </div>
             </section>
           ) : (
@@ -97,6 +104,15 @@ export function DailyDesktop({
               >
                 По категориям
               </PanelTitle>
+              <div
+                data-testid="month-spent"
+                className="text-[15px] text-ink-muted"
+              >
+                Потрачено {monthNamePrepositional(today)}{" "}
+                <span className="font-semibold text-ink">
+                  {formatMoney(monthSpent)}
+                </span>
+              </div>
               {categories.length === 0 ? (
                 <div className="text-sm text-ink-muted">
                   Категорий пока нет. Лимит у категории необязателен.
@@ -143,10 +159,17 @@ export function DailyDesktop({
                           {formatRelativeDay(e.date, today)}
                         </div>
                         <div className="truncate font-semibold">
-                          {e.targetName}
+                          {e.categoryName}
                         </div>
                         <div className="truncate text-ink-muted">
-                          {e.note ?? ""}
+                          {[
+                            e.envelopeName
+                              ? `из ${quoted(e.envelopeName)}`
+                              : "",
+                            e.note ?? "",
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
                         </div>
                         <div className="whitespace-nowrap text-right font-semibold">
                           {formatMoney(e.amount)}

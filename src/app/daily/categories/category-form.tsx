@@ -100,7 +100,7 @@ export function CategoryForm({
           title={`Удалить категорию «${category.name}»?`}
           description={
             expenseCount > 0
-              ? `Траты в этой категории (${expenseCount}) тоже удалятся.`
+              ? `Категория пропадёт из списка, а её траты (${expenseCount}) останутся в истории. Деньги не вернутся.`
               : "Трат в этой категории нет."
           }
           onConfirm={async () => {
