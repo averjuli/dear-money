@@ -5,6 +5,7 @@ import {
   formatDay,
   formatFrequency,
   formatRelativeDay,
+  monthNamePrepositional,
 } from "./text";
 
 describe("text helpers", () => {
@@ -32,5 +33,11 @@ describe("text helpers", () => {
     expect(formatRelativeDay("2026-10-20", "2026-10-21")).toBe("вчера");
     expect(formatRelativeDay("2026-09-18", "2026-10-21")).toBe("18 сентября");
     expect(formatRelativeDay("2026-02-28", "2026-03-01")).toBe("вчера");
+  });
+
+  it("names the month in the prepositional case", () => {
+    expect(monthNamePrepositional("2026-11-05")).toBe("в ноябре");
+    expect(monthNamePrepositional("2026-12-01")).toBe("в декабре");
+    expect(monthNamePrepositional("2027-05-31")).toBe("в мае");
   });
 });

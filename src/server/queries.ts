@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, isNotNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, isNotNull, isNull, sql } from "drizzle-orm";
 import { getDb } from "@/db/client";
 import {
   allocations,
@@ -73,7 +73,10 @@ export interface ExpenseView {
   note: string | null;
   envelopeId: string | null;
   categoryId: string | null;
+  /** Envelope name, or the category name for a daily expense. */
   targetName: string;
+  categoryName: string | null;
+  envelopeName: string | null;
 }
 
 /** Wallets with envelopes and their current balances. */
@@ -205,7 +208,10 @@ export function periodStart(income: IncomeView | null): string {
   return income?.date ?? monthStartIso();
 }
 
-/** Daily categories with spending since the period start. */
+/**
+ * Visible categories with everything spent in them since the given day:
+ * daily expenses and envelope expenses. Deleted categories are left out.
+ */
 export async function loadCategories(
   userId: string,
   since: string,
@@ -215,7 +221,12 @@ export async function loadCategories(
     db
       .select()
       .from(spendCategories)
-      .where(eq(spendCategories.userId, userId))
+      .where(
+        and(
+          eq(spendCategories.userId, userId),
+          isNull(spendCategories.deletedAt),
+        ),
+      )
       .orderBy(asc(spendCategories.position), asc(spendCategories.createdAt)),
     db
       .select({
@@ -250,20 +261,26 @@ const expenseSelect = {
   envelopeId: expenses.envelopeId,
   categoryId: expenses.categoryId,
   targetName: sql<string>`coalesce(${envelopes.name}, ${spendCategories.name}, '')`,
+  categoryName: spendCategories.name,
+  envelopeName: envelopes.name,
 };
 
-/** Latest expenses, newest first, optionally only daily or for one target. */
+/**
+ * Latest expenses, newest first. "spending" is what the Spending screen
+ * shows: every expense with a category, daily or from an envelope.
+ */
 export async function loadExpenses(
   userId: string,
   filter: {
-    kind?: "daily" | "envelope";
+    kind?: "spending" | "envelope";
     envelopeId?: string;
     categoryId?: string;
     limit?: number;
   } = {},
 ): Promise<ExpenseView[]> {
   const conditions = [eq(expenses.userId, userId)];
-  if (filter.kind === "daily") conditions.push(isNotNull(expenses.categoryId));
+  if (filter.kind === "spending")
+    conditions.push(isNotNull(expenses.categoryId));
   if (filter.kind === "envelope")
     conditions.push(isNotNull(expenses.envelopeId));
   if (filter.envelopeId)
@@ -294,7 +311,10 @@ export async function loadExpense(
   return row ?? null;
 }
 
-/** Envelope and category ids of recent expenses, newest first. */
+/**
+ * Envelope and category ids of recent expenses, newest first. Categories come
+ * from all expenses, envelope ones included; deleted categories are skipped.
+ */
 export async function loadRecentTargetIds(
   userId: string,
 ): Promise<{ envelopes: string[]; categories: string[] }> {
@@ -302,18 +322,46 @@ export async function loadRecentTargetIds(
     .select({
       envelopeId: expenses.envelopeId,
       categoryId: expenses.categoryId,
+      categoryDeletedAt: spendCategories.deletedAt,
     })
     .from(expenses)
+    .leftJoin(spendCategories, eq(expenses.categoryId, spendCategories.id))
     .where(eq(expenses.userId, userId))
     .orderBy(desc(expenses.createdAt))
     .limit(50);
   return {
     envelopes: rows.flatMap((r) => (r.envelopeId ? [r.envelopeId] : [])),
-    categories: rows.flatMap((r) => (r.categoryId ? [r.categoryId] : [])),
+    categories: rows.flatMap((r) =>
+      r.categoryId && !r.categoryDeletedAt ? [r.categoryId] : [],
+    ),
   };
 }
 
+/** Spent from the daily budget: expenses that are not from an envelope. */
 export async function loadDailySpent(
+  userId: string,
+  since: string,
+): Promise<number> {
+  const [row] = await getDb()
+    .select({
+      total: sql<number>`coalesce(sum(${expenses.amount}), 0)::int`,
+    })
+    .from(expenses)
+    .where(
+      and(
+        eq(expenses.userId, userId),
+        isNull(expenses.envelopeId),
+        gte(expenses.date, since),
+      ),
+    );
+  return row?.total ?? 0;
+}
+
+/**
+ * Everything spent under a category since the given day, daily and from
+ * envelopes, deleted categories included.
+ */
+export async function loadMonthSpent(
   userId: string,
   since: string,
 ): Promise<number> {

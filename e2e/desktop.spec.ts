@@ -106,6 +106,20 @@ test("expenses: form always open, daily hint, stays on the screen after saving",
   await expect(page.getByTestId("daily-left")).toHaveText(rub("79 020"));
   await expect(page).toHaveURL("/daily");
   await expect(page.getByLabel("Сумма")).toHaveValue("");
+
+  // 3 900 from «Маникюр» + 6 230 + 1 000: the month total includes envelope expenses.
+  await expect(page.getByTestId("month-spent")).toContainText(rub("11 130"));
+  await expect(page.getByText("из «Маникюр»")).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "+ Новая категория" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Из конверта" }).click();
+  await expect(
+    page
+      .locator("section", { hasText: "Новая трата" })
+      .getByText("Категория", { exact: true }),
+  ).toBeVisible();
+  await shot(page, "daily-envelope-mode");
 });
 
 test("income: form on the left, preview on the right", async ({ page }) => {

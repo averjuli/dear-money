@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowUpIcon, ChevronIcon } from "@/components/icons";
 import { BottomNav, Screen, Spacer } from "@/components/screen";
 import { Bar, Card, SectionTitle } from "@/components/ui-kit";
-import { categoryStatus, dailySummary } from "@/domain/daily";
+import { categoryStatus, dailySummary, monthStart } from "@/domain/daily";
 import { formatMoney } from "@/domain/money";
 import { countEnvelopes, monthName, plural } from "@/lib/text";
 import { cn } from "@/lib/utils";
@@ -27,7 +27,7 @@ export default async function HomePage() {
   const since = periodStart(income);
   const [wallets, categories, dailySpent] = await Promise.all([
     loadWallets(userId),
-    loadCategories(userId, since),
+    loadCategories(userId, monthStart(today)),
     loadDailySpent(userId, since),
   ]);
 

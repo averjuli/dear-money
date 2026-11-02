@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { ConfirmButton } from "@/components/confirm-button";
-import { MoneyInput } from "@/components/money-input";
+import { MoneyField, MoneyInput } from "@/components/money-input";
 import { Spacer } from "@/components/screen";
 import { Card, Notice, primaryButtonClass } from "@/components/ui-kit";
 import { remainingAfterExpense } from "@/domain/daily";
@@ -11,7 +11,7 @@ import { expenseHint } from "@/domain/expense";
 import { formatMoney, formatMoneyInput, parseMoney } from "@/domain/money";
 import { countTimes, quoted } from "@/lib/text";
 import { cn } from "@/lib/utils";
-import { deleteExpense, saveExpense } from "@/server/actions";
+import { deleteExpense, saveCategory, saveExpense } from "@/server/actions";
 
 export interface PickEnvelope {
   id: string;
@@ -76,9 +76,118 @@ function Chip({
   );
 }
 
+/** «+ Новая категория»: name and optional monthly limit, created right away. */
+function NewCategory({
+  sunken,
+  onCreated,
+}: {
+  sunken: boolean;
+  onCreated: (category: PickCategory) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [limitText, setLimitText] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const limit = limitText.trim() === "" ? null : parseMoney(limitText);
+  const limitValid = limitText.trim() === "" || (limit !== null && limit > 0);
+  const canAdd = name.trim() !== "" && limitValid && !saving;
+
+  if (!open) {
+    return (
+      <Chip dashed onClick={() => setOpen(true)}>
+        + Новая категория
+      </Chip>
+    );
+  }
+
+  async function add() {
+    if (!canAdd) return;
+    setSaving(true);
+    setError(null);
+    const result = await saveCategory({ name, monthlyLimit: limit });
+    if (result.ok && result.id) {
+      onCreated({ id: result.id, name: name.trim() });
+      setName("");
+      setLimitText("");
+      setOpen(false);
+    } else if (!result.ok) {
+      setError(result.error);
+    }
+    setSaving(false);
+  }
+
+  return (
+    <div
+      className={cn(
+        "flex w-full flex-col gap-3 rounded-[20px] p-4",
+        sunken ? "border border-line" : "bg-surface",
+      )}
+    >
+      <div className="flex flex-col gap-1.5">
+        <label
+          htmlFor="new-category-name"
+          className="text-[13px] text-ink-muted"
+        >
+          Название
+        </label>
+        <input
+          id="new-category-name"
+          type="text"
+          maxLength={80}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="h-[46px] rounded-[10px] bg-surface-sunken px-3 text-[15px] text-ink outline-none"
+        />
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <label
+          htmlFor="new-category-limit"
+          className="text-[13px] text-ink-muted"
+        >
+          Лимит в месяц, необязательно
+        </label>
+        <MoneyField>
+          <MoneyInput
+            id="new-category-limit"
+            value={limitText}
+            onChange={setLimitText}
+            placeholder="без лимита"
+          />
+        </MoneyField>
+        {!limitValid && (
+          <div className="text-[13px] text-warn">
+            Лимит больше нуля или пустое поле
+          </div>
+        )}
+      </div>
+      {error && <div className="text-[13px] text-warn">{error}</div>}
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="min-h-11 rounded-[12px] bg-surface-sunken text-[15px] text-ink"
+        >
+          Отмена
+        </button>
+        <button
+          type="button"
+          disabled={!canAdd}
+          onClick={add}
+          className="min-h-11 rounded-[12px] bg-accent text-[15px] font-semibold text-white disabled:opacity-50"
+        >
+          {saving ? "Добавляю…" : "Добавить"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function ExpenseForm({
   wallets,
   categories,
+  keptCategory = null,
   recentEnvelopeIds,
   recentCategoryIds,
   initial,
@@ -90,6 +199,8 @@ export function ExpenseForm({
 }: {
   wallets: PickWallet[];
   categories: PickCategory[];
+  /** Category of the edited expense when it has been deleted: still selectable. */
+  keptCategory?: PickCategory | null;
   recentEnvelopeIds: string[];
   recentCategoryIds: string[];
   initial: ExpenseInitial | null;
@@ -126,13 +237,17 @@ export function ExpenseForm({
   );
   const [date, setDate] = useState(initial?.date ?? today);
   const [note, setNote] = useState(initial?.note ?? "");
+  const [created, setCreated] = useState<PickCategory[]>([]);
   const [showAll, setShowAll] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   const amount = parseMoney(amountText) ?? 0;
-  const target = mode === "envelope" ? envelopeId : categoryId;
-  const canSave = amount > 0 && target !== null && !saving;
+  const canSave =
+    amount > 0 &&
+    categoryId !== null &&
+    (mode === "daily" || envelopeId !== null) &&
+    !saving;
 
   // When editing, the stored balance already includes this expense.
   const selected = envelopeId ? envelopeById.get(envelopeId) : undefined;
@@ -163,12 +278,43 @@ export function ExpenseForm({
   ) {
     recentEnvelopes.push(selected);
   }
-  const categoryById = new Map(categories.map((c) => [c.id, c]));
-  const recentCategories = recentCategoryIds
+  // Categories made in this form show up before the page data is refreshed.
+  const allCategories = [
+    ...(keptCategory ? [keptCategory] : []),
+    ...categories,
+    ...created,
+  ].filter((c, i, list) => list.findIndex((x) => x.id === c.id) === i);
+  const categoryById = new Map(allCategories.map((c) => [c.id, c]));
+  const recentCategories = [
+    ...created.map((c) => c.id).reverse(),
+    ...recentCategoryIds,
+  ]
+    .filter((id, i, list) => list.indexOf(id) === i)
     .map((id) => categoryById.get(id))
     .filter((c): c is PickCategory => Boolean(c));
-  const restCategories = categories.filter(
-    (c) => !recentCategoryIds.includes(c.id),
+  const restCategories = allCategories.filter(
+    (c) => !recentCategories.some((r) => r.id === c.id),
+  );
+  const categoryChips = (
+    <div className="flex flex-wrap gap-2">
+      {[...recentCategories, ...restCategories].map((c) => (
+        <Chip
+          key={c.id}
+          selected={categoryId === c.id}
+          onClick={() => setCategoryId(c.id)}
+          sunken={panel}
+        >
+          {c.name}
+        </Chip>
+      ))}
+      <NewCategory
+        sunken={panel}
+        onCreated={(c) => {
+          setCreated((list) => [...list, c]);
+          setCategoryId(c.id);
+        }}
+      />
+    </div>
   );
 
   async function save() {
@@ -181,7 +327,7 @@ export function ExpenseForm({
       date,
       note,
       envelopeId: mode === "envelope" ? envelopeId : null,
-      categoryId: mode === "daily" ? categoryId : null,
+      categoryId,
     });
     if (result.ok && panel) {
       setAmountText("");
@@ -328,28 +474,11 @@ export function ExpenseForm({
                 ))}
               </div>
             )}
+            <div className="text-[15px] font-semibold">Категория</div>
+            {categoryChips}
           </>
         ) : (
-          <>
-            {categories.length === 0 ? (
-              <div className="text-sm text-ink-muted">
-                Категорий пока нет: добавьте их на экране «Траты».
-              </div>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {[...recentCategories, ...restCategories].map((c) => (
-                  <Chip
-                    key={c.id}
-                    selected={categoryId === c.id}
-                    onClick={() => setCategoryId(c.id)}
-                    sunken={panel}
-                  >
-                    {c.name}
-                  </Chip>
-                ))}
-              </div>
-            )}
-          </>
+          categoryChips
         )}
       </div>
 

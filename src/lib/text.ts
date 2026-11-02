@@ -29,6 +29,21 @@ const MONTHS_GENITIVE = [
   "декабря",
 ];
 
+const MONTHS_PREPOSITIONAL = [
+  "январе",
+  "феврале",
+  "марте",
+  "апреле",
+  "мае",
+  "июне",
+  "июле",
+  "августе",
+  "сентябре",
+  "октябре",
+  "ноябре",
+  "декабре",
+];
+
 const MONTHS_NOMINATIVE = [
   "январь",
   "февраль",
@@ -69,6 +84,11 @@ export function formatRelativeDay(iso: string, today: string): string {
 
 export function monthName(iso: string): string {
   return MONTHS_NOMINATIVE[parts(iso)[1] - 1];
+}
+
+/** "2026-11-05" → "в ноябре". */
+export function monthNamePrepositional(iso: string): string {
+  return `в ${MONTHS_PREPOSITIONAL[parts(iso)[1] - 1]}`;
 }
 
 const UNIT_FORMS = {

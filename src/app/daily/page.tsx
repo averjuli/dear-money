@@ -2,9 +2,15 @@ import Link from "next/link";
 import { ChevronIcon } from "@/components/icons";
 import { BottomNav, Screen, ScreenTitle, Spacer } from "@/components/screen";
 import { AddLink, Bar, Card, SectionTitle } from "@/components/ui-kit";
-import { categoryStatus, dailySummary } from "@/domain/daily";
+import { categoryStatus, dailySummary, monthStart } from "@/domain/daily";
 import { formatMoney } from "@/domain/money";
-import { formatDay, formatRelativeDay, monthName } from "@/lib/text";
+import {
+  formatDay,
+  formatRelativeDay,
+  monthName,
+  monthNamePrepositional,
+  quoted,
+} from "@/lib/text";
 import { cn } from "@/lib/utils";
 import { requireUserId } from "@/server/auth/current-user";
 import { isDesktop } from "@/server/device";
@@ -13,6 +19,7 @@ import {
   loadDailySpent,
   loadExpenses,
   loadLatestIncome,
+  loadMonthSpent,
   periodStart,
 } from "@/server/queries";
 import { todayIso } from "@/server/today";
@@ -25,11 +32,15 @@ export default async function DailyPage() {
   const userId = await requireUserId();
   const today = todayIso();
   const income = await loadLatestIncome(userId);
+  // The «Осталось на жизнь» card still counts from the last income;
+  // categories and the month total count from the 1st of the month.
   const since = periodStart(income);
-  const [categories, spent, recent] = await Promise.all([
-    loadCategories(userId, since),
+  const monthSince = monthStart(today);
+  const [categories, spent, monthSpent, recent] = await Promise.all([
+    loadCategories(userId, monthSince),
     loadDailySpent(userId, since),
-    loadExpenses(userId, { kind: "daily", limit: 10 }),
+    loadMonthSpent(userId, monthSince),
+    loadExpenses(userId, { kind: "spending", limit: 10 }),
   ]);
   const summary = income
     ? dailySummary({
@@ -48,8 +59,9 @@ export default async function DailyPage() {
         income={income}
         summary={summary}
         categories={categories}
+        monthSpent={monthSpent}
         recent={recent}
-        pickers={await loadPickers(userId, since)}
+        pickers={await loadPickers(userId, monthSince)}
       />
     );
   }
@@ -108,9 +120,15 @@ export default async function DailyPage() {
 
       <p className="m-0 text-sm leading-snug text-ink-muted">
         Это всё, что осталось от зарплаты после конвертов. Траты из конвертов
-        сюда не входят.
+        эту сумму не уменьшают, но видны в категориях
       </p>
 
+      <div data-testid="month-spent" className="text-[15px] text-ink-muted">
+        Потрачено {monthNamePrepositional(today)}{" "}
+        <span className="font-semibold text-ink">
+          {formatMoney(monthSpent)}
+        </span>
+      </div>
       <SectionTitle hint="лимит необязателен">По категориям</SectionTitle>
       {categories.length > 0 && (
         <Card className="flex flex-col px-4">
@@ -180,11 +198,18 @@ export default async function DailyPage() {
                 href={`/expenses/${e.id}?from=/daily`}
                 className="flex min-h-[52px] items-center border-b border-line text-[15px] text-ink no-underline last:border-b-0"
               >
-                <div className="grow">
-                  {e.note ? `${e.targetName}: ${e.note}` : e.targetName}{" "}
-                  <span className="text-ink-muted">
-                    · {formatRelativeDay(e.date, today)}
-                  </span>
+                <div className="grow py-1.5">
+                  <div>
+                    {e.note ? `${e.categoryName}: ${e.note}` : e.categoryName}{" "}
+                    <span className="text-ink-muted">
+                      · {formatRelativeDay(e.date, today)}
+                    </span>
+                  </div>
+                  {e.envelopeName && (
+                    <div className="text-[13px] text-ink-muted">
+                      из {quoted(e.envelopeName)}
+                    </div>
+                  )}
                 </div>
                 <div className="font-semibold">{formatMoney(e.amount)}</div>
               </Link>
