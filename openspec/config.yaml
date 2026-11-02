@@ -1,0 +1,38 @@
+schema: spec-driven
+
+context: |
+  Language: Russian
+  All artifacts must be written in Russian.
+  Keep OpenSpec structural headings and SHALL/MUST keywords in English.
+
+  Project: Dear Money, a personal envelope-method savings planner.
+  Read CLAUDE.md first: it holds the stack, money rules and workflow.
+  Product idea and open questions: specs/01-продуктовая-идея.md.
+  Screens and design tokens: specs/02-экраны-и-дизайн.md, mockups in design/.
+  Money is integer kopecks; scenarios show rubles for readability.
+  Calculation logic lives in src/domain/ and is tested with the exact
+  numbers from spec scenarios.
+  The repo is public: amounts in specs are fictional, never real.
+  Do not invent product decisions: ask the user.
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always state what is out of scope
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+
+# Per-operation guidance (optional)
+# Add advisory guidance for how apply and archive work should be conducted.
+# This is separate from artifact rules above.
+# Example:
+#   operations:
+#     apply:
+#       guidance:
+#         - Keep test summaries concise
+#     archive:
+#       guidance:
+#         - Summarize the archive outcome before finishing
