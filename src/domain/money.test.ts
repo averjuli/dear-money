@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { divRound, formatMoney, half, parseMoney } from "./money";
+import { divCeil, divRound, formatMoney, half, parseMoney } from "./money";
 
 const NBSP = " ";
 
@@ -19,6 +19,20 @@ describe("divRound", () => {
   it("rejects non-integer input and zero divisor", () => {
     expect(() => divRound(1.5, 2)).toThrow();
     expect(() => divRound(1, 0)).toThrow();
+  });
+});
+
+describe("divCeil", () => {
+  it("rounds any remainder up", () => {
+    expect(divCeil(7, 2)).toBe(4);
+    expect(divCeil(6, 2)).toBe(3);
+    expect(divCeil(1, 5000)).toBe(1);
+    expect(divCeil(0, 5)).toBe(0);
+  });
+
+  it("rejects non-integer input and zero divisor", () => {
+    expect(() => divCeil(1.5, 2)).toThrow();
+    expect(() => divCeil(1, 0)).toThrow();
   });
 });
 

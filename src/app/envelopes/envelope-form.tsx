@@ -347,8 +347,7 @@ export function EnvelopeForm({
         />
       </MoneyField>
       <div className="text-[13px] text-ink-muted">
-        Сколько уже лежит в конверте, например при переносе из таблицы. Может
-        быть отрицательным.
+        Сколько уже лежит в конверте.
       </div>
     </Block>
   );

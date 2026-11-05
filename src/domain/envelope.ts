@@ -1,4 +1,4 @@
-import { divFloor, divRound } from "./money";
+import { divCeil, divFloor } from "./money";
 
 export type PeriodUnit = "week" | "month" | "year";
 
@@ -21,20 +21,31 @@ export interface CeilingSettings {
 const WEEKS_PER_YEAR = 52;
 const MONTHS_PER_YEAR = 12;
 
-/** Contribution per month from cost and frequency, unless set manually. */
+/** A computed monthly contribution is rounded up to a multiple of 50 ₽. */
+const CONTRIBUTION_STEP = 5000;
+
+/** Divides, then rounds the result up to the contribution step (one rounding). */
+function ceilToStep(dividend: number, divisor: number): number {
+  return divCeil(dividend, divisor * CONTRIBUTION_STEP) * CONTRIBUTION_STEP;
+}
+
+/**
+ * Contribution per month from cost and frequency, rounded up to 50 ₽,
+ * unless set manually (a manual amount is used as is).
+ */
 export function monthlyContribution(env: ContributionSettings): number {
   if (env.contributionOverride !== null) return env.contributionOverride;
   if (env.periodN <= 0) return 0;
   switch (env.periodUnit) {
     case "week":
-      return divRound(
+      return ceilToStep(
         env.costPerTime * WEEKS_PER_YEAR,
         env.periodN * MONTHS_PER_YEAR,
       );
     case "month":
-      return divRound(env.costPerTime, env.periodN);
+      return ceilToStep(env.costPerTime, env.periodN);
     case "year":
-      return divRound(env.costPerTime, env.periodN * MONTHS_PER_YEAR);
+      return ceilToStep(env.costPerTime, env.periodN * MONTHS_PER_YEAR);
   }
 }
 

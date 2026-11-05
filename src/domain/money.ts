@@ -39,6 +39,14 @@ export function divFloor(dividend: number, divisor: number): number {
   return Math.floor(dividend / divisor);
 }
 
+/** Integer division rounded up, for non-negative values: 7 / 2 → 4. */
+export function divCeil(dividend: number, divisor: number): number {
+  assertInteger(dividend, "dividend");
+  assertInteger(divisor, "divisor");
+  if (divisor === 0) throw new Error("Division by zero");
+  return Math.ceil(dividend / divisor);
+}
+
 /** Rounds kopecks to whole rubles. */
 export function roundToRubles(kopecks: number): number {
   return divRound(kopecks, 100) * 100;
