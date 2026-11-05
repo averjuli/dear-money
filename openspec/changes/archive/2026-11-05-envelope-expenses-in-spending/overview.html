@@ -1,0 +1,2443 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Траты из конвертов — обзор</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Unbounded:wght@500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* Values copied from src/app/globals.css (@theme design tokens) */
+      :root {
+        --color-bg: #edf1ee;
+        --color-surface: #ffffff;
+        --color-surface-sunken: #f4f7f5;
+        --color-ink: #14211b;
+        --color-ink-muted: #55635c;
+        --color-accent: #1b6b4d;
+        --color-accent-strong: #14523b;
+        --color-accent-soft: #dcebe3;
+        --color-warn: #a34d14;
+        --color-warn-strong: #8a4315;
+        --color-warn-soft: #fbeadd;
+        --color-warn-bar: #c46a2b;
+        --color-line: #e3e9e5;
+        --color-dash: #9db5a9;
+
+        --font-sans: "Golos Text", system-ui, sans-serif;
+        --font-display: "Unbounded", "Golos Text", sans-serif;
+        --font-mono: ui-monospace, Menlo, Consolas, monospace;
+
+        --radius-card: 20px;
+        --radius-card-lg: 24px;
+        --radius-control: 14px;
+        --radius-button: 16px;
+        --radius-bar: 4px;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        background: var(--color-bg);
+      }
+      body {
+        margin: 0;
+        background: var(--color-bg);
+        color: var(--color-ink);
+        font-family: var(--font-sans);
+        font-size: 16px;
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+      }
+      .page {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 40px 16px 80px;
+      }
+      header.top {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 15px;
+        color: var(--color-ink-muted);
+        font-weight: 500;
+      }
+      .dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--color-accent);
+        flex-shrink: 0;
+      }
+      h1 {
+        font-family: var(--font-display);
+        font-weight: 600;
+        font-size: 38px;
+        line-height: 1.12;
+        letter-spacing: -0.02em;
+        margin: 16px 0 12px;
+        text-wrap: balance;
+      }
+      h2 {
+        font-family: var(--font-display);
+        font-weight: 500;
+        font-size: 26px;
+        letter-spacing: -0.01em;
+        margin: 56px 0 16px;
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+      }
+      h2 .num {
+        font-size: 15px;
+        color: var(--color-accent);
+      }
+      h3 {
+        font-weight: 600;
+        font-size: 19px;
+        margin: 28px 0 10px;
+      }
+      p {
+        margin: 8px 0;
+      }
+      .lead {
+        font-size: 18px;
+        color: var(--color-ink-muted);
+        max-width: 700px;
+      }
+      .muted {
+        color: var(--color-ink-muted);
+      }
+      .small {
+        font-size: 14px;
+      }
+      code,
+      .mono {
+        font-family: var(--font-mono);
+        font-size: 0.86em;
+      }
+      code {
+        background: var(--color-surface-sunken);
+        border: 1px solid var(--color-line);
+        padding: 1px 5px;
+        border-radius: 6px;
+      }
+      ul.points {
+        padding-left: 20px;
+        margin: 8px 0;
+      }
+      ul.points li {
+        margin: 4px 0;
+      }
+      .card {
+        background: var(--color-surface);
+        border: 1px solid var(--color-line);
+        border-radius: var(--radius-card);
+        padding: 20px 24px;
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 16px;
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        border-radius: 999px;
+        background: var(--color-surface);
+        border: 1px solid var(--color-line);
+        font-size: 14px;
+      }
+      .chip.ok {
+        color: var(--color-accent-strong);
+        background: var(--color-accent-soft);
+        border-color: var(--color-accent-soft);
+      }
+      .chip.warn {
+        color: var(--color-warn);
+        background: var(--color-warn-soft);
+        border-color: var(--color-warn-soft);
+      }
+
+      /* Screen sketches */
+      .screens {
+        display: grid;
+        gap: 36px;
+      }
+      .pair {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 24px;
+        align-items: start;
+      }
+      .screen-title {
+        font-size: 17px;
+        font-weight: 600;
+        margin: 0 0 8px;
+      }
+      .device {
+        background: var(--color-bg);
+        border: 1px solid var(--color-dash);
+        border-radius: 22px;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .device.phone {
+        max-width: 400px;
+      }
+      .cap {
+        font-size: 13px;
+        color: var(--color-ink-muted);
+      }
+      .stitle {
+        font-family: var(--font-display);
+        font-size: 22px;
+        font-weight: 600;
+        line-height: 1.2;
+      }
+      .sum-box {
+        background: var(--color-surface);
+        border-radius: var(--radius-card-lg);
+        padding: 14px;
+        text-align: center;
+      }
+      .sum-box .k {
+        font-size: 13px;
+        color: var(--color-ink-muted);
+      }
+      .sum-box .v {
+        font-family: var(--font-display);
+        font-size: 30px;
+        font-weight: 600;
+      }
+      .sum-box .v span {
+        color: var(--color-ink-muted);
+        font-weight: 500;
+        font-size: 22px;
+      }
+      .lbl {
+        font-size: 15px;
+        font-weight: 600;
+      }
+      .lbl-sm {
+        font-size: 13px;
+        color: var(--color-ink-muted);
+      }
+      .toggle {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4px;
+        background: var(--color-surface);
+        border-radius: var(--radius-control);
+        padding: 4px;
+      }
+      .toggle span {
+        text-align: center;
+        padding: 8px 0;
+        border-radius: 10px;
+        font-size: 14px;
+        color: var(--color-ink-muted);
+      }
+      .toggle span.on {
+        background: var(--color-accent-soft);
+        color: var(--color-accent-strong);
+        font-weight: 600;
+      }
+      .pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .pill {
+        padding: 7px 13px;
+        border-radius: 999px;
+        background: var(--color-surface);
+        font-size: 14px;
+        border: 2px solid transparent;
+      }
+      .pill.on {
+        border-color: var(--color-accent);
+        background: var(--color-accent-soft);
+        color: var(--color-accent-strong);
+        font-weight: 600;
+      }
+      .pill.dash {
+        border: 2px dashed var(--color-dash);
+        background: transparent;
+      }
+      .hint {
+        border-radius: 16px;
+        padding: 10px 14px;
+        font-size: 14px;
+        background: var(--color-accent-soft);
+        color: var(--color-accent-strong);
+      }
+      .btn {
+        background: var(--color-accent);
+        color: #fff;
+        border-radius: var(--radius-button);
+        padding: 12px;
+        text-align: center;
+        font-weight: 600;
+        font-size: 15px;
+      }
+      .btn.off {
+        background: var(--color-line);
+        color: var(--color-ink-muted);
+      }
+      .btn.sm {
+        padding: 8px 14px;
+        font-size: 14px;
+        display: inline-block;
+      }
+      .inp {
+        background: var(--color-surface);
+        border: 1px solid var(--color-line);
+        border-radius: 12px;
+        padding: 8px 12px;
+        font-size: 14px;
+      }
+      .inp.ph {
+        color: var(--color-ink-muted);
+      }
+      .subcard {
+        background: var(--color-surface);
+        border-radius: var(--radius-card);
+        padding: 12px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .green {
+        background: var(--color-accent);
+        color: #fff;
+        border-radius: var(--radius-card);
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .green .k {
+        font-size: 14px;
+        color: var(--color-accent-soft);
+      }
+      .green .v {
+        font-family: var(--font-display);
+        font-size: 28px;
+        font-weight: 600;
+        line-height: 1.1;
+      }
+      .green .bar {
+        height: 6px;
+        border-radius: var(--radius-bar);
+        background: var(--color-accent-strong);
+        overflow: hidden;
+      }
+      .green .bar i {
+        display: block;
+        height: 100%;
+        width: 22%;
+        background: #fff;
+      }
+      .green .row2 {
+        display: flex;
+        justify-content: space-between;
+        font-size: 13px;
+        color: var(--color-accent-soft);
+      }
+      .expl {
+        font-size: 13px;
+        color: var(--color-ink-muted);
+        line-height: 1.4;
+      }
+      .sec {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        font-size: 17px;
+        font-weight: 600;
+      }
+      .sec small {
+        font-size: 13px;
+        font-weight: 400;
+        color: var(--color-ink-muted);
+      }
+      .month {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        background: var(--color-surface);
+        border-radius: 16px;
+        padding: 10px 14px;
+        font-size: 15px;
+      }
+      .month b {
+        font-family: var(--font-display);
+        font-weight: 600;
+        font-size: 18px;
+      }
+      .list {
+        background: var(--color-surface);
+        border-radius: var(--radius-card);
+        padding: 0 14px;
+      }
+      .li {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        padding: 11px 0;
+        border-bottom: 1px solid var(--color-line);
+      }
+      .li:last-child {
+        border-bottom: 0;
+      }
+      .li .top {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        font-size: 15px;
+      }
+      .li .top .n {
+        font-weight: 600;
+      }
+      .li .top .s {
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .li .sub {
+        font-size: 12.5px;
+        color: var(--color-ink-muted);
+      }
+      .li .sub.w {
+        color: var(--color-warn);
+        font-weight: 500;
+      }
+      .li .top .s.w {
+        color: var(--color-warn);
+      }
+      .mbar {
+        height: 6px;
+        border-radius: var(--radius-bar);
+        background: var(--color-surface-sunken);
+        overflow: hidden;
+      }
+      .mbar i {
+        display: block;
+        height: 100%;
+        background: var(--color-accent);
+      }
+      .mbar.w i {
+        background: var(--color-warn-bar);
+      }
+      .from {
+        color: var(--color-ink-muted);
+        font-size: 13px;
+      }
+      .addlink {
+        color: var(--color-accent);
+        font-weight: 600;
+        font-size: 14px;
+      }
+      .warnline {
+        background: var(--color-warn-soft);
+        color: var(--color-warn);
+        border-radius: 14px;
+        padding: 10px 14px;
+        font-size: 14px;
+        font-weight: 500;
+      }
+      .dialog {
+        background: var(--color-surface);
+        border-radius: var(--radius-card);
+        padding: 16px;
+        box-shadow: 0 16px 40px -20px rgba(20, 33, 27, 0.45);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .dialog .t {
+        font-weight: 600;
+        font-size: 16px;
+      }
+      .dialog .d {
+        font-size: 14px;
+        color: var(--color-ink-muted);
+      }
+      .dialog .acts {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        margin-top: 4px;
+      }
+      .dialog .acts span {
+        padding: 7px 14px;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .dialog .acts .no {
+        background: var(--color-surface-sunken);
+      }
+      .dialog .acts .yes {
+        background: var(--color-warn);
+        color: #fff;
+      }
+      /* Desktop sketch */
+      .desk {
+        display: grid;
+        grid-template-columns: 1.6fr 1fr;
+        gap: 12px;
+        align-items: start;
+      }
+      .desk .col {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        min-width: 0;
+      }
+      .panel {
+        background: var(--color-surface);
+        border-radius: var(--radius-card);
+        padding: 12px 14px;
+      }
+      .ph-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 4px;
+      }
+      .ph-head .t {
+        font-weight: 600;
+        font-size: 16px;
+      }
+      table.tt {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      table.tt th {
+        text-align: left;
+        color: var(--color-ink-muted);
+        font-weight: 500;
+        padding: 6px 4px;
+        border-bottom: 1px solid var(--color-line);
+      }
+      table.tt td {
+        padding: 7px 4px;
+        border-bottom: 1px solid var(--color-line);
+        vertical-align: top;
+      }
+      table.tt td.r,
+      table.tt th.r {
+        text-align: right;
+        white-space: nowrap;
+      }
+      /* New marks */
+      .is-new {
+        position: relative;
+        outline: 2px dashed var(--color-accent);
+        outline-offset: 4px;
+        border-radius: 14px;
+      }
+      .new-tag {
+        position: absolute;
+        top: -12px;
+        right: 10px;
+        background: var(--color-accent);
+        color: #fff;
+        font-size: 10.5px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        padding: 2px 8px;
+        border-radius: 999px;
+        z-index: 1;
+      }
+      .new-tag.chg {
+        background: var(--color-warn);
+      }
+      .is-chg {
+        position: relative;
+        outline: 2px dashed var(--color-warn-bar);
+        outline-offset: 4px;
+        border-radius: 14px;
+      }
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 20px;
+        font-size: 14px;
+        color: var(--color-ink-muted);
+        margin: 8px 0 16px;
+      }
+      .legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .sw {
+        width: 18px;
+        height: 14px;
+        border-radius: 4px;
+        border: 2px dashed var(--color-accent);
+      }
+      .sw.chg {
+        border-color: var(--color-warn-bar);
+      }
+      .sw.old {
+        border: 1.5px solid var(--color-dash);
+        background: var(--color-surface);
+      }
+      .callouts {
+        margin: 10px 0 0;
+        padding-left: 20px;
+        font-size: 14px;
+        color: var(--color-ink-muted);
+        max-width: 720px;
+      }
+      .callouts li {
+        margin: 3px 0;
+      }
+
+      /* Rules: full-width strips, one under another */
+      .rules {
+        display: grid;
+        gap: 12px;
+      }
+      .rule {
+        background: var(--color-surface);
+        border: 1px solid var(--color-line);
+        border-radius: 16px;
+        padding: 14px 18px;
+      }
+      .rule .h {
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      .rule .tag {
+        display: inline-block;
+        font-size: 11.5px;
+        font-weight: 600;
+        color: var(--color-warn);
+        background: var(--color-warn-soft);
+        padding: 1px 8px;
+        border-radius: 999px;
+        margin-left: 6px;
+        vertical-align: 2px;
+      }
+      .example {
+        font-size: 14px;
+        color: var(--color-accent-strong);
+        background: var(--color-surface-sunken);
+        border-left: 3px solid var(--color-accent);
+        padding: 6px 10px;
+        margin-top: 8px;
+        border-radius: 0 8px 8px 0;
+      }
+      table.kinds {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 14px;
+        margin-top: 8px;
+      }
+      table.kinds th,
+      table.kinds td {
+        text-align: left;
+        padding: 7px 10px;
+        border-bottom: 1px solid var(--color-line);
+        vertical-align: top;
+      }
+      table.kinds th {
+        color: var(--color-ink-muted);
+        font-weight: 500;
+      }
+      table.kinds td.new {
+        color: var(--color-accent-strong);
+        font-weight: 600;
+      }
+      .tablewrap {
+        overflow-x: auto;
+      }
+
+      /* Data model */
+      .schema {
+        background: var(--color-surface);
+        border: 1px solid var(--color-line);
+        border-radius: var(--radius-card);
+        overflow-x: auto;
+      }
+      .schema svg {
+        display: block;
+        width: 100%;
+        min-width: 760px;
+        height: auto;
+      }
+      .scroll-hint {
+        display: none;
+        font-size: 13px;
+        color: var(--color-ink-muted);
+      }
+      .box {
+        fill: var(--color-surface-sunken);
+        stroke: var(--color-dash);
+        stroke-width: 1.5;
+      }
+      .head {
+        fill: var(--color-line);
+      }
+      .tname {
+        font: 600 14px var(--font-mono);
+        fill: var(--color-ink);
+      }
+      .tru {
+        font: 400 13px var(--font-sans);
+        fill: var(--color-ink-muted);
+      }
+      .row {
+        font: 400 13px var(--font-mono);
+        fill: var(--color-ink);
+      }
+      .row .ru {
+        font-family: var(--font-sans);
+        fill: var(--color-ink-muted);
+      }
+      .row.hl {
+        fill: var(--color-accent-strong);
+        font-weight: 600;
+      }
+      .row.hl .ru {
+        fill: var(--color-accent-strong);
+      }
+      .rowbg {
+        fill: var(--color-accent-soft);
+        stroke: var(--color-accent);
+        stroke-width: 1.5;
+        stroke-dasharray: 5 3;
+      }
+      .link {
+        fill: none;
+        stroke: var(--color-dash);
+        stroke-width: 1.5;
+      }
+      .arrow {
+        fill: var(--color-dash);
+      }
+      .note {
+        font: 400 13px var(--font-sans);
+        fill: var(--color-ink-muted);
+      }
+      .note.new {
+        fill: var(--color-accent-strong);
+        font-weight: 600;
+      }
+      .lookup {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+        margin-top: 12px;
+      }
+      .who {
+        background: var(--color-surface);
+        border: 1px solid var(--color-line);
+        border-radius: 16px;
+        padding: 18px;
+        display: grid;
+        gap: 10px;
+        min-width: 0;
+      }
+      .who h3 {
+        margin: 0;
+        font-size: 16px;
+      }
+      .who .ask {
+        font-family: var(--font-mono);
+        font-size: 13.5px;
+        background: var(--color-surface-sunken);
+        border: 1px solid var(--color-line);
+        border-radius: 10px;
+        padding: 10px 12px;
+        overflow-wrap: anywhere;
+      }
+      .who .ask b {
+        color: var(--color-accent-strong);
+      }
+      .result {
+        display: inline-flex;
+        justify-self: start;
+        font-size: 14px;
+        font-weight: 500;
+        border-radius: 999px;
+        padding: 4px 12px;
+      }
+      .result.ok {
+        background: var(--color-accent-soft);
+        color: var(--color-accent-strong);
+      }
+      .result.no {
+        background: var(--color-warn-soft);
+        color: var(--color-warn);
+      }
+      .steps {
+        list-style: none;
+        margin: 12px 0 0;
+        padding: 0;
+        display: grid;
+        gap: 12px;
+        counter-reset: step;
+      }
+      .steps li {
+        counter-increment: step;
+        display: grid;
+        grid-template-columns: 40px 1fr;
+        gap: 14px;
+        background: var(--color-surface);
+        border: 1px solid var(--color-line);
+        border-radius: 16px;
+        padding: 16px 18px;
+      }
+      .steps li::before {
+        content: counter(step);
+        font: 600 24px/1 var(--font-display);
+        color: var(--color-dash);
+      }
+      .steps li.changes {
+        border-color: var(--color-warn-bar);
+      }
+      .steps li.changes::before {
+        color: var(--color-warn);
+      }
+      .steps h3 {
+        margin: 0 0 4px;
+        font-size: 16px;
+      }
+      .steps p {
+        margin: 0;
+        color: var(--color-ink-muted);
+        font-size: 15px;
+      }
+      .mchip {
+        display: inline-block;
+        font-size: 11.5px;
+        font-weight: 600;
+        color: var(--color-accent-strong);
+        background: var(--color-accent-soft);
+        border-radius: 999px;
+        padding: 1px 9px;
+        margin-left: 6px;
+        vertical-align: 2px;
+      }
+      .mchip.chg {
+        color: var(--color-warn);
+        background: var(--color-warn-soft);
+      }
+      .callout {
+        background: var(--color-warn-soft);
+        color: var(--color-warn-strong);
+        border-radius: 16px;
+        padding: 14px 18px;
+        margin-top: 16px;
+        font-size: 15px;
+      }
+      .callout h3 {
+        margin: 0 0 6px;
+        font-size: 16px;
+      }
+
+      /* Checklist */
+      .check-group {
+        margin-bottom: 18px;
+      }
+      .check {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        padding: 10px 14px;
+        background: var(--color-surface);
+        border: 1px solid var(--color-line);
+        border-radius: 14px;
+        margin: 6px 0;
+        cursor: pointer;
+      }
+      .check input {
+        margin-top: 5px;
+        accent-color: var(--color-accent);
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+      }
+      .check .sc {
+        font-weight: 600;
+      }
+      .check .st {
+        font-size: 14px;
+        color: var(--color-ink-muted);
+      }
+      .check .st .arrow {
+        color: var(--color-accent);
+        font-weight: 700;
+      }
+      .check .auto {
+        font-size: 12px;
+        color: var(--color-accent);
+        margin-left: 6px;
+        font-weight: 500;
+      }
+      .prep {
+        background: var(--color-accent-soft);
+        border-radius: 14px;
+        padding: 12px 16px;
+        font-size: 14px;
+        color: var(--color-accent-strong);
+      }
+      .prep ol {
+        margin: 6px 0 0;
+        padding-left: 20px;
+      }
+
+      .two {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+      .box2 h3 {
+        margin-top: 0;
+      }
+      .q {
+        border-top: 1px solid var(--color-line);
+        padding-top: 12px;
+        margin-top: 12px;
+      }
+      .q:first-child {
+        border-top: 0;
+        padding-top: 0;
+        margin-top: 0;
+      }
+      footer {
+        margin-top: 64px;
+        font-size: 13px;
+        color: var(--color-ink-muted);
+      }
+
+      @media (max-width: 800px) {
+        .scroll-hint {
+          display: block;
+        }
+        .desk {
+          grid-template-columns: 1fr;
+        }
+      }
+      @media (max-width: 720px) {
+        h1 {
+          font-size: 30px;
+        }
+        h2 {
+          font-size: 22px;
+        }
+        .two {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="top">
+        <span class="dot"></span>Dear Money · обзор фичи
+      </header>
+      <h1>Траты из конвертов видны на «Тратах»</h1>
+      <p class="lead">
+        У траты из конверта появляется категория: конверт отвечает, откуда взяли
+        деньги, а категория — на что потратили. Так на экране «Траты» видно в
+        одном месте, сколько всего ушло за месяц и на что.
+      </p>
+      <div class="chips">
+        <span class="chip warn">Спроектирована, ещё не сделана</span>
+        <span class="chip">Задачи: 0 из 18</span>
+        <span class="chip">Автотестов пока нет, они в плане</span>
+        <span class="chip"
+          >Изменение <code>envelope-expenses-in-spending</code></span
+        >
+      </div>
+
+      <!-- 1 -->
+      <h2><span class="num">1</span>Коротко</h2>
+      <ul class="points">
+        <li>
+          Трата из конверта теперь обязательно получает категорию — ту же, что у
+          повседневных: «Транспорт», «Продукты»…
+        </li>
+        <li>
+          Такая трата видна на «Тратах»: в списке «Последние» с пометкой «из
+          «Маникюра»», в сумме своей категории, в её лимите и в новой цифре
+          «Потрачено в ноябре».
+        </li>
+        <li>
+          «Осталось на жизнь» от трат из конвертов по-прежнему не уменьшается:
+          эти деньги отложены заранее.
+        </li>
+        <li>
+          Категории и лимиты считаются с 1-го числа месяца, а не от зарплаты.
+        </li>
+        <li>Новую категорию можно завести прямо в форме траты.</li>
+        <li>
+          Удаление категории больше не удаляет её траты: категория пропадает с
+          экрана, траты остаются в истории.
+        </li>
+        <li>
+          Статус: <b>спроектирована</b>. Из 18 задач не отмечена ни одна, кода и
+          автотестов (программ, которые сами проходят сценарий и сверяют
+          результат) пока нет. Автотесты на все сценарии запланированы в
+          задачах.
+        </li>
+      </ul>
+
+      <!-- 2 -->
+      <h2><span class="num">2</span>Что появится на экранах</h2>
+      <p class="muted small">
+        Наброски, не точные макеты. Новое обведено зелёным пунктиром, изменённое
+        — оранжевым. Названия и суммы выдуманы.
+      </p>
+      <div class="legend">
+        <span><i class="sw"></i>новое</span>
+        <span><i class="sw chg"></i>изменилось</span>
+      </div>
+
+      <div class="screens">
+        <div>
+          <p class="screen-title">Форма траты, режим «Из конверта»</p>
+          <div class="pair">
+            <div class="device phone">
+              <div class="sum-box">
+                <div class="k">Сумма</div>
+                <div class="v">3 900 <span>₽</span></div>
+              </div>
+              <div class="lbl">Откуда списать</div>
+              <div class="toggle">
+                <span>Повседневное</span><span class="on">Из конверта</span>
+              </div>
+              <div class="lbl-sm">Недавние</div>
+              <div class="pills">
+                <span class="pill on">Маникюр</span
+                ><span class="pill">Тройка на год</span
+                ><span class="pill">Стрижка</span
+                ><span class="pill dash">Все конверты</span>
+              </div>
+              <div class="is-new">
+                <span class="new-tag">новое</span>
+                <div
+                  style="
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                    padding: 2px 0;
+                  "
+                >
+                  <div class="lbl">Категория</div>
+                  <div class="pills">
+                    <span class="pill">Продукты</span
+                    ><span class="pill">Кафе и кофе</span
+                    ><span class="pill">Транспорт</span
+                    ><span class="pill">Подписки и сервисы</span
+                    ><span class="pill dash">+ Новая категория</span>
+                  </div>
+                </div>
+              </div>
+              <div class="hint">
+                В конверте «Маникюр» станет 8 700 ₽, хватит ещё на 2 раза.
+              </div>
+              <div class="btn off">Сохранить</div>
+              <div class="cap" style="text-align: center">
+                Категория не выбрана — «Сохранить» недоступна
+              </div>
+            </div>
+
+            <div class="device phone">
+              <div class="cap">После нажатия «+ Новая категория»</div>
+              <div class="lbl">Категория</div>
+              <div class="pills">
+                <span class="pill">Продукты</span
+                ><span class="pill">Кафе и кофе</span
+                ><span class="pill">Транспорт</span
+                ><span class="pill">Подписки и сервисы</span>
+              </div>
+              <div class="is-new">
+                <span class="new-tag">новое</span>
+                <div class="subcard">
+                  <div class="lbl-sm">Название</div>
+                  <div class="inp">Красота</div>
+                  <div class="lbl-sm">Лимит в месяц, необязательно</div>
+                  <div class="inp ph">₽</div>
+                  <div><span class="btn sm">Добавить</span></div>
+                </div>
+              </div>
+              <div class="cap">После «Добавить»:</div>
+              <div class="pills">
+                <span class="pill">Продукты</span
+                ><span class="pill">Кафе и кофе</span
+                ><span class="pill">Транспорт</span
+                ><span class="pill">Подписки и сервисы</span
+                ><span class="pill on">Красота</span>
+              </div>
+              <div class="btn">Сохранить</div>
+            </div>
+          </div>
+          <ul class="callouts">
+            <li>
+              Блок «Категория» стоит под выбором конверта. Те же кнопки, что в
+              режиме «Повседневное»: сначала недавние, потом остальные.
+            </li>
+            <li>
+              «+ Новая категория» есть и в режиме «Повседневное», в конце ряда
+              категорий. Пунктир — как у «Все конверты».
+            </li>
+            <li>
+              Категория создаётся сразу по «Добавить», ещё до сохранения траты,
+              и сразу выбрана. Пустое название — «Добавить» недоступна.
+            </li>
+            <li>
+              Если переключить «Повседневное» ↔ «Из конверта», выбранная
+              категория не сбрасывается.
+            </li>
+            <li>
+              Старая трата из конверта без категории открывается без выбранной
+              категории: сохранить нельзя, пока не выберешь; удалить можно.
+            </li>
+            <li>
+              Трата удалённой категории открывается с этой категорией выбранной
+              — отдельной кнопкой, в общем ряду её нет.
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <p class="screen-title">Экран «Траты» на телефоне</p>
+          <div class="device phone">
+            <div class="stitle">Повседневные траты</div>
+            <div class="green">
+              <div class="k">Осталось на жизнь до 25 ноября</div>
+              <div class="v">66 770 ₽</div>
+              <div class="bar"><i></i></div>
+              <div class="row2">
+                <span>потрачено 19 480 из 86 250 ₽</span
+                ><span>≈ 2 900 ₽ в день</span>
+              </div>
+            </div>
+            <div class="is-chg">
+              <span class="new-tag chg">текст изменился</span>
+              <div class="expl">
+                Это всё, что осталось от зарплаты после конвертов. Траты из
+                конвертов эту сумму не уменьшают, но видны в категориях.
+              </div>
+            </div>
+            <div class="is-new">
+              <span class="new-tag">новое</span>
+              <div class="month">
+                <span>Потрачено в ноябре</span><b>23 380 ₽</b>
+              </div>
+            </div>
+            <div class="sec">
+              По категориям <small>лимит необязателен</small>
+            </div>
+            <div class="list">
+              <div class="li">
+                <div class="top">
+                  <span class="n">Продукты</span><span class="s">12 870 ₽</span>
+                </div>
+              </div>
+              <div class="li">
+                <div class="top">
+                  <span class="n">Кафе и кофе</span
+                  ><span class="s">3 140 из 8 000 ₽</span>
+                </div>
+                <div class="mbar"><i style="width: 39%"></i></div>
+                <div class="sub">осталось 4 860 ₽</div>
+              </div>
+              <div class="li">
+                <div class="top">
+                  <span class="n">Транспорт</span
+                  ><span class="s">2 300 из 4 000 ₽</span>
+                </div>
+                <div class="mbar"><i style="width: 58%"></i></div>
+                <div class="sub">осталось 1 700 ₽</div>
+              </div>
+              <div class="li">
+                <div class="top">
+                  <span class="n">Подписки и сервисы</span
+                  ><span class="s">1 170 ₽</span>
+                </div>
+              </div>
+              <div class="li is-new" style="outline-offset: 0">
+                <span class="new-tag">из конверта</span>
+                <div class="top">
+                  <span class="n">Красота</span><span class="s">3 900 ₽</span>
+                </div>
+              </div>
+            </div>
+            <div class="addlink">+ Добавить категорию</div>
+            <div class="sec">Последние</div>
+            <div class="list">
+              <div class="li is-new" style="outline-offset: 0">
+                <span class="new-tag">новое</span>
+                <div class="top">
+                  <span>Красота <span class="from">· сегодня</span></span
+                  ><span class="s">3 900 ₽</span>
+                </div>
+                <div class="sub">из «Маникюра»</div>
+              </div>
+              <div class="li">
+                <div class="top">
+                  <span>Продукты: рынок <span class="from">· вчера</span></span
+                  ><span class="s">1 250 ₽</span>
+                </div>
+              </div>
+              <div class="li">
+                <div class="top">
+                  <span>Транспорт <span class="from">· 3 ноября</span></span
+                  ><span class="s">640 ₽</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <ul class="callouts">
+            <li>
+              Карточка «Осталось на жизнь» не меняется: 66 770 ₽ до и после
+              траты 3 900 из «Маникюра». Она по-прежнему считается от последней
+              зарплаты.
+            </li>
+            <li>
+              «Потрачено в ноябре» — все траты с категорией с 1-го числа:
+              повседневные 19 480 + из конвертов 3 900 = 23 380 ₽.
+            </li>
+            <li>
+              У траты из конверта под названием категории приглушённо «из
+              «Маникюра»».
+            </li>
+            <li>
+              Траты из конвертов, внесённые до этой правки (без категории),
+              здесь не показываются.
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <p class="screen-title">Экран «Траты» на компьютере</p>
+          <div class="device">
+            <div class="cap">ноябрь</div>
+            <div class="stitle">Повседневные траты</div>
+            <div class="desk">
+              <div class="col">
+                <div class="green" style="padding: 12px 16px">
+                  <div class="k">Осталось на жизнь до 25 ноября</div>
+                  <div class="v" style="font-size: 24px">66 770 ₽</div>
+                </div>
+                <div class="panel">
+                  <div class="ph-head">
+                    <span class="t">По категориям</span>
+                    <span
+                      class="is-new"
+                      style="padding: 0 6px; outline-offset: 2px"
+                      ><span class="new-tag" style="top: -15px">новое</span
+                      ><span class="small"
+                        >Потрачено в ноябре <b>23 380 ₽</b></span
+                      ></span
+                    >
+                  </div>
+                  <table class="tt">
+                    <tr>
+                      <td>Продукты</td>
+                      <td class="r">12 870 ₽</td>
+                    </tr>
+                    <tr>
+                      <td>Кафе и кофе</td>
+                      <td class="r">3 140 из 8 000 ₽</td>
+                    </tr>
+                    <tr>
+                      <td>Красота</td>
+                      <td class="r">3 900 ₽</td>
+                    </tr>
+                  </table>
+                </div>
+                <div class="panel">
+                  <div class="ph-head"><span class="t">Последние</span></div>
+                  <table class="tt">
+                    <tr>
+                      <th>Когда</th>
+                      <th>Категория</th>
+                      <th>Заметка</th>
+                      <th class="r">Сумма</th>
+                    </tr>
+                    <tr>
+                      <td>сегодня</td>
+                      <td>Красота</td>
+                      <td>
+                        <span
+                          class="is-new"
+                          style="padding: 0 4px; outline-offset: 1px"
+                          ><span class="from">из «Маникюра»</span></span
+                        >
+                      </td>
+                      <td class="r">3 900 ₽</td>
+                    </tr>
+                    <tr>
+                      <td>вчера</td>
+                      <td>Продукты</td>
+                      <td>рынок</td>
+                      <td class="r">1 250 ₽</td>
+                    </tr>
+                  </table>
+                </div>
+              </div>
+              <div class="col">
+                <div class="panel">
+                  <div class="ph-head"><span class="t">Новая трата</span></div>
+                  <div class="small muted">
+                    Та же форма, что на телефоне: блок «Категория» в режиме «Из
+                    конверта» и «+ Новая категория».
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <ul class="callouts">
+            <li>
+              «Потрачено в ноябре» стоит в заголовке панели «По категориям».
+            </li>
+            <li>
+              В таблице «Последние» пометка конверта — в колонке «Заметка»,
+              перед текстом заметки.
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <p class="screen-title">Экран категории и удаление категории</p>
+          <div class="pair">
+            <div class="device phone">
+              <div class="is-chg">
+                <span class="new-tag chg">текст изменился</span>
+                <div class="cap">Траты · категория</div>
+              </div>
+              <div class="stitle">Красота</div>
+              <div class="is-chg">
+                <span class="new-tag chg">текст изменился</span>
+                <div class="month">
+                  <span>В ноябре потрачено</span><b>5 400 ₽</b>
+                </div>
+              </div>
+              <div class="list">
+                <div class="li">
+                  <div class="top">
+                    <span>сегодня</span><span class="s">3 900 ₽</span>
+                  </div>
+                  <div
+                    class="sub is-new"
+                    style="
+                      outline-offset: 1px;
+                      align-self: flex-start;
+                      padding: 0 4px;
+                    "
+                  >
+                    <span class="from">из «Маникюра»</span>
+                  </div>
+                </div>
+                <div class="li">
+                  <div class="top">
+                    <span>2 ноября</span><span class="s">1 500 ₽</span>
+                  </div>
+                </div>
+              </div>
+              <div
+                class="btn off"
+                style="
+                  background: var(--color-warn-soft);
+                  color: var(--color-warn);
+                "
+              >
+                Удалить категорию
+              </div>
+            </div>
+            <div class="device phone">
+              <div class="cap">Окно подтверждения</div>
+              <div class="is-chg">
+                <span class="new-tag chg">смысл изменился</span>
+                <div class="dialog">
+                  <div class="t">Удалить категорию «Красота»?</div>
+                  <div class="d">
+                    Категория пропадёт из списка. Её траты останутся в истории,
+                    деньги не вернутся.
+                  </div>
+                  <div class="acts">
+                    <span class="no">Отмена</span
+                    ><span class="yes">Удалить</span>
+                  </div>
+                </div>
+              </div>
+              <div class="cap">
+                Сейчас здесь написано: «Траты в этой категории (2) тоже
+                удалятся».
+              </div>
+              <div class="cap" style="margin-top: 6px">
+                После удаления на «Последних»:
+              </div>
+              <div class="list">
+                <div class="li">
+                  <div class="top">
+                    <span>Красота <span class="from">· сегодня</span></span
+                    ><span class="s">3 900 ₽</span>
+                  </div>
+                  <div class="sub">из «Маникюра»</div>
+                </div>
+                <div class="li">
+                  <div class="top">
+                    <span>Красота <span class="from">· 2 ноября</span></span
+                    ><span class="s">1 500 ₽</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <ul class="callouts">
+            <li>
+              Подпись «Повседневные траты · категория» → «Траты · категория»,
+              «За период потрачено» → «В ноябре потрачено».
+            </li>
+            <li>
+              Точный текст окна в изменении не записан, есть только смысл:
+              категория пропадёт, траты останутся, деньги не вернутся. На
+              наброске — пример.
+            </li>
+            <li>
+              Удалённой категории нет в списке «По категориям», в форме траты и
+              в предупреждениях на главной. Её экран по старой ссылке отвечает
+              «не найдено».
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <p class="screen-title">Главная: предупреждение о лимите</p>
+          <div class="device phone">
+            <div class="warnline">Транспорт превышен на 1 200 ₽</div>
+          </div>
+          <ul class="callouts">
+            <li>
+              Строка не новая. Новое — что её может вызвать трата из конверта: 2
+              300 повседневных + 2 900 из «Тройки на год» в «Транспорт» при
+              лимите 4 000.
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 3 -->
+      <h2><span class="num">3</span>Как это работает</h2>
+      <div class="rules">
+        <div class="rule">
+          <div class="h">
+            Конверт — откуда взяли деньги, категория — на что потратили
+          </div>
+          <p>
+            У повседневной траты есть только категория. У новой траты из
+            конверта — и конверт, и категория, категория обязательна.
+          </p>
+          <div class="example">
+            3 900 на маникюр: конверт «Маникюр», категория «Красота».
+          </div>
+        </div>
+        <div class="rule">
+          <div class="h">На «Тратах» видно всё, у чего есть категория</div>
+          <div class="tablewrap">
+            <table class="kinds">
+              <tr>
+                <th>Вид траты</th>
+                <th>Конверт</th>
+                <th>Категория</th>
+                <th>Видна на «Тратах»</th>
+                <th>Уменьшает «Осталось на жизнь»</th>
+              </tr>
+              <tr>
+                <td>Повседневная</td>
+                <td>—</td>
+                <td>есть</td>
+                <td>да</td>
+                <td>да</td>
+              </tr>
+              <tr>
+                <td class="new">Из конверта, новая</td>
+                <td>есть</td>
+                <td class="new">есть</td>
+                <td class="new">да</td>
+                <td>нет</td>
+              </tr>
+              <tr>
+                <td>Из конверта, внесённая до правки</td>
+                <td>есть</td>
+                <td>—</td>
+                <td>нет, только в конверте</td>
+                <td>нет</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+        <div class="rule">
+          <div class="h">
+            «Осталось на жизнь» трата из конверта не уменьшает
+          </div>
+          <p>
+            Деньги на неё отложили заранее. Она уменьшает только остаток своего
+            конверта.
+          </p>
+          <div class="example">
+            «Осталось на жизнь» 66 770 ₽. Трачу 3 900 из «Маникюра» →
+            по-прежнему 66 770 ₽, а в «Маникюре» было 12 600, стало 8 700.
+          </div>
+        </div>
+        <div class="rule">
+          <div class="h">
+            «Потрачено в ноябре» — все траты с категорией за календарный месяц
+          </div>
+          <p>
+            Повседневные и из конвертов, с 1-го числа. Сюда входят и траты
+            удалённых категорий.
+          </p>
+          <div class="example">
+            В ноябре повседневных 19 480 → трачу 3 900 из «Маникюра» в «Красоту»
+            → «Потрачено в ноябре» 23 380 ₽.<br />Наступило 1 декабря, трат ещё
+            нет → «Потрачено в декабре 0 ₽».
+          </div>
+        </div>
+        <div class="rule">
+          <div class="h">
+            Категории и лимиты считаются с 1-го числа
+            <span class="tag">меняет цифры</span>
+          </div>
+          <p>
+            Раньше — от даты последней зарплаты. Теперь в начале месяца суммы
+            категорий обнулятся раньше, чем обнулялись по зарплате. В лимит
+            входят и траты из конвертов.
+          </p>
+          <div class="example">
+            Сегодня 5 ноября. В «Кафе и кофе» лимит 8 000, трата 1 200 от 31
+            октября и 3 140 с 1 ноября → «осталось 4 860 ₽»: октябрьская не
+            входит.<br />«Транспорт», лимит 4 000: повседневных 2 300 + 2 900 из
+            «Тройки на год» → «5 200 из 4 000 ₽», «лимит превышен на 1 200 ₽».
+          </div>
+        </div>
+        <div class="rule">
+          <div class="h">Пока на одном экране две даты начала</div>
+          <p>
+            Карточка «Осталось на жизнь» до следующей правки считается от
+            последней зарплаты, а категории и «Потрачено в месяце» — с 1-го
+            числа. Следующей правкой «Осталось на жизнь» станет остатком
+            «кошелька на жизнь» без привязки к зарплате.
+          </p>
+        </div>
+        <div class="rule">
+          <div class="h">Новая категория из формы создаётся сразу</div>
+          <p>
+            По «Добавить», ещё до сохранения траты. Если трату потом не
+            сохранить, категория всё равно останется — её видно на «Тратах»,
+            удалить можно там же.
+          </p>
+          <div class="example">
+            Создаю «Такси» с лимитом 3 000, сохраняю повседневную трату 1 800 →
+            у «Такси» «1 800 из 3 000 ₽», «осталось 1 200 ₽».
+          </div>
+        </div>
+        <div class="rule">
+          <div class="h">
+            Удаление категории не трогает траты и деньги
+            <span class="tag">меняет поведение</span>
+          </div>
+          <p>
+            Категория пропадает со списка, из формы и из предупреждений. Её
+            траты, повседневные и из конвертов, остаются в истории с прежним
+            названием. Сейчас повседневные траты удаляются вместе с категорией —
+            это поменяется.
+          </p>
+          <div class="example">
+            В «Красоте» 3 900 из «Маникюра» и 1 500 повседневных. Удаляю
+            «Красоту» → обе траты в «Последних» с категорией «Красота», в
+            «Маникюре» по-прежнему 8 700, «Осталось на жизнь» и «Потрачено в
+            ноябре» не изменились.
+          </div>
+          <p class="small muted">
+            Заведёте новую «Красоту» — это будет другая категория, старые траты
+            в ней не появятся.
+          </p>
+        </div>
+        <div class="rule">
+          <div class="h">Удаление или правка одной траты возвращает деньги</div>
+          <p>
+            Туда, откуда их списали: в конверт или в «Осталось на жизнь». Это
+            как раньше.
+          </p>
+          <div class="example">
+            Удаляю 3 900 из «Маникюра» → в нём снова 12 600.<br />Внесла 39 000
+            вместо 3 900, исправляю → в «Маникюре» 8 700.<br />«Осталось на
+            жизнь» 65 520, удаляю повседневную 1 250 → снова 66 770.
+          </div>
+        </div>
+      </div>
+
+      <!-- 4 -->
+      <h2><span class="num">4</span>Модель данных до и после</h2>
+      <p>
+        Модель данных — какие таблицы лежат в базе и какие в них поля. Новых
+        таблиц нет. Меняются две вещи: правило в таблице трат и одно новое поле
+        у категорий.
+      </p>
+
+      <h3>Сейчас</h3>
+      <p class="scroll-hint">Схему можно листать вбок.</p>
+      <div class="schema">
+        <svg
+          viewBox="0 0 880 530"
+          role="img"
+          aria-label="Схема сейчас: expenses ссылается на envelopes и на spend_categories, правило — ровно одно из двух"
+        >
+          <defs>
+            <marker
+              id="a1"
+              viewBox="0 0 10 10"
+              refX="9"
+              refY="5"
+              markerWidth="8"
+              markerHeight="8"
+              orient="auto-start-reverse"
+            >
+              <path d="M0 0 L10 5 L0 10 z" class="arrow" />
+            </marker>
+          </defs>
+          <path
+            class="link"
+            d="M330 250 V230 H165 V208"
+            marker-end="url(#a1)"
+          />
+          <path
+            class="link"
+            d="M550 250 V230 H715 V208"
+            marker-end="url(#a1)"
+          />
+          <text class="note" x="250" y="222" text-anchor="middle">
+            откуда списали
+          </text>
+          <text class="note" x="632" y="222" text-anchor="middle">
+            в какой категории
+          </text>
+
+          <rect class="box" x="40" y="30" width="250" height="172" rx="12" />
+          <path
+            class="head"
+            d="M52 30 H278 A12 12 0 0 1 290 42 V66 H40 V42 A12 12 0 0 1 52 30 Z"
+          />
+          <text class="tname" x="56" y="53">envelopes</text>
+          <text class="tru" x="274" y="53" text-anchor="end">конверты</text>
+          <text class="row" x="56" y="90">id</text>
+          <text class="row" x="56" y="114">
+            user_id
+            <tspan class="ru">— чей</tspan>
+          </text>
+          <text class="row" x="56" y="138">
+            name
+            <tspan class="ru">— «Маникюр»</tspan>
+          </text>
+          <text class="row" x="56" y="162">cost_per_time</text>
+          <text class="row" x="56" y="186">start_balance, …</text>
+
+          <rect class="box" x="590" y="30" width="250" height="172" rx="12" />
+          <path
+            class="head"
+            d="M602 30 H828 A12 12 0 0 1 840 42 V66 H590 V42 A12 12 0 0 1 602 30 Z"
+          />
+          <text class="tname" x="606" y="53">spend_categories</text>
+          <text class="tru" x="824" y="53" text-anchor="end">категории</text>
+          <text class="row" x="606" y="90">id</text>
+          <text class="row" x="606" y="114">
+            user_id
+            <tspan class="ru">— чья</tspan>
+          </text>
+          <text class="row" x="606" y="138">
+            name
+            <tspan class="ru">— «Красота»</tspan>
+          </text>
+          <text class="row" x="606" y="162">
+            monthly_limit
+            <tspan class="ru">— лимит</tspan>
+          </text>
+          <text class="row" x="606" y="186">position</text>
+
+          <rect class="box" x="260" y="250" width="360" height="250" rx="12" />
+          <path
+            class="head"
+            d="M272 250 H608 A12 12 0 0 1 620 262 V286 H260 V262 A12 12 0 0 1 272 250 Z"
+          />
+          <text class="tname" x="276" y="273">expenses</text>
+          <text class="tru" x="604" y="273" text-anchor="end">траты</text>
+          <text class="row" x="276" y="310">id</text>
+          <text class="row" x="276" y="334">
+            user_id
+            <tspan class="ru">— чья</tspan>
+          </text>
+          <text class="row" x="276" y="358">
+            amount
+            <tspan class="ru">— в копейках</tspan>
+          </text>
+          <text class="row" x="276" y="382">date, note</text>
+          <text class="row" x="276" y="406">
+            envelope_id
+            <tspan class="ru">— конверт или пусто</tspan>
+          </text>
+          <text class="row" x="276" y="430">
+            category_id
+            <tspan class="ru">— категория или пусто</tspan>
+          </text>
+          <text class="row" x="276" y="462">
+            правило:
+            <tspan class="ru">ровно одно из двух</tspan>
+          </text>
+          <text class="row" x="276" y="484">
+            <tspan class="ru">удалили категорию — удалились и её траты</tspan>
+          </text>
+        </svg>
+      </div>
+
+      <h3>После</h3>
+      <div class="legend">
+        <span><i class="sw"></i>новое или изменилось</span>
+        <span><i class="sw old"></i>как было</span>
+      </div>
+      <p class="scroll-hint">Схему можно листать вбок.</p>
+      <div class="schema">
+        <svg
+          viewBox="0 0 880 530"
+          role="img"
+          aria-label="Схема после: у spend_categories новое поле deleted_at, у expenses правило — хотя бы одно из двух, можно оба"
+        >
+          <defs>
+            <marker
+              id="a2"
+              viewBox="0 0 10 10"
+              refX="9"
+              refY="5"
+              markerWidth="8"
+              markerHeight="8"
+              orient="auto-start-reverse"
+            >
+              <path d="M0 0 L10 5 L0 10 z" class="arrow" />
+            </marker>
+          </defs>
+          <path
+            class="link"
+            d="M330 250 V238 H165 V208"
+            marker-end="url(#a2)"
+          />
+          <path
+            class="link"
+            d="M550 250 V238 H715 V232"
+            marker-end="url(#a2)"
+          />
+          <text class="note" x="250" y="230" text-anchor="middle">
+            откуда списали
+          </text>
+          <text class="note new" x="440" y="232" text-anchor="middle">
+            на что потратили — теперь и у трат из конвертов
+          </text>
+
+          <rect class="box" x="40" y="30" width="250" height="172" rx="12" />
+          <path
+            class="head"
+            d="M52 30 H278 A12 12 0 0 1 290 42 V66 H40 V42 A12 12 0 0 1 52 30 Z"
+          />
+          <text class="tname" x="56" y="53">envelopes</text>
+          <text class="tru" x="274" y="53" text-anchor="end">как было</text>
+          <text class="row" x="56" y="90">id</text>
+          <text class="row" x="56" y="114">
+            user_id
+            <tspan class="ru">— чей</tspan>
+          </text>
+          <text class="row" x="56" y="138">
+            name
+            <tspan class="ru">— «Маникюр»</tspan>
+          </text>
+          <text class="row" x="56" y="162">cost_per_time</text>
+          <text class="row" x="56" y="186">start_balance, …</text>
+
+          <rect class="box" x="590" y="30" width="250" height="196" rx="12" />
+          <path
+            class="head"
+            d="M602 30 H828 A12 12 0 0 1 840 42 V66 H590 V42 A12 12 0 0 1 602 30 Z"
+          />
+          <text class="tname" x="606" y="53">spend_categories</text>
+          <text class="tru" x="824" y="53" text-anchor="end">категории</text>
+          <text class="row" x="606" y="90">id</text>
+          <text class="row" x="606" y="114">
+            user_id
+            <tspan class="ru">— чья</tspan>
+          </text>
+          <text class="row" x="606" y="138">
+            name
+            <tspan class="ru">— «Красота»</tspan>
+          </text>
+          <text class="row" x="606" y="162">
+            monthly_limit
+            <tspan class="ru">— лимит</tspan>
+          </text>
+          <text class="row" x="606" y="186">position</text>
+          <rect class="rowbg" x="596" y="193" width="238" height="24" rx="6" />
+          <text class="row hl" x="606" y="210">
+            + deleted_at
+            <tspan class="ru">— когда удалена</tspan>
+          </text>
+
+          <rect class="box" x="260" y="250" width="360" height="250" rx="12" />
+          <path
+            class="head"
+            d="M272 250 H608 A12 12 0 0 1 620 262 V286 H260 V262 A12 12 0 0 1 272 250 Z"
+          />
+          <text class="tname" x="276" y="273">expenses</text>
+          <text class="tru" x="604" y="273" text-anchor="end">траты</text>
+          <text class="row" x="276" y="310">id</text>
+          <text class="row" x="276" y="334">
+            user_id
+            <tspan class="ru">— чья</tspan>
+          </text>
+          <text class="row" x="276" y="358">
+            amount
+            <tspan class="ru">— в копейках</tspan>
+          </text>
+          <text class="row" x="276" y="382">date, note</text>
+          <text class="row" x="276" y="406">
+            envelope_id
+            <tspan class="ru">— конверт или пусто</tspan>
+          </text>
+          <text class="row" x="276" y="430">
+            category_id
+            <tspan class="ru">— категория или пусто</tspan>
+          </text>
+          <rect class="rowbg" x="266" y="445" width="348" height="24" rx="6" />
+          <text class="row hl" x="276" y="462">
+            правило:
+            <tspan class="ru">хотя бы одно, можно оба</tspan>
+          </text>
+          <text class="row" x="276" y="490">
+            <tspan class="ru">категории не удаляются — траты остаются</tspan>
+          </text>
+        </svg>
+      </div>
+
+      <ul class="points" style="margin-top: 14px">
+        <li>
+          <b>deleted_at</b> у категории — пометка «удалена» (дата и время
+          удаления). Пусто — категория живая. Удаление категории теперь ставит
+          эту пометку, а строку из базы не стирает: её траты продолжают на неё
+          ссылаться и сохраняют название.
+        </li>
+        <li>
+          <b>Правило трат.</b> Было: у траты либо конверт, либо категория, ровно
+          одно. Стало: хотя бы одно из двух, можно оба. Трата из конверта с
+          категорией хранит оба поля.
+        </li>
+        <li>
+          <b>Как связано.</b> Таблицы и связи те же: трата ссылается на конверт
+          (откуда списали) и на категорию (на что потратили). Новое — что у трат
+          из конвертов вторая ссылка теперь тоже заполнена.
+        </li>
+        <li>
+          <b>Что станет с данными, которые уже есть.</b> Ничего не меняется: все
+          старые траты подходят под новое правило. Старые траты из конвертов
+          остаются без категории — задним числом им категорию не ставят. У всех
+          категорий пометка «удалена» пустая.
+        </li>
+      </ul>
+
+      <h3>Как запрос находит свои данные и не находит чужие</h3>
+      <p>
+        Каждый запрос к тратам и категориям, как и раньше, фильтрует по текущему
+        пользователю (<code>user_id</code>). Пример: «Потрачено в ноябре».
+      </p>
+      <div class="lookup">
+        <div class="who">
+          <h3>Вошла я</h3>
+          <div class="ask">
+            сложи траты <b>с категорией</b>, с 1 ноября, <b>у моего user_id</b>
+          </div>
+          <span class="result ok">19 480 + 3 900 = 23 380 ₽</span>
+        </div>
+        <div class="who">
+          <h3>Позже: вошёл другой человек</h3>
+          <div class="ask">та же сумма <b>у его user_id</b></div>
+          <span class="result no">Мои траты не видны: у него своя сумма</span>
+        </div>
+        <div class="who">
+          <h3>Старая трата из конверта</h3>
+          <div class="ask">трата из «Маникюра» без категории</div>
+          <span class="result no">В «Потрачено» не попадает</span>
+        </div>
+      </div>
+
+      <h3>Миграция</h3>
+      <p>
+        Миграция — скрипт, который меняет устройство базы. Здесь одна. Файл
+        создаст генератор Drizzle (<code>pnpm db:generate</code>) следующим по
+        номеру в папке <code>drizzle/</code>. Применяется отдельным разовым
+        контейнером до старта новой версии, как обычно.
+      </p>
+      <ol class="steps">
+        <li class="changes">
+          <div>
+            <h3>
+              Новое правило трат <span class="mchip chg">меняет правила</span>
+            </h3>
+            <p>
+              «Ровно одно: конверт или категория» → «хотя бы одно, можно оба».
+              Существующие траты не меняются: все подходят под новое правило.
+            </p>
+          </div>
+        </li>
+        <li>
+          <div>
+            <h3>
+              Поле deleted_at у категорий
+              <span class="mchip">данные не меняет</span>
+            </h3>
+            <p>
+              Новое пустое поле. У всех существующих категорий оно пустое — все
+              остаются видимыми.
+            </p>
+          </div>
+        </li>
+      </ol>
+
+      <div class="callout">
+        <h3>Откат — только руками и с подготовкой</h3>
+        <p>
+          Прошлая версия приложения не знает про пометку «удалена» и снова
+          покажет удалённые категории. Ещё она не примет траты с конвертом и
+          категорией сразу: для неё правило «ровно одно». Поэтому перед ручным
+          откатом у трат из конвертов нужно стереть категорию. Автоматического
+          отката нет — по правилам проекта откат запускаете вы.
+        </p>
+      </div>
+
+      <!-- 5 -->
+      <h2><span class="num">5</span>Как проверить руками</h2>
+      <div class="prep">
+        <b>Подготовка</b> — когда фича будет сделана.
+        <ol>
+          <li>
+            Запустить локально, как в README: <code>pnpm db:migrate</code>,
+            затем <code>pnpm build &amp;&amp; pnpm start</code> →
+            <code>http://localhost:3000</code>.
+          </li>
+          <li>
+            Тестовые данные: <code>pnpm db:seed data/sample-seed.json</code> — 5
+            кошельков, 4 категории («Транспорт» с лимитом 4 000, «Продукты»,
+            «Кафе и кофе» с лимитом 8 000, «Подписки и сервисы»), трат нет. В
+            «Маникюре» 12 600 ₽.
+          </li>
+          <li>
+            Разложить доход на экране «Доход», чтобы появилась карточка
+            «Осталось на жизнь».
+          </li>
+          <li>
+            Для проверок со «старой тратой без категории»: до обновления, на
+            версии из main, внести одну трату из конверта. На сервере после
+            выкатки подойдёт любая ваша прошлая трата из конверта.
+          </li>
+        </ol>
+        <p style="margin: 8px 0 0">
+          «Автотест в плане» — на сценарий запланирован автотест в задачах.
+          Галочки на странице только для удобства и не сохраняются.
+        </p>
+      </div>
+
+      <div class="check-group">
+        <h3>Форма траты</h3>
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Быстрый ввод<span class="auto">автотест в плане</span>
+            </div>
+            <div class="st">
+              «+» → сумма → «Из конверта» → конверт из недавних → категория →
+              «Сохранить» <span class="arrow">→</span> вернулась на прошлый
+              экран, суммы обновились.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Пустая сумма</div>
+            <div class="st">
+              Сумму не вводить или ввести 0
+              <span class="arrow">→</span> «Сохранить» недоступна.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Трата из конверта без категории<span class="auto"
+                >автотест в плане</span
+              >
+            </div>
+            <div class="st">
+              3 900 → «Из конверта» → «Маникюр», категорию не выбирать
+              <span class="arrow">→</span> «Сохранить» недоступна.
+            </div>
+          </div></label
+        >
+      </div>
+
+      <div class="check-group">
+        <h3>Новая категория из формы</h3>
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Новая категория для траты из конверта<span class="auto"
+                >автотест в плане</span
+              >
+            </div>
+            <div class="st">
+              3 900 → «Маникюр» → «+ Новая категория» → «Красота», без лимита →
+              «Добавить» → «Сохранить» <span class="arrow">→</span> на «Тратах»
+              категория «Красота» 3 900 ₽.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Новая категория с лимитом<span class="auto"
+                >автотест в плане</span
+              >
+            </div>
+            <div class="st">
+              «Повседневное» → «+ Новая категория» → «Такси», лимит 3 000 →
+              «Добавить» → сумма 1 800 → «Сохранить»
+              <span class="arrow">→</span> у «Такси» «1 800 из 3 000 ₽»,
+              «осталось 1 200 ₽».
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Пустое название<span class="auto">автотест в плане</span>
+            </div>
+            <div class="st">
+              «+ Новая категория», название не вводить
+              <span class="arrow">→</span> «Добавить» недоступна.
+            </div>
+          </div></label
+        >
+      </div>
+
+      <div class="check-group">
+        <h3>Траты из конвертов и «Осталось на жизнь»</h3>
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Трата из конверта не трогает «на жизнь»<span class="auto"
+                >автотест в плане</span
+              >
+            </div>
+            <div class="st">
+              Запомнить «На жизнь осталось» на главной и «Осталось на жизнь» на
+              «Тратах» → 3 900 из «Маникюра» в «Красоту»
+              <span class="arrow">→</span> обе цифры прежние, в «Красоте» 3 900
+              ₽, в «Маникюре» 8 700 ₽.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Повседневные и из конверта — «Потрачено в ноябре»<span
+                class="auto"
+                >автотест в плане</span
+              >
+            </div>
+            <div class="st">
+              Запомнить «Потрачено в ноябре» → 3 900 из «Маникюра» в «Красоту»
+              <span class="arrow">→</span> цифра выросла ровно на 3 900 (в
+              сценарии: с 19 480 до 23 380 ₽), «Осталось на жизнь» прежнее.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Начало месяца<span class="auto">автотест в плане</span>
+            </div>
+            <div class="st">
+              1 декабря, до первой траты <span class="arrow">→</span> «Потрачено
+              в декабре 0 ₽». Руками — только 1-го числа; до этого проверит
+              автотест.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Трата из конверта в списке<span class="auto"
+                >автотест в плане</span
+              >
+            </div>
+            <div class="st">
+              После траты 3 900 из «Маникюра» в «Красоту»
+              <span class="arrow">→</span> в «Последних» строка «Красота», под
+              ней «из «Маникюра»», 3 900 ₽. На компьютере пометка — в колонке
+              «Заметка».
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Старая трата без категории на «Тратах»</div>
+            <div class="st">
+              Трата из конверта, внесённая до обновления
+              <span class="arrow">→</span> её нет в «Последних», в категориях и
+              в «Потрачено в месяце»; на экране конверта она есть и остаток её
+              учитывает.
+            </div>
+          </div></label
+        >
+      </div>
+
+      <div class="check-group">
+        <h3>Категории и лимиты</h3>
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Лимит превышен</div>
+            <div class="st">
+              «Транспорт», лимит 4 000 → повседневных трат на 6 230
+              <span class="arrow">→</span> «6 230 из 4 000 ₽», «лимит превышен
+              на 2 230 ₽» оранжевым; на главной «Транспорт превышен на 2 230 ₽».
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Лимит не превышен</div>
+            <div class="st">
+              «Кафе и кофе», лимит 8 000 → трат на 3 140
+              <span class="arrow">→</span> «осталось 4 860 ₽».
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Без лимита</div>
+            <div class="st">
+              «Продукты» → трат на 5 870 <span class="arrow">→</span> только «5
+              870 ₽», без полоски.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Трата из конверта превысила лимит<span class="auto"
+                >автотест в плане</span
+              >
+            </div>
+            <div class="st">
+              «Транспорт» → повседневная 2 300 → 2 900 из «Тройки на год» в
+              «Транспорт» <span class="arrow">→</span> «5 200 из 4 000 ₽»,
+              «лимит превышен на 1 200 ₽»; на главной «Транспорт превышен на 1
+              200 ₽».
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Трата прошлого месяца<span class="auto">автотест в плане</span>
+            </div>
+            <div class="st">
+              «Кафе и кофе»: трата 1 200 с датой 31 октября и 3 140 с
+              ноябрьскими датами <span class="arrow">→</span> «осталось 4 860
+              ₽»: октябрьская не входит.
+            </div>
+          </div></label
+        >
+      </div>
+
+      <div class="check-group">
+        <h3>Правка и удаление траты</h3>
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Удаление траты из конверта<span class="auto"
+                >автотест в плане</span
+              >
+            </div>
+            <div class="st">
+              Открыть 3 900 из «Маникюра» → «Удалить»
+              <span class="arrow">→</span> в «Маникюре» снова 12 600, в
+              «Красоте» этих 3 900 нет.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Удаление повседневной траты<span class="auto"
+                >автотест в плане</span
+              >
+            </div>
+            <div class="st">
+              Запомнить «Осталось на жизнь» → удалить повседневную 1 250 в
+              «Продуктах» <span class="arrow">→</span> стало больше ровно на 1
+              250 (в сценарии: 65 520 → 66 770).
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Исправление суммы<span class="auto">автотест в плане</span>
+            </div>
+            <div class="st">
+              Внести 39 000 из «Маникюра» (там 12 600) → открыть → исправить на
+              3 900 <span class="arrow">→</span> в «Маникюре» 8 700.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Старая трата из конверта без категории</div>
+            <div class="st">
+              Открыть её из списка трат конверта
+              <span class="arrow">→</span> категория не выбрана, «Сохранить»
+              недоступна → выбрать категорию
+              <span class="arrow">→</span> сохраняется. Отдельно: «Удалить»
+              работает и без категории.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Трата удалённой категории<span class="auto"
+                >автотест в плане</span
+              >
+            </div>
+            <div class="st">
+              Удалить «Красоту» → открыть её трату из «Последних»
+              <span class="arrow">→</span> «Красота» выбрана; сохранить можно с
+              ней или с другой категорией.
+            </div>
+          </div></label
+        >
+      </div>
+
+      <div class="check-group">
+        <h3>Удаление категории</h3>
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Подтверждение<span class="auto">автотест в плане</span>
+            </div>
+            <div class="st">
+              Экран категории → «Удалить категорию»
+              <span class="arrow">→</span> в окне сказано: категория пропадёт из
+              списка, траты останутся в истории, деньги не вернутся.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              В категории есть трата из конверта и повседневная<span
+                class="auto"
+                >автотест в плане</span
+              >
+            </div>
+            <div class="st">
+              В «Красоте» 3 900 из «Маникюра» и повседневная 1 500 → удалить
+              «Красоту» <span class="arrow">→</span> её нет в категориях на
+              «Тратах», в форме траты и в предупреждениях на главной; обе траты
+              в «Последних» с категорией «Красота»; 3 900 видна в «Маникюре»; в
+              «Маникюре» 8 700; «Осталось на жизнь» и «Потрачено в ноябре»
+              прежние.
+            </div>
+          </div></label
+        >
+      </div>
+
+      <!-- 6 -->
+      <h2><span class="num">6</span>Что агент решил сам</h2>
+      <div class="two">
+        <div class="card box2">
+          <h3>Продуктовые — стоит просмотреть</h3>
+          <p class="small muted">
+            В документах изменения не отмечено, что из этого согласовано с вами.
+            Ваше решение точно: календарный месяц для категорий и отдельная
+            следующая правка про «Осталось на жизнь».
+          </p>
+          <ul class="points small">
+            <li>
+              Тексты — предложение, их проверяете вы: новое пояснение под
+              карточкой, «Траты · категория», «В ноябре потрачено», «Потрачено в
+              ноябре».
+            </li>
+            <li>
+              Где стоит «Потрачено в ноябре»: на телефоне над «По категориям»,
+              на компьютере в заголовке этой панели.
+            </li>
+            <li>
+              Пометка «из «Маникюра»» — под названием категории; на компьютере в
+              колонке «Заметка».
+            </li>
+            <li>
+              Категория из формы создаётся сразу по «Добавить» и остаётся, даже
+              если трату не сохранили.
+            </li>
+            <li>
+              Переключение «Повседневное» ↔ «Из конверта» не сбрасывает
+              категорию.
+            </li>
+            <li>
+              Недавние категории в форме считаются по всем тратам, и из
+              конвертов тоже.
+            </li>
+            <li>Удалённая категория по старой ссылке отвечает «не найдено».</li>
+            <li>
+              Новая категория с тем же названием — другая категория: старые
+              траты в ней не появятся.
+            </li>
+            <li>
+              Сумма видимых категорий может быть меньше «Потрачено в месяце»,
+              если в месяце были траты удалённой категории.
+            </li>
+            <li>
+              Старым тратам из конвертов категорию задним числом не ставят — они
+              видны только в конверте.
+            </li>
+            <li>
+              Подсказки о лимите категории в форме траты (как «На жизнь
+              останется») не будет.
+            </li>
+          </ul>
+        </div>
+        <div class="card box2">
+          <h3>Технические — на экраны не влияют</h3>
+          <ul class="points small">
+            <li>
+              Категория траты из конверта хранится в том же поле, что у
+              повседневной, а не в отдельном: так суммы категорий собираются из
+              одного места.
+            </li>
+            <li>
+              «Повседневная трата» теперь означает «без конверта», а не «с
+              категорией» — во всех запросах.
+            </li>
+            <li>
+              Удаление категории — пометка, а не стирание строки: остатки
+              считаются на лету из трат, и деньги не «вернутся» сами.
+            </li>
+            <li>
+              Граница месяца и правило «что входит в сумму» — чистые функции в
+              <code>src/domain/</code> с тестами на числа из сценариев; сложение
+              — в запросе к базе.
+            </li>
+            <li>
+              «в ноябре», «в декабре» — новая функция рядом с названиями месяцев
+              в <code>src/lib/text.ts</code>.
+            </li>
+            <li>
+              Создание категории из формы — то же действие, что на экране «Новая
+              категория», нового не добавляется.
+            </li>
+            <li>
+              Сервер проверяет: категория ваша и не удалена (кроме уже стоящей у
+              этой траты).
+            </li>
+            <li>Новых библиотек нет.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 7 -->
+      <h2><span class="num">7</span>Что осталось неясным</h2>
+      <div class="card">
+        <div class="q">
+          <p><b>Заголовок экрана остаётся «Повседневные траты»?</b></p>
+          <p class="small">
+            Теперь на этом экране и траты из конвертов. Подпись экрана категории
+            меняется на «Траты · категория», а про заголовок самого экрана (и на
+            телефоне, и на компьютере) в изменении ничего нет.
+          </p>
+        </div>
+        <div class="q">
+          <p><b>Что писать в форме, когда категорий ещё нет?</b></p>
+          <p class="small">
+            Сейчас там «Категорий пока нет: добавьте их на экране «Траты»». С
+            кнопкой «+ Новая категория» прямо в форме этот текст устаревает, но
+            новый в изменении не записан.
+          </p>
+        </div>
+        <div class="q">
+          <p><b>Пояснение на карточке «Осталось на жизнь» на компьютере</b></p>
+          <p class="small">
+            На компьютере под суммой написано «· траты из конвертов сюда не
+            входят». Изменение называет новое пояснение для телефона; меняется
+            ли эта строка на компьютере — не сказано.
+          </p>
+        </div>
+        <div class="q">
+          <p><b>Точный текст окна «Удалить категорию»</b></p>
+          <p class="small">
+            Записан только смысл. Текст на наброске — пример, его стоит
+            утвердить.
+          </p>
+        </div>
+      </div>
+
+      <footer>
+        Собрано по
+        <code>openspec/changes/envelope-expenses-in-spending/</code> (proposal,
+        specs, design, tasks) и текущему коду ветки. Страница только показывает,
+        ничего не меняет.
+      </footer>
+    </div>
+  </body>
+</html>
