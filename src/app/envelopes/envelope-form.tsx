@@ -13,7 +13,12 @@ import {
   monthlyContribution,
   type PeriodUnit,
 } from "@/domain/envelope";
-import { formatMoney, formatMoneyInput, parseMoney } from "@/domain/money";
+import {
+  formatMoney,
+  formatMoneyInput,
+  half,
+  parseMoney,
+} from "@/domain/money";
 import { countMonths, quoted } from "@/lib/text";
 import { cn } from "@/lib/utils";
 import { deleteEnvelope, saveEnvelope } from "@/server/actions";
@@ -76,7 +81,7 @@ export function EnvelopeForm({
   envelope: EnvelopeFormValue | null;
   priority: number;
   priorityCount: number;
-  /** Where this envelope's contribution goes this month if it is full. */
+  /** Where this envelope's contribution goes if it is full. */
   surplusReceivers: string[];
   /**
    * "panel": the side panel of the desktop wallet screen;
@@ -366,15 +371,16 @@ export function EnvelopeForm({
 
       {envelope && full && surplusReceivers.length > 0 && (
         <Notice title="Что будет с излишком">
-          Конверт полный, поэтому его {formatMoney(contribution)} в этом месяце
-          уйдут в {surplusReceivers.map(quoted).join(" и ")}. Когда вы потратите
-          из {quoted(envelope.name)}, взносы вернутся сюда.
+          Конверт полный, поэтому его взнос с каждого дохода (
+          {formatMoney(half(contribution))}) уйдёт в{" "}
+          {surplusReceivers.map(quoted).join(" и ")}. Когда вы потратите из{" "}
+          {quoted(envelope.name)}, взносы вернутся сюда.
         </Notice>
       )}
       {envelope && full && surplusReceivers.length === 0 && (
         <Notice title="Что будет с излишком">
           Конверт полный, а других неполных конвертов в {walletName} нет,
-          поэтому его взнос уйдёт на повседневные траты.
+          поэтому его взнос останется в нём сверх потолка.
         </Notice>
       )}
 

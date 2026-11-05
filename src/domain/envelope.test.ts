@@ -111,9 +111,9 @@ describe("demo data totals", () => {
     expect(clothes.reduce((s, e) => s + e.balance, 0)).toBe(rub(33700));
   });
 
-  it("«Всего в конвертах» across all wallets is 233 950", () => {
+  it("«Всего в конвертах» across all wallets is 230 350", () => {
     expect(demoEnvelopes().reduce((s, e) => s + e.balance, 0)).toBe(
-      rub(233950),
+      rub(230350),
     );
   });
 });

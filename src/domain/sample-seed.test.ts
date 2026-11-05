@@ -18,16 +18,16 @@ describe("sample seed", () => {
     expect(sampleSeed.expenses).toEqual([]);
   });
 
-  it("salary 150 000 → 63 750 to envelopes, 86 250 daily, 7 450 surplus to «Косметология»", () => {
+  it("salary 150 000 → 30 775 to envelopes, 119 225 daily, 3 725 surplus to «Косметология»", () => {
     const plan = planAllocation(
       sampleWallets(),
       sampleEnvelopes(),
       rub(150000),
     );
-    expect(plan.toEnvelopes).toBe(rub(63750));
-    expect(plan.toDaily).toBe(rub(86250));
+    expect(plan.toEnvelopes).toBe(rub(30775));
+    expect(plan.toDaily).toBe(rub(119225));
     const selfCare = plan.surpluses.find((s) => s.walletName === "Self-care");
-    expect(selfCare?.amount).toBe(rub(7450));
+    expect(selfCare?.amount).toBe(rub(3725));
     expect(selfCare?.receivers.map((r) => r.name)).toEqual(["Косметология"]);
   });
 

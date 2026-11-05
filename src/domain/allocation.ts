@@ -1,10 +1,10 @@
 import {
-  ceiling,
   isFull,
   monthlyContribution,
   type CeilingSettings,
   type ContributionSettings,
 } from "./envelope";
+import { half } from "./money";
 
 export interface AllocationWallet {
   id: string;
@@ -44,20 +44,16 @@ export interface WalletSurplus {
   amount: number;
   fullEnvelopeNames: string[];
   receivers: SurplusReceiver[];
-  /** Part of the surplus that found no non-full envelope. */
-  toDaily: number;
+  /** Every envelope of the wallet is full: each keeps its own contribution. */
+  allFull: boolean;
 }
 
-/** Destination of one piece of a contribution: an envelope or daily spending. */
-type Destination =
-  | { envelopeId: string; amount: number; kind: AllocationKind }
-  | { envelopeId: null; amount: number; kind: "surplus" };
-
-/** One envelope's monthly contribution and where it goes. */
+/** One envelope's contribution from one income and where it goes. */
 interface FundingItem {
   sourceEnvelopeId: string;
   amount: number;
-  destinations: Destination[];
+  destinationEnvelopeId: string;
+  kind: AllocationKind;
 }
 
 export interface WalletPlan {
@@ -67,77 +63,60 @@ export interface WalletPlan {
   surplus: Omit<WalletSurplus, "walletId" | "walletName"> | null;
 }
 
+/** What one income puts into an envelope: half of the monthly contribution. */
+export function incomeContribution(env: ContributionSettings): number {
+  return half(monthlyContribution(env));
+}
+
 function byPriority(a: AllocationEnvelope, b: AllocationEnvelope): number {
   return a.priority - b.priority;
 }
 
 /**
  * Plans one wallet at full contributions.
- * Full envelopes (before allocation) give their contribution to the most
- * important non-full envelope; whatever would overflow a receiver's ceiling
- * moves to the next non-full one, and finally to daily spending.
+ * A full envelope (before allocation) gives its contribution, whole, to the
+ * most important non-full envelope; that envelope may end up above its
+ * ceiling. If every envelope is full, each keeps its own contribution.
  */
 export function planWallet(envelopes: AllocationEnvelope[]): WalletPlan {
   const sorted = [...envelopes].sort(byPriority);
   const full = new Set(
     sorted.filter((e) => isFull(e, e.balance)).map((e) => e.id),
   );
-  const receivers = sorted.filter((e) => !full.has(e.id));
-  const projected = new Map(sorted.map((e) => [e.id, e.balance]));
-
-  // Own contributions of non-full envelopes come first.
-  const own = new Map<string, number>();
-  for (const env of receivers) {
-    const amount = monthlyContribution(env);
-    own.set(env.id, amount);
-    projected.set(env.id, env.balance + amount);
-  }
+  const receiver = sorted.find((e) => !full.has(e.id)) ?? null;
 
   const items: FundingItem[] = [];
-  const surplusByReceiver = new Map<string, number>();
-  let surplusTotal = 0;
-  let surplusToDaily = 0;
   const fullNames: string[] = [];
+  let surplusTotal = 0;
+  let surplusToReceiver = 0;
 
   for (const env of sorted) {
-    const amount = monthlyContribution(env);
+    const amount = incomeContribution(env);
     if (amount <= 0) continue;
 
-    if (!full.has(env.id)) {
+    if (!full.has(env.id) || receiver === null) {
+      if (full.has(env.id)) {
+        fullNames.push(env.name);
+        surplusTotal += amount;
+      }
       items.push({
         sourceEnvelopeId: env.id,
         amount,
-        destinations: [{ envelopeId: env.id, amount, kind: "contribution" }],
+        destinationEnvelopeId: env.id,
+        kind: "contribution",
       });
       continue;
     }
 
     fullNames.push(env.name);
     surplusTotal += amount;
-    let left = amount;
-    const destinations: Destination[] = [];
-    for (const receiver of receivers) {
-      if (left === 0) break;
-      const room = ceiling(receiver) - projected.get(receiver.id)!;
-      if (room <= 0) continue;
-      const give = Math.min(left, room);
-      destinations.push({
-        envelopeId: receiver.id,
-        amount: give,
-        kind: "surplus",
-      });
-      projected.set(receiver.id, projected.get(receiver.id)! + give);
-      surplusByReceiver.set(
-        receiver.id,
-        (surplusByReceiver.get(receiver.id) ?? 0) + give,
-      );
-      left -= give;
-    }
-    if (left > 0) {
-      destinations.push({ envelopeId: null, amount: left, kind: "surplus" });
-      surplusToDaily += left;
-    }
-    items.push({ sourceEnvelopeId: env.id, amount, destinations });
+    surplusToReceiver += amount;
+    items.push({
+      sourceEnvelopeId: env.id,
+      amount,
+      destinationEnvelopeId: receiver.id,
+      kind: "surplus",
+    });
   }
 
   const contributions = items.reduce((s, i) => s + i.amount, 0);
@@ -146,43 +125,60 @@ export function planWallet(envelopes: AllocationEnvelope[]): WalletPlan {
       ? {
           amount: surplusTotal,
           fullEnvelopeNames: fullNames,
-          receivers: receivers
-            .filter((r) => surplusByReceiver.has(r.id))
-            .map((r) => ({
-              envelopeId: r.id,
-              name: r.name,
-              amount: surplusByReceiver.get(r.id)!,
-            })),
-          toDaily: surplusToDaily,
+          receivers:
+            receiver !== null && surplusToReceiver > 0
+              ? [
+                  {
+                    envelopeId: receiver.id,
+                    name: receiver.name,
+                    amount: surplusToReceiver,
+                  },
+                ]
+              : [],
+          allFull: receiver === null,
         }
       : null;
 
   return { items, contributions, surplus };
 }
 
+export interface WalletAmount {
+  walletId: string;
+  name: string;
+  amount: number;
+}
+
 export interface AllocationPlan {
   income: number;
-  /** Sum of all monthly contributions. */
+  /** Sum of the contributions of all wallets from one income. */
   totalContributions: number;
   toEnvelopes: number;
   toDaily: number;
-  /** How much is missing to cover all contributions; 0 if enough. */
+  /** How much is missing to cover the contributions of checked wallets. */
   shortage: number;
-  /** Amount per wallet, largest first. */
-  wallets: { walletId: string; name: string; amount: number }[];
+  /** Income is smaller than all contributions: wallets can be unchecked. */
+  needsChoice: boolean;
+  /** No wallet is unchecked. */
+  allSelected: boolean;
+  /** Amount per wallet that got money, largest first. */
+  wallets: WalletAmount[];
+  /** Amount per wallet in wallet order, zeros included. */
+  byWallet: WalletAmount[];
   lines: AllocationLine[];
   surpluses: WalletSurplus[];
 }
 
 /**
  * Plans how an income is split between envelopes and daily spending.
- * If the income is smaller than all contributions, contributions are funded
- * in wallet order and, inside a wallet, by envelope priority.
+ * If the income is smaller than all contributions, only checked wallets get
+ * money: in wallet order and, inside a wallet, by envelope priority.
+ * Unchecked wallets are ignored when the income covers everything.
  */
 export function planAllocation(
   wallets: AllocationWallet[],
   envelopes: AllocationEnvelope[],
   income: number,
+  skippedWalletIds: string[] = [],
 ): AllocationPlan {
   const orderedWallets = [...wallets].sort((a, b) => a.order - b.order);
   const walletPlans = orderedWallets.map((wallet) => ({
@@ -194,52 +190,56 @@ export function planAllocation(
     (s, w) => s + w.plan.contributions,
     0,
   );
-  const enough = income >= totalContributions;
+  const needsChoice = income < totalContributions;
+  const skipped = new Set(needsChoice ? skippedWalletIds : []);
+  const selected = walletPlans.filter(({ wallet }) => !skipped.has(wallet.id));
+  const selectedTotal = selected.reduce((s, w) => s + w.plan.contributions, 0);
+  const enough = income >= selectedTotal;
 
   const lines: AllocationLine[] = [];
   const walletAmounts = new Map<string, number>();
   let left = Math.max(income, 0);
 
-  for (const { wallet, plan } of walletPlans) {
+  for (const { wallet, plan } of selected) {
     for (const item of plan.items) {
-      for (const dest of item.destinations) {
-        if (dest.envelopeId === null) continue;
-        const amount = enough ? dest.amount : Math.min(dest.amount, left);
-        if (amount <= 0) continue;
-        left -= amount;
-        lines.push({
-          envelopeId: dest.envelopeId,
-          amount,
-          kind: dest.kind,
-          sourceEnvelopeId:
-            dest.kind === "surplus" ? item.sourceEnvelopeId : null,
-        });
-        walletAmounts.set(
-          wallet.id,
-          (walletAmounts.get(wallet.id) ?? 0) + amount,
-        );
-      }
+      const amount = enough ? item.amount : Math.min(item.amount, left);
+      if (amount <= 0) continue;
+      left -= amount;
+      lines.push({
+        envelopeId: item.destinationEnvelopeId,
+        amount,
+        kind: item.kind,
+        sourceEnvelopeId:
+          item.kind === "surplus" ? item.sourceEnvelopeId : null,
+      });
+      walletAmounts.set(
+        wallet.id,
+        (walletAmounts.get(wallet.id) ?? 0) + amount,
+      );
     }
   }
 
   const toEnvelopes = lines.reduce((s, l) => s + l.amount, 0);
+  const byWallet = walletPlans.map(({ wallet }) => ({
+    walletId: wallet.id,
+    name: wallet.name,
+    amount: walletAmounts.get(wallet.id) ?? 0,
+  }));
 
   return {
     income,
     totalContributions,
     toEnvelopes,
     toDaily: income - toEnvelopes,
-    shortage: enough ? 0 : totalContributions - income,
-    wallets: walletPlans
-      .map(({ wallet }) => ({
-        walletId: wallet.id,
-        name: wallet.name,
-        amount: walletAmounts.get(wallet.id) ?? 0,
-      }))
+    shortage: enough ? 0 : selectedTotal - income,
+    needsChoice,
+    allSelected: selected.length === walletPlans.length,
+    wallets: byWallet
       .filter((w) => w.amount > 0)
       .sort((a, b) => b.amount - a.amount),
+    byWallet,
     lines,
-    surpluses: walletPlans.flatMap(({ wallet, plan }) =>
+    surpluses: selected.flatMap(({ wallet, plan }) =>
       plan.surplus
         ? [{ walletId: wallet.id, walletName: wallet.name, ...plan.surplus }]
         : [],

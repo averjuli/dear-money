@@ -112,6 +112,8 @@ export async function allocateIncome(input: {
   kind: (typeof INCOME_KINDS)[number];
   date: string;
   nextIncomeDate: string | null;
+  /** Wallets unchecked on the allocation screen; used only if money is short. */
+  skippedWalletIds?: string[];
 }): Promise<ActionResult> {
   const userId = await requireUserId();
   if (!isMoney(input.amount) || input.amount <= 0) {
@@ -131,7 +133,11 @@ export async function allocateIncome(input: {
   const { wallets: w, envelopes: e } = toAllocationInput(
     await loadWallets(userId),
   );
-  const plan = planAllocation(w, e, input.amount);
+  const ownWalletIds = new Set(w.map((wallet) => wallet.id));
+  const skippedWalletIds = (input.skippedWalletIds ?? []).filter(
+    (id) => isUuid(id) && ownWalletIds.has(id),
+  );
+  const plan = planAllocation(w, e, input.amount, skippedWalletIds);
 
   await getDb().transaction(async (tx) => {
     const [income] = await tx

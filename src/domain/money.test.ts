@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { divRound, formatMoney, parseMoney } from "./money";
+import { divRound, formatMoney, half, parseMoney } from "./money";
 
 const NBSP = " ";
 
@@ -19,6 +19,17 @@ describe("divRound", () => {
   it("rejects non-integer input and zero divisor", () => {
     expect(() => divRound(1.5, 2)).toThrow();
     expect(() => divRound(1, 0)).toThrow();
+  });
+});
+
+describe("half", () => {
+  it("halves evenly", () => {
+    expect(half(260_000)).toBe(130_000);
+    expect(half(0)).toBe(0);
+  });
+
+  it("rounds an odd kopeck up: 2 166,67 → 1 083,34", () => {
+    expect(half(216_667)).toBe(108_334);
   });
 });
 

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "note": "Выдуманные демо-данные для тестов и проверки. Суммы в копейках. timesToSave=3 временно (specs/01-продуктовая-идея.md, открытый вопрос 3).",
+  "note": "Выдуманные демо-данные для тестов и проверки. Суммы в копейках.",
   "wallets": [
     {
       "id": "w1",
@@ -13,24 +13,19 @@
       "order": 2
     },
     {
-      "id": "w3",
-      "name": "Запасные",
-      "order": 3
-    },
-    {
       "id": "w4",
       "name": "Miscellaneous",
-      "order": 4
+      "order": 3
     },
     {
       "id": "w5",
       "name": "Long term",
-      "order": 5
+      "order": 4
     },
     {
       "id": "w6",
       "name": "Goals WB",
-      "order": 6
+      "order": 5
     }
   ],
   "envelopes": [
@@ -165,18 +160,6 @@
       "contributionOverride": 15000,
       "timesToSave": 3,
       "startBalance": -30000
-    },
-    {
-      "id": "w3e1",
-      "walletId": "w3",
-      "name": "Запасные",
-      "priority": 1,
-      "costPerTime": 220000,
-      "periodN": 1,
-      "periodUnit": "month",
-      "contributionOverride": 220000,
-      "timesToSave": 3,
-      "startBalance": 360000
     },
     {
       "id": "w4e1",

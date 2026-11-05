@@ -18,9 +18,9 @@ describe("mainEnvelopes", () => {
     expect(more).toBe(6);
   });
 
-  it("Запасные: one envelope, nothing more", () => {
-    const { shown, more } = mainEnvelopes(demoWalletEnvelopes("Запасные"));
-    expect(shown.map((e) => e.name)).toEqual(["Запасные"]);
+  it("Clothes: two envelopes, nothing more", () => {
+    const { shown, more } = mainEnvelopes(demoWalletEnvelopes("Clothes"));
+    expect(shown.map((e) => e.name)).toEqual(["Одежда", "Украшения"]);
     expect(more).toBe(0);
   });
 
