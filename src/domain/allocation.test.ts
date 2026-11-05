@@ -89,7 +89,22 @@ describe("half of the contribution per income", () => {
     ]);
   });
 
-  it("2 166,67 a month → 1 083,34 per income", () => {
+  it("manual 2 166,67 a month → 1 083,34 per income", () => {
+    const envelopes: AllocationEnvelope[] = [
+      {
+        ...env("a", 1, 1000, 0, 3),
+        contributionOverride: 216_667,
+      },
+    ];
+    const plan = planAllocation(
+      [{ id: "w", name: "W", order: 1 }],
+      envelopes,
+      rub(10000),
+    );
+    expect(plan.lines[0].amount).toBe(108_334);
+  });
+
+  it("1 000 every 2 weeks → 2 200 a month → 1 100 per income", () => {
     const envelopes: AllocationEnvelope[] = [
       {
         ...env("a", 1, 1000, 0, 3),
@@ -102,7 +117,7 @@ describe("half of the contribution per income", () => {
       envelopes,
       rub(10000),
     );
-    expect(plan.lines[0].amount).toBe(108_334);
+    expect(plan.lines[0].amount).toBe(rub(1100));
   });
 });
 

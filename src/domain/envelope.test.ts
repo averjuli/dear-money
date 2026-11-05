@@ -22,13 +22,47 @@ describe("monthlyContribution", () => {
     ).toBe(rub(1500));
   });
 
-  it("every few weeks: 1 000 every 2 weeks → 2 166,67", () => {
+  it("every few weeks: 1 000 every 2 weeks → 2 166,67 rounded up to 2 200", () => {
     expect(
       monthlyContribution({
         ...base,
         costPerTime: rub(1000),
         periodN: 2,
         periodUnit: "week",
+      }),
+    ).toBe(rub(2200));
+  });
+
+  it("once a year: 10 000 → 833,33 rounded up to 850", () => {
+    expect(
+      monthlyContribution({
+        ...base,
+        costPerTime: rub(10000),
+        periodN: 1,
+        periodUnit: "year",
+      }),
+    ).toBe(rub(850));
+  });
+
+  it("zero cost → 0", () => {
+    expect(
+      monthlyContribution({
+        ...base,
+        costPerTime: 0,
+        periodN: 3,
+        periodUnit: "week",
+      }),
+    ).toBe(0);
+  });
+
+  it("manual contribution is not rounded: 2 166,67 stays", () => {
+    expect(
+      monthlyContribution({
+        ...base,
+        costPerTime: rub(1000),
+        periodN: 2,
+        periodUnit: "week",
+        contributionOverride: rub(2166.67),
       }),
     ).toBe(rub(2166.67));
   });
