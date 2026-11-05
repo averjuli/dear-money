@@ -83,19 +83,33 @@ test("opened: all wallets with sums, total in envelopes and daily", async ({
 }) => {
   await login(page);
   await expect(page.getByTestId("total-in-envelopes")).toHaveText(
-    rub("233 950"),
+    rub("230 350"),
   );
   await expect(
-    page.getByText(`Откладывать ${rub("63 750")} в месяц`),
+    page.getByText(`Откладывать ${rub("61 550")} в месяц`),
   ).toBeVisible();
   for (const [name, sum] of [
     ["Clothes", "33 700"],
     ["Self-care", "55 200"],
-    ["Запасные", "3 600"],
   ]) {
     const row = page.getByRole("link", { name: new RegExp(`^${name}`) });
     await expect(row).toContainText(rub(sum));
   }
+  await expect(page.getByText("Запасные")).toHaveCount(0);
+  // Wallets keep the order set by the user, not the order of the sums.
+  const names = [
+    "Clothes",
+    "Self-care",
+    "Miscellaneous",
+    "Long term",
+    "Goals WB",
+  ];
+  const cards = await page
+    .getByRole("link", { name: new RegExp(`^(${names.join("|")})`) })
+    .allInnerTexts();
+  expect(cards.map((text) => names.find((n) => text.startsWith(n)))).toEqual(
+    names,
+  );
   await expect(page.getByText("На жизнь осталось")).toBeVisible();
   await expect(page.getByText("Чужой кошелёк")).toHaveCount(0);
 });
@@ -106,10 +120,11 @@ test("salary 150 000: preview, surplus to «Косметология», allocate
   await login(page);
   await page.getByRole("link", { name: "Пришли деньги", exact: true }).click();
   await page.getByLabel("Сколько пришло").fill("150 000");
-  await expect(page.getByTestId("to-envelopes")).toHaveText(rub("63 750"));
-  await expect(page.getByTestId("to-daily")).toHaveText(rub("86 250"));
+  await expect(page.getByTestId("to-envelopes")).toHaveText(rub("30 775"));
+  await expect(page.getByTestId("to-daily")).toHaveText(rub("119 225"));
+  await expect(page.getByRole("checkbox")).toHaveCount(0);
   await expect(
-    page.getByText(`Излишек ${rub("7 450")} в Self-care`),
+    page.getByText(`Излишек ${rub("3 725")} в Self-care`),
   ).toBeVisible();
   await expect(
     page.getByText(/их взносы уйдут в «Косметология»/),
@@ -118,11 +133,11 @@ test("salary 150 000: preview, surplus to «Косметология», allocate
   await page.getByRole("button", { name: "Разложить" }).click();
   await expect(page).toHaveURL("/");
   await expect(page.getByTestId("total-in-envelopes")).toHaveText(
-    rub("297 700"),
+    rub("261 125"),
   );
-  await expect(page.getByTestId("daily-remaining")).toHaveText(rub("86 250"));
+  await expect(page.getByTestId("daily-remaining")).toHaveText(rub("119 225"));
   await expect(page.getByRole("link", { name: /^Self-care/ })).toContainText(
-    rub("67 050"),
+    rub("61 125"),
   );
 });
 
@@ -154,7 +169,7 @@ test("expense 3 900 from «Маникюр» needs a category: balance 8 700, dai
 
   await page.getByRole("button", { name: "Сохранить" }).click();
   await expect(page).toHaveURL("/");
-  await expect(page.getByTestId("daily-remaining")).toHaveText(rub("86 250"));
+  await expect(page.getByTestId("daily-remaining")).toHaveText(rub("119 225"));
 
   await page.getByRole("link", { name: /^Self-care/ }).click();
   await page.getByRole("link", { name: /Маникюр/ }).click();
@@ -166,7 +181,7 @@ test("«Траты» shows the envelope expense: category, month total, envelope
 }) => {
   await login(page);
   await page.goto("/daily");
-  await expect(page.getByTestId("daily-left")).toHaveText(rub("86 250"));
+  await expect(page.getByTestId("daily-left")).toHaveText(rub("119 225"));
   await expect(page.getByTestId("month-spent")).toContainText("Потрачено в");
   await expect(page.getByTestId("month-spent")).toContainText(rub("3 900"));
   await expect(categoryRow(page, "Красота")).toContainText(rub("3 900"));
@@ -215,10 +230,10 @@ test("daily expense: delete returns it to «Осталось на жизнь»",
 }) => {
   await login(page);
   await addExpense(page, { amount: "1 250", category: "Продукты" });
-  await expect(page.getByTestId("daily-left")).toHaveText(rub("85 000"));
+  await expect(page.getByTestId("daily-left")).toHaveText(rub("117 975"));
   await expenseRow(page, "Продукты").click();
   await deleteOpenExpense(page);
-  await expect(page.getByTestId("daily-left")).toHaveText(rub("86 250"));
+  await expect(page.getByTestId("daily-left")).toHaveText(rub("119 225"));
 });
 
 test("new category «Такси» with limit 3 000 made from the expense form", async ({
@@ -241,7 +256,7 @@ test("new category «Такси» with limit 3 000 made from the expense form", 
 
   await expenseRow(page, "Такси").click();
   await deleteOpenExpense(page);
-  await expect(page.getByTestId("daily-left")).toHaveText(rub("86 250"));
+  await expect(page.getByTestId("daily-left")).toHaveText(rub("119 225"));
 });
 
 test("limit: 2 900 from «Тройка на год» in «Транспорт» after daily 2 300", async ({
@@ -257,7 +272,7 @@ test("limit: 2 900 from «Тройка на год» in «Транспорт» a
     envelope: "Тройка на год",
     category: "Транспорт",
   });
-  await expect(page.getByTestId("daily-left")).toHaveText(rub("83 950"));
+  await expect(page.getByTestId("daily-left")).toHaveText(rub("116 925"));
   await expect(categoryRow(page, "Транспорт")).toContainText(
     `лимит превышен на ${rub("1 200")}`,
   );
@@ -273,7 +288,7 @@ test("limit: 2 900 from «Тройка на год» in «Транспорт» a
   await deleteOpenExpense(page);
   await expenseRow(page, "Транспорт").click();
   await deleteOpenExpense(page);
-  await expect(page.getByTestId("daily-left")).toHaveText(rub("86 250"));
+  await expect(page.getByTestId("daily-left")).toHaveText(rub("119 225"));
 });
 
 test("daily expense 6 230 in «Транспорт» over the 4 000 limit", async ({
@@ -289,7 +304,7 @@ test("daily expense 6 230 in «Транспорт» over the 4 000 limit", async
   await expect(
     page.getByText(`лимит превышен на ${rub("2 230")}`),
   ).toBeVisible();
-  await expect(page.getByTestId("daily-left")).toHaveText(rub("80 020"));
+  await expect(page.getByTestId("daily-left")).toHaveText(rub("112 995"));
 
   await page.getByRole("link", { name: "Конверты" }).click();
   await expect(
@@ -302,7 +317,7 @@ test("deleting «Красота» keeps its expenses and the money", async ({
 }) => {
   await login(page);
   await addExpense(page, { amount: "1 500", category: "Красота" });
-  await expect(page.getByTestId("daily-left")).toHaveText(rub("78 520"));
+  await expect(page.getByTestId("daily-left")).toHaveText(rub("111 495"));
   const monthBefore = await page.getByTestId("month-spent").innerText();
 
   await categoryRow(page, "Красота").click();
@@ -317,7 +332,7 @@ test("deleting «Красота» keeps its expenses and the money", async ({
   await expect(expenseRow(page, "Красота")).toHaveCount(2);
   await expect(expenseRow(page, "из «Маникюр»")).toContainText("Красота");
   await expect(page.getByTestId("month-spent")).toHaveText(monthBefore);
-  await expect(page.getByTestId("daily-left")).toHaveText(rub("78 520"));
+  await expect(page.getByTestId("daily-left")).toHaveText(rub("111 495"));
   await expectEnvelopeSaved(page, "Маникюр", "8 700");
 
   // Gone from the form in both modes.
@@ -342,7 +357,7 @@ test("deleting «Красота» keeps its expenses and the money", async ({
 
   await expenseRow(page, "1 500").click();
   await deleteOpenExpense(page);
-  await expect(page.getByTestId("daily-left")).toHaveText(rub("80 020"));
+  await expect(page.getByTestId("daily-left")).toHaveText(rub("112 995"));
 });
 
 test("old envelope expense without a category: nothing selected, can be deleted", async ({
@@ -369,12 +384,60 @@ test("old envelope expense without a category: nothing selected, can be deleted"
   await expectEnvelopeSaved(page, "Маникюр", "8 700");
 });
 
+test("income 20 000 is short: wallets get checkboxes and unchecking changes the split", async ({
+  page,
+}) => {
+  await login(page);
+  await page.getByRole("link", { name: "Пришли деньги", exact: true }).click();
+  await page.getByLabel("Сколько пришло").fill("20 000");
+  const wallet = (name: string) =>
+    page.getByRole("checkbox", { name: new RegExp(name) });
+
+  // All checked: wallet order, nothing is left for daily spending.
+  await expect(
+    page.getByText(`Не хватает ${rub("10 775")} на все взносы`),
+  ).toBeVisible();
+  for (const name of [
+    "Clothes",
+    "Self-care",
+    "Miscellaneous",
+    "Long term",
+    "Goals WB",
+  ]) {
+    await expect(wallet(name)).toBeChecked();
+  }
+  await expect(page.getByTestId("to-envelopes")).toHaveText(rub("20 000"));
+  await expect(page.getByTestId("to-daily")).toHaveText(rub("0"));
+
+  // Without Long term and Goals WB the checked wallets fit into the income.
+  await wallet("Long term").click();
+  await wallet("Goals WB").click();
+  await expect(page.getByTestId("to-envelopes")).toHaveText(rub("17 275"));
+  await expect(page.getByTestId("to-daily")).toHaveText(rub("2 725"));
+  await expect(page.getByText(/Не хватает/)).toHaveCount(0);
+
+  // Without Clothes the checked wallets do not fit.
+  await wallet("Long term").click();
+  await wallet("Goals WB").click();
+  await wallet("Clothes").click();
+  await expect(
+    page.getByText(`Не хватает ${rub("5 975")} на взносы отмеченных кошельков`),
+  ).toBeVisible();
+  await expect(page.getByTestId("to-daily")).toHaveText(rub("0"));
+  await page.screenshot({ path: test.info().outputPath("income-short.png") });
+
+  // Enough income: no checkboxes.
+  await page.getByLabel("Сколько пришло").fill("150 000");
+  await expect(page.getByRole("checkbox")).toHaveCount(0);
+});
+
 test("envelope settings: 3 000 once in 2 months → 1 500 a month", async ({
   page,
 }) => {
   await login(page);
   await page.getByRole("link", { name: /^Self-care/ }).click();
   await page.getByRole("link", { name: "Добавить конверт" }).click();
+  await expect(page.getByLabel("На сколько раз копить")).toHaveValue("3");
   await page.getByLabel("Название").fill("Массаж");
   await page.getByLabel("Сколько стоит один раз").fill("3 000");
   await page.getByLabel("Как часто").fill("2");

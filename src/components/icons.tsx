@@ -44,6 +44,12 @@ export const ChevronIcon = (p: IconProps) => (
   </Svg>
 );
 
+export const CheckIcon = (p: IconProps) => (
+  <Svg size={16} strokeWidth={3} {...p}>
+    <path d="M5 12.5l4.5 4.5L19 7.5" />
+  </Svg>
+);
+
 export const PlusIcon = (p: IconProps) => (
   <Svg size={26} strokeWidth={2.6} {...p}>
     <path d="M12 5v14M5 12h14" />

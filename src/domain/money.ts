@@ -26,6 +26,11 @@ export function divRound(dividend: number, divisor: number): number {
   return sign * rounded || 0;
 }
 
+/** Half of an amount, a half kopeck rounds up: 216667 → 108334. */
+export function half(kopecks: number): number {
+  return divRound(kopecks, 2);
+}
+
 /** Integer division rounded down (for "how many whole times"). */
 export function divFloor(dividend: number, divisor: number): number {
   assertInteger(dividend, "dividend");

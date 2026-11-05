@@ -36,9 +36,9 @@ test("envelopes: side menu, three cards, wallet cards with main envelopes", asyn
   );
 
   await expect(page.getByTestId("total-in-envelopes")).toHaveText(
-    rub("293 800"),
+    rub("257 225"),
   );
-  await expect(page.getByTestId("daily-remaining")).toHaveText(rub("80 020"));
+  await expect(page.getByTestId("daily-remaining")).toHaveText(rub("112 995"));
   await expect(page.getByText("Откладывать в месяц")).toBeVisible();
 
   const selfCare = page.getByRole("link", { name: /^Self-care/ });
@@ -47,9 +47,10 @@ test("envelopes: side menu, three cards, wallet cards with main envelopes", asyn
   await expect(selfCare).toContainText("Косметология");
   await expect(selfCare).not.toContainText("Брови");
   await expect(selfCare).toContainText("ещё 7");
-  await expect(page.getByRole("link", { name: /^Запасные/ })).not.toContainText(
+  await expect(page.getByRole("link", { name: /^Clothes/ })).not.toContainText(
     "ещё",
   );
+  await expect(page.getByText("Запасные")).toHaveCount(0);
   await shot(page, "main");
 });
 
@@ -60,7 +61,9 @@ test("wallet: table by priority, settings panel on the right", async ({
   await page.getByRole("link", { name: /^Self-care/ }).click();
   await expect(page.getByRole("heading", { name: "Self-care" })).toBeVisible();
   await expect(page.getByText("Конверты по приоритету")).toBeVisible();
-  await expect(page.getByText("минус · получит излишек")).toBeVisible();
+  // «Маникюр» (first by priority, 8 700 of 12 600) is the only receiver.
+  await expect(page.getByText("копится · получит излишек")).toBeVisible();
+  await expect(page.getByText("минус · получит излишек")).toHaveCount(0);
 
   await page.getByRole("link", { name: /Маникюр/ }).click();
   await expect(page).toHaveURL(/\?envelope=/);
@@ -99,11 +102,11 @@ test("expenses: form always open, daily hint, stays on the screen after saving",
   await page.getByLabel("Сумма").fill("1 000");
   await page.getByRole("button", { name: "Продукты" }).click();
   await expect(page.getByTestId("daily-hint")).toHaveText(
-    `На жизнь останется ${rub("79 020")}`,
+    `На жизнь останется ${rub("111 995")}`,
   );
   await shot(page, "daily");
   await page.getByRole("button", { name: "Сохранить" }).click();
-  await expect(page.getByTestId("daily-left")).toHaveText(rub("79 020"));
+  await expect(page.getByTestId("daily-left")).toHaveText(rub("111 995"));
   await expect(page).toHaveURL("/daily");
   await expect(page.getByLabel("Сумма")).toHaveValue("");
 
@@ -135,6 +138,76 @@ test("income: form on the left, preview on the right", async ({ page }) => {
   await expect(page.getByText(/в день до 1 января 2099/)).toBeVisible();
   await expect(page.getByText("Взносы по кошелькам")).toBeVisible();
   await shot(page, "income");
+});
+
+test("income is short: uncheck a wallet, it gets nothing, the rest is saved", async ({
+  page,
+}) => {
+  // «Массаж» was added on the iPhone run: contributions per income are
+  // Clothes 4 800, Self-care 6 675, Miscellaneous 6 550, Long term 5 700,
+  // Goals WB 7 800 = 31 525.
+  await login(page);
+  await page
+    .getByRole("navigation", { name: "Разделы" })
+    .getByRole("link", { name: "Пришли деньги" })
+    .click();
+  await page.getByLabel("Сколько пришло").fill("20 000");
+  await expect(
+    page.getByText(`Не хватает ${rub("11 525")} на все взносы`),
+  ).toBeVisible();
+  const clothes = page.getByRole("checkbox", { name: /Clothes/ });
+  await expect(clothes).toBeChecked();
+  await clothes.click();
+  await expect(
+    page.getByText(`Не хватает ${rub("6 725")} на взносы отмеченных кошельков`),
+  ).toBeVisible();
+  await expect(page.locator("label", { hasText: "Goals WB" })).toContainText(
+    rub("1 075"),
+  );
+  await expect(page.getByTestId("to-daily")).toHaveText(rub("0"));
+  await shot(page, "income-short");
+
+  await page.getByRole("button", { name: "Разложить" }).click();
+  await expect(page).toHaveURL("/");
+  // After the salary Clothes held 33 700 + 4 800 and got nothing now; Goals WB held 60 900 + 7 800 and gets 1 075 more.
+  await expect(page.getByRole("link", { name: /^Clothes/ })).toContainText(
+    rub("38 500"),
+  );
+  await expect(page.getByRole("link", { name: /^Goals WB/ })).toContainText(
+    rub("69 775"),
+  );
+  await expect(page.getByTestId("total-in-envelopes")).toHaveText(
+    rub("277 225"),
+  );
+});
+
+test("income: a wallet with only full envelopes keeps its contributions above the ceiling", async ({
+  page,
+}) => {
+  await login(page);
+  await page.goto("/wallets/new");
+  await page.getByLabel("Название").fill("Резерв");
+  await page.getByRole("button", { name: "Сохранить" }).click();
+  await page.getByRole("link", { name: "Добавить конверт" }).click();
+  await page.getByLabel("Название").fill("Ремонт");
+  await page.getByLabel("Сколько стоит один раз").fill("3 000");
+  await page.getByLabel("Начальный остаток").fill("9 000");
+  await page.getByRole("button", { name: "Сохранить" }).click();
+
+  await page
+    .getByRole("navigation", { name: "Разделы" })
+    .getByRole("link", { name: "Пришли деньги" })
+    .click();
+  await page.getByLabel("Сколько пришло").fill("150 000");
+  await expect(
+    page.getByText(`Излишек ${rub("1 500")} в Резерв`),
+  ).toBeVisible();
+  await expect(
+    page.getByText(
+      "Все конверты кошелька полные, их взносы останутся в них сверх потолка.",
+    ),
+  ).toBeVisible();
+  await expect(page.getByText(/уйдут на повседневные/)).toHaveCount(0);
 });
 
 test("narrow window: menu is one row at the bottom", async ({ page }) => {

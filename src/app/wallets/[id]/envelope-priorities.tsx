@@ -73,14 +73,14 @@ export function SurplusBanner({
   return (
     <>
       <div className="text-base font-semibold">
-        Излишек в этом месяце: {formatMoney(surplus.amount)}
+        Излишек с каждого дохода: {formatMoney(surplus.amount)}
       </div>
       <div className="text-sm leading-snug text-accent-soft">
         {countEnvelopes(surplus.fullEnvelopeNames.length)} уже{" "}
         {surplus.fullEnvelopeNames.length === 1 ? "накоплен" : "накоплены"}.{" "}
         {surplus.receivers.length > 0
           ? `Их взносы уйдут в ${surplus.receivers.map((r) => quoted(r.name)).join(" и ")}: выше всех по приоритету среди неполных.`
-          : "Неполных конвертов нет, поэтому взносы уйдут на повседневные траты."}
+          : "Неполных конвертов нет, поэтому взносы останутся в своих конвертах сверх потолка."}
       </div>
     </>
   );

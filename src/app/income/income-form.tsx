@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { Panel, PanelTitle } from "@/components/desktop";
 import { MoneyField, MoneyInput } from "@/components/money-input";
 import { Spacer } from "@/components/screen";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Card,
   Notice,
@@ -14,6 +15,7 @@ import {
 import {
   planAllocation,
   type AllocationEnvelope,
+  type AllocationPlan,
   type AllocationWallet,
   type WalletSurplus,
 } from "@/domain/allocation";
@@ -42,27 +44,81 @@ function SurplusNotice({ surplus }: { surplus: WalletSurplus }) {
     <Notice
       title={`Излишек ${formatMoney(surplus.amount)} в ${surplus.walletName}`}
     >
-      {surplus.receivers.length > 0 ? (
+      {surplus.allFull ? (
+        <>
+          Все конверты кошелька полные, их взносы останутся в них сверх потолка.
+        </>
+      ) : (
         <>
           {countEnvelopes(fullCount)} уже{" "}
           {fullCount === 1 ? "полный" : "полные"} (
           {surplus.fullEnvelopeNames.join(", ")}), их взносы уйдут в {receivers}{" "}
           по приоритету.
         </>
-      ) : (
-        <>
-          Все конверты кошелька полные, поэтому их взносы уйдут на повседневные
-          траты.
-        </>
-      )}
-      {surplus.receivers.length > 0 && surplus.toDaily > 0 && (
-        <>
-          {" "}
-          {formatMoney(surplus.toDaily)} не поместятся до потолков и уйдут на
-          повседневные траты.
-        </>
       )}
     </Notice>
+  );
+}
+
+/** Shown when the income is smaller than all contributions. */
+function ShortageNotice({ plan }: { plan: AllocationPlan }) {
+  if (plan.shortage <= 0) return null;
+  return plan.allSelected ? (
+    <Notice
+      tone="warn"
+      title={`Не хватает ${formatMoney(plan.shortage)} на все взносы`}
+    >
+      Раздам по порядку кошельков и приоритету конвертов. Снимите галочку, чтобы
+      кошелёк в этот раз ничего не получил. На повседневные траты ничего не
+      останется.
+    </Notice>
+  ) : (
+    <Notice
+      tone="warn"
+      title={`Не хватает ${formatMoney(plan.shortage)} на взносы отмеченных кошельков`}
+    >
+      На повседневные траты ничего не останется.
+    </Notice>
+  );
+}
+
+/** Wallets in their order with a checkbox: who gets money when it is short. */
+function WalletChoice({
+  plan,
+  skipped,
+  onToggle,
+  rowClassName,
+}: {
+  plan: AllocationPlan;
+  skipped: string[];
+  onToggle: (walletId: string) => void;
+  rowClassName?: string;
+}) {
+  return (
+    <div
+      role="group"
+      aria-label="Кошельки, которые получат деньги"
+      className="flex flex-col"
+    >
+      {plan.byWallet.map((w) => (
+        <label
+          key={w.walletId}
+          htmlFor={`wallet-${w.walletId}`}
+          className={cn(
+            "flex min-h-11 cursor-pointer items-center gap-3 text-[15px]",
+            rowClassName,
+          )}
+        >
+          <Checkbox
+            id={`wallet-${w.walletId}`}
+            checked={!skipped.includes(w.walletId)}
+            onCheckedChange={() => onToggle(w.walletId)}
+          />
+          <span className="min-w-0 grow">{w.name}</span>
+          <span className="font-semibold">{formatMoney(w.amount)}</span>
+        </label>
+      ))}
+    </div>
   );
 }
 
@@ -82,16 +138,35 @@ export function IncomeForm({
   const [amountText, setAmountText] = useState("");
   const [kind, setKind] = useState<(typeof KINDS)[number]["value"]>("salary");
   const [nextDate, setNextDate] = useState("");
+  const [skipped, setSkipped] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   const amount = parseMoney(amountText) ?? 0;
   const valid = amount > 0;
+  const totalContributions = useMemo(
+    () => planAllocation(wallets, envelopes, 0).totalContributions,
+    [wallets, envelopes],
+  );
   const plan = useMemo(
-    () => planAllocation(wallets, envelopes, valid ? amount : 0),
-    [wallets, envelopes, amount, valid],
+    () => planAllocation(wallets, envelopes, valid ? amount : 0, skipped),
+    [wallets, envelopes, amount, valid, skipped],
   );
   const envelopeShare = valid ? plan.toEnvelopes / amount : 0;
+
+  function changeAmount(text: string) {
+    setAmountText(text);
+    // Once the income covers everything again, the choice starts over.
+    if ((parseMoney(text) ?? 0) >= totalContributions) setSkipped([]);
+  }
+
+  function toggleWallet(walletId: string) {
+    setSkipped((current) =>
+      current.includes(walletId)
+        ? current.filter((id) => id !== walletId)
+        : [...current, walletId],
+    );
+  }
 
   async function submit() {
     if (!valid) return;
@@ -102,6 +177,7 @@ export function IncomeForm({
       kind,
       date: today,
       nextIncomeDate: nextDate === "" ? null : nextDate,
+      skippedWalletIds: plan.needsChoice ? skipped : [],
     });
     if (result.ok) {
       router.push("/");
@@ -134,7 +210,7 @@ export function IncomeForm({
               <MoneyInput
                 id="income"
                 value={amountText}
-                onChange={setAmountText}
+                onChange={changeAmount}
                 size="lg"
                 autoFocus
                 className="text-3xl"
@@ -261,17 +337,29 @@ export function IncomeForm({
             )}
           </Panel>
 
-          {valid && plan.shortage > 0 && (
-            <Notice
-              tone="warn"
-              title={`Не хватает ${formatMoney(plan.shortage)} на все взносы`}
-            >
-              Раздам по порядку кошельков и приоритету конвертов, пока деньги не
-              кончатся. На повседневные траты ничего не останется.
-            </Notice>
+          {valid && <ShortageNotice plan={plan} />}
+
+          {valid && plan.needsChoice && (
+            <Panel>
+              <PanelTitle
+                aside={
+                  <span className="text-[13px] text-ink-muted">
+                    отметьте, кто получит деньги
+                  </span>
+                }
+              >
+                Кошельки
+              </PanelTitle>
+              <WalletChoice
+                plan={plan}
+                skipped={skipped}
+                onToggle={toggleWallet}
+                rowClassName="border-t border-line"
+              />
+            </Panel>
           )}
 
-          {valid && plan.wallets.length > 0 && (
+          {valid && !plan.needsChoice && plan.wallets.length > 0 && (
             <Panel>
               <PanelTitle>Взносы по кошелькам</PanelTitle>
               <div className="flex flex-col">
@@ -320,7 +408,7 @@ export function IncomeForm({
             <MoneyInput
               id="income"
               value={amountText}
-              onChange={setAmountText}
+              onChange={changeAmount}
               size="lg"
               autoFocus
             />
@@ -388,15 +476,7 @@ export function IncomeForm({
             )}
           </div>
 
-          {plan.shortage > 0 && (
-            <Notice
-              tone="warn"
-              title={`Не хватает ${formatMoney(plan.shortage)} на все взносы`}
-            >
-              Раздам по порядку кошельков и приоритету конвертов, пока деньги не
-              кончатся. На повседневные траты ничего не останется.
-            </Notice>
-          )}
+          <ShortageNotice plan={plan} />
 
           <Card className="flex flex-col px-4 py-1">
             <div className="flex min-h-[52px] items-center gap-2.5 border-b border-line">
@@ -409,7 +489,16 @@ export function IncomeForm({
                 {formatMoney(plan.toEnvelopes)}
               </div>
             </div>
-            {plan.wallets.length > 0 && (
+            {plan.needsChoice && (
+              <div className="border-b border-line py-1">
+                <WalletChoice
+                  plan={plan}
+                  skipped={skipped}
+                  onToggle={toggleWallet}
+                />
+              </div>
+            )}
+            {!plan.needsChoice && plan.wallets.length > 0 && (
               <div className="flex flex-col border-b border-line pb-2 pl-5 pt-1.5 text-sm text-ink-muted">
                 {plan.wallets.map((w) => (
                   <div

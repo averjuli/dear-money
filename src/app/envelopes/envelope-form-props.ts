@@ -24,11 +24,13 @@ export function envelopeFormProps(
 
   const plan = planWallet(toAllocationInput([wallet]).envelopes);
   const ownItem = plan.items.find((i) => i.sourceEnvelopeId === envelopeId);
-  const receivers = (ownItem?.destinations ?? [])
-    .filter((d) => d.kind === "surplus" && d.envelopeId !== null)
-    .map(
-      (d) => wallet.envelopes.find((e) => e.id === d.envelopeId)?.name ?? "",
-    );
+  const receivers =
+    ownItem?.kind === "surplus"
+      ? [
+          wallet.envelopes.find((e) => e.id === ownItem.destinationEnvelopeId)
+            ?.name ?? "",
+        ]
+      : [];
 
   return {
     walletId: wallet.id,
