@@ -2,7 +2,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { BackIcon, CloseIcon } from "./icons";
 
-/** Phone-width column with the paddings from the mockups. */
+/** Screen column: stretches with the window up to the content width. */
 export function Screen({
   children,
   className,
@@ -13,7 +13,7 @@ export function Screen({
   return (
     <main
       className={cn(
-        "mx-auto flex min-h-dvh w-full max-w-[430px] flex-col gap-3.5 px-5 pb-[max(20px,env(safe-area-inset-bottom))] pt-[max(56px,calc(env(safe-area-inset-top)+16px))]",
+        "content-column flex min-h-dvh flex-col gap-3.5 pb-[max(20px,env(safe-area-inset-bottom))] pt-[max(56px,calc(env(safe-area-inset-top)+16px))] wide:pt-[max(32px,calc(env(safe-area-inset-top)+16px))]",
         className,
       )}
     >

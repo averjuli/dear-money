@@ -27,9 +27,33 @@
   --radius-control: 14px;
   --radius-button: 16px;
   --radius-bar: 4px;
+
+  /* Layout by window width: specs/02-экраны-и-дизайн.md, «Ширина окна». */
+  --breakpoint-labels: 360px; /* narrower: the menu shows icons only */
+  --breakpoint-wide: 600px; /* from here: wider paddings, «+» beside the menu */
+  --content-width: 1180px;
+}
+
+/*
+ * Column of the screens and of the bottom menu: up to --content-width wide,
+ * centered, side paddings 20 px (32 px from 600 px) but never under the safe area.
+ */
+@utility content-column {
+  width: 100%;
+  margin-inline: auto;
+  max-width: calc(var(--content-width) + 2 * 20px);
+  padding-inline: max(20px, env(safe-area-inset-left))
+    max(20px, env(safe-area-inset-right));
+  @media (width >= theme(--breakpoint-wide)) {
+    max-width: calc(var(--content-width) + 2 * 32px);
+    padding-inline: max(32px, env(safe-area-inset-left))
+      max(32px, env(safe-area-inset-right));
+  }
 }
 
 html {
+  /* Room for the scrollbar on every screen: content does not shift when it appears. */
+  scrollbar-gutter: stable;
   background: var(--color-bg);
   color: var(--color-ink);
   -webkit-text-size-adjust: 100%;

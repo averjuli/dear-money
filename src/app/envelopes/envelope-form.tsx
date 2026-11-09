@@ -50,23 +50,6 @@ function formula(cost: number, n: number, unit: PeriodUnit): string {
   return `${price} × 52 недели ÷ ${countMonths(n * 12)}`;
 }
 
-/** A card on the phone screen; a plain block inside the desktop side panel. */
-function Block({
-  panel,
-  className,
-  children,
-}: {
-  panel: boolean;
-  className: string;
-  children: React.ReactNode;
-}) {
-  return panel ? (
-    <div className={cn(className, "p-0")}>{children}</div>
-  ) : (
-    <Card className={className}>{children}</Card>
-  );
-}
-
 export function EnvelopeForm({
   walletId,
   walletName,
@@ -74,7 +57,6 @@ export function EnvelopeForm({
   priority,
   priorityCount,
   surplusReceivers,
-  variant = "screen",
 }: {
   walletId: string;
   walletName: string;
@@ -83,14 +65,7 @@ export function EnvelopeForm({
   priorityCount: number;
   /** Where this envelope's contribution goes if it is full. */
   surplusReceivers: string[];
-  /**
-   * "panel": the side panel of the desktop wallet screen;
-   * "wide": the same, full width in two columns (a new envelope on desktop).
-   */
-  variant?: "screen" | "panel" | "wide";
 }) {
-  const panel = variant !== "screen";
-  const wide = variant === "wide";
   const router = useRouter();
   const [name, setName] = useState(envelope?.name ?? "");
   const [costText, setCostText] = useState(
@@ -155,7 +130,7 @@ export function EnvelopeForm({
   }
 
   const mainBlock = (
-    <Block panel={panel} className="flex flex-col gap-4 p-4">
+    <Card className="flex flex-col gap-4 p-4">
       <div className="flex flex-col gap-2">
         <label htmlFor="name" className="text-[15px] font-semibold">
           Название
@@ -222,22 +197,14 @@ export function EnvelopeForm({
           </div>
         </div>
       </div>
-    </Block>
+    </Card>
   );
   const contributionCard = (
-    <div
-      className={cn(
-        "flex flex-col gap-1 bg-accent text-white",
-        panel ? "rounded-[16px] px-4 py-3.5" : "rounded-[20px] px-[18px] py-4",
-      )}
-    >
+    <div className="flex flex-col gap-1 rounded-[20px] bg-accent px-[18px] py-4 text-white">
       <div className="text-sm text-accent-soft">Откладывать в месяц</div>
       <div
         data-testid="monthly-contribution"
-        className={cn(
-          "font-display font-semibold leading-tight",
-          panel ? "text-2xl" : "text-[30px]",
-        )}
+        className="font-display text-[30px] font-semibold leading-tight"
       >
         {formatMoney(contribution)}
       </div>
@@ -249,7 +216,7 @@ export function EnvelopeForm({
     </div>
   );
   const manualBlock = (
-    <Block panel={panel} className="flex flex-col gap-3 p-4">
+    <Card className="flex flex-col gap-3 p-4">
       <label className="flex items-center gap-3 text-[15px] font-semibold">
         <input
           type="checkbox"
@@ -273,10 +240,10 @@ export function EnvelopeForm({
           />
         </MoneyField>
       )}
-    </Block>
+    </Card>
   );
   const timesBlock = (
-    <Block panel={panel} className="flex flex-col gap-3 p-4">
+    <Card className="flex flex-col gap-3 p-4">
       <div className="flex items-center gap-2.5">
         <label htmlFor="cap" className="grow text-[15px] font-semibold">
           На сколько раз копить
@@ -331,10 +298,10 @@ export function EnvelopeForm({
               : `накоплено ${formatMoney(balance)}, до потолка ${formatMoney(cap - balance)}`}
         </div>
       </div>
-    </Block>
+    </Card>
   );
   const startBlock = (
-    <Block panel={panel} className="flex flex-col gap-2 p-4">
+    <Card className="flex flex-col gap-2 p-4">
       <label htmlFor="start" className="text-[15px] font-semibold">
         Начальный остаток
       </label>
@@ -349,11 +316,11 @@ export function EnvelopeForm({
       <div className="text-[13px] text-ink-muted">
         Сколько уже лежит в конверте.
       </div>
-    </Block>
+    </Card>
   );
   const rest = (
     <>
-      {envelope && !panel && (
+      {envelope && (
         <Link
           href={`/wallets/${walletId}`}
           className="flex min-h-[60px] items-center gap-2.5 rounded-[20px] bg-surface px-4 text-ink no-underline"
@@ -384,12 +351,12 @@ export function EnvelopeForm({
       )}
 
       {error && <Notice tone="warn" title={error} />}
-      {!panel && <Spacer />}
+      <Spacer />
       <button
         type="button"
         disabled={!valid || saving}
         onClick={save}
-        className={cn(primaryButtonClass, wide && "max-w-[360px] self-center")}
+        className={primaryButtonClass}
       >
         {saving ? "Сохраняю…" : "Сохранить"}
       </button>
@@ -416,24 +383,6 @@ export function EnvelopeForm({
     </>
   );
 
-  if (wide) {
-    return (
-      <>
-        <div className="grid items-start gap-x-8 gap-y-5 min-[900px]:grid-cols-2">
-          <div className="flex flex-col gap-5">
-            {mainBlock}
-            {startBlock}
-          </div>
-          <div className="flex flex-col gap-5">
-            {contributionCard}
-            {manualBlock}
-            {timesBlock}
-          </div>
-        </div>
-        {rest}
-      </>
-    );
-  }
   return (
     <>
       {mainBlock}

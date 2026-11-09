@@ -1,11 +1,9 @@
 import Link from "next/link";
-import { DesktopScreen } from "@/components/desktop";
 import { ChevronIcon } from "@/components/icons";
 import { Screen, ScreenTitle } from "@/components/screen";
 import { Card } from "@/components/ui-kit";
 import { logout } from "@/server/actions";
 import { requireUserId } from "@/server/auth/current-user";
-import { isDesktop } from "@/server/device";
 
 export const dynamic = "force-dynamic";
 
@@ -35,16 +33,6 @@ function SettingsList() {
 
 export default async function SettingsPage() {
   await requireUserId();
-
-  if (await isDesktop()) {
-    return (
-      <DesktopScreen title="Настройки">
-        <div className="max-w-[560px]">
-          <SettingsList />
-        </div>
-      </DesktopScreen>
-    );
-  }
 
   return (
     <Screen>

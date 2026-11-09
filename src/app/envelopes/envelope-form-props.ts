@@ -2,7 +2,7 @@ import { planWallet } from "@/domain/allocation";
 import { toAllocationInput, type WalletView } from "@/server/queries";
 import type { EnvelopeForm } from "./envelope-form";
 
-type FormProps = Omit<React.ComponentProps<typeof EnvelopeForm>, "variant">;
+type FormProps = React.ComponentProps<typeof EnvelopeForm>;
 
 /** Props of the envelope form for an existing envelope, or a new one when id is null. */
 export function envelopeFormProps(
