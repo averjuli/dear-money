@@ -7,13 +7,11 @@ import { formatMoney } from "@/domain/money";
 import {
   formatDay,
   formatRelativeDay,
-  monthName,
   monthNamePrepositional,
   quoted,
 } from "@/lib/text";
 import { cn } from "@/lib/utils";
 import { requireUserId } from "@/server/auth/current-user";
-import { isDesktop } from "@/server/device";
 import {
   loadCategories,
   loadDailySpent,
@@ -23,8 +21,6 @@ import {
   periodStart,
 } from "@/server/queries";
 import { todayIso } from "@/server/today";
-import { loadPickers } from "../expenses/load-pickers";
-import { DailyDesktop } from "./daily-desktop";
 
 export const dynamic = "force-dynamic";
 
@@ -50,21 +46,6 @@ export default async function DailyPage() {
         nextIncomeDate: income.nextIncomeDate,
       })
     : null;
-
-  if (await isDesktop()) {
-    return (
-      <DailyDesktop
-        month={monthName(today)}
-        today={today}
-        income={income}
-        summary={summary}
-        categories={categories}
-        monthSpent={monthSpent}
-        recent={recent}
-        pickers={await loadPickers(userId, monthSince)}
-      />
-    );
-  }
 
   return (
     <Screen>

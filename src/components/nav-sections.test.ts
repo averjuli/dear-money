@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { phoneMenuSection } from "./nav-sections";
+import { menuSection } from "./nav-sections";
 
-describe("phoneMenuSection", () => {
+describe("menuSection", () => {
   it("shows the menu on the four section screens", () => {
-    expect(phoneMenuSection("/")).toBe("envelopes");
-    expect(phoneMenuSection("/daily")).toBe("daily");
-    expect(phoneMenuSection("/income")).toBe("income");
-    expect(phoneMenuSection("/settings")).toBe("settings");
+    expect(menuSection("/")).toBe("envelopes");
+    expect(menuSection("/daily")).toBe("daily");
+    expect(menuSection("/income")).toBe("income");
+    expect(menuSection("/settings")).toBe("settings");
   });
 
   it("hides the menu on the other screens", () => {
@@ -18,7 +18,7 @@ describe("phoneMenuSection", () => {
       "/install",
       "/login",
     ]) {
-      expect(phoneMenuSection(path)).toBeNull();
+      expect(menuSection(path)).toBeNull();
     }
   });
 });

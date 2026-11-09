@@ -1,8 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Golos_Text, Unbounded } from "next/font/google";
-import { DesktopFrame } from "@/components/desktop-frame";
-import { PhoneFrame } from "@/components/phone-frame";
-import { isDesktop } from "@/server/device";
+import { AppFrame } from "@/components/app-frame";
 import "./globals.css";
 
 const golos = Golos_Text({
@@ -34,18 +32,13 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const desktop = await isDesktop();
   return (
     <html lang="ru" className={`${golos.variable} ${unbounded.variable}`}>
       <body>
-        {desktop ? (
-          <DesktopFrame>{children}</DesktopFrame>
-        ) : (
-          <PhoneFrame>{children}</PhoneFrame>
-        )}
+        <AppFrame>{children}</AppFrame>
       </body>
     </html>
   );

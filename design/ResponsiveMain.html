@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dear Money: конверты на любой ширине</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Unbounded:wght@500;600&display=swap">
+<style>
+/* Design tokens: specs/02-экраны-и-дизайн.md */
+:root {
+  --bg: #EDF1EE;
+  --surface: #FFFFFF;
+  --ink: #14211B;
+  --ink-muted: #55635C;
+  --accent: #1B6B4D;
+  --accent-strong: #14523B;
+  --accent-soft: #DCEBE3;
+  --warn: #A34D14;
+  --line: #E3E9E5;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: #C9D3CD;
+  color: var(--ink);
+  font-family: 'Golos Text', system-ui, sans-serif;
+}
+a { color: var(--accent); text-decoration: none; }
+
+/* ---------- Mockup controls (not part of the design) ---------- */
+.toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 24px;
+  padding: 14px 24px;
+  background: var(--surface);
+  box-shadow: 0 2px 12px rgba(20, 33, 27, 0.08);
+  font-size: 14px;
+}
+.toolbar .group { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.toolbar .label { color: var(--ink-muted); margin-right: 4px; }
+.toolbar button {
+  font: inherit;
+  font-weight: 500;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+}
+.toolbar button[aria-pressed="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent-soft);
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+.toolbar input[type="range"] { width: 220px; accent-color: var(--accent); }
+.toolbar .value { font-weight: 600; min-width: 64px; }
+.toolbar .hint { color: var(--ink-muted); font-size: 13px; }
+
+.stage { padding: 24px; }
+.holder { position: relative; margin: 0 auto; }
+
+/* The "window" the screen is drawn in. Its width is what the layout reacts to. */
+.window {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: top left;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--bg);
+  box-shadow: 0 12px 40px rgba(20, 33, 27, 0.18);
+}
+.window-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 12px;
+  background: #DDE4E0;
+}
+.window-bar span { width: 10px; height: 10px; border-radius: 50%; background: #B7C3BC; }
+.frame { container-type: inline-size; }
+
+/* ---------- The design ---------- */
+.screen {
+  display: flex;
+  flex-direction: column;
+  min-height: 760px;
+  padding-bottom: 12px;
+}
+.content {
+  width: 100%;
+  max-width: calc(1180px + 2 * 20px);
+  margin: 0 auto;
+  padding: 56px 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.layout, .col { display: flex; flex-direction: column; gap: 14px; }
+
+/* Blocks stretch with the window, up to 1180 px of content; from 600 px wider paddings. */
+@container (min-width: 600px) {
+  .content { max-width: calc(1180px + 2 * 32px); padding: 32px 32px 0; }
+}
+
+.header { display: flex; justify-content: space-between; align-items: center; }
+.logo { font-family: 'Unbounded', sans-serif; font-weight: 600; font-size: 22px; color: var(--accent); }
+.month { font-size: 14px; color: var(--ink-muted); }
+
+.total {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  border-radius: 20px;
+  background: var(--accent);
+  color: #FFFFFF;
+}
+.total .caption { font-size: 15px; color: var(--accent-soft); }
+.total .sum { font-family: 'Unbounded', sans-serif; font-weight: 600; font-size: 32px; line-height: 1.1; margin-top: 4px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; font-size: 13px; }
+.chip { padding: 5px 10px; border-radius: 999px; background: var(--accent-strong); }
+
+.card { border-radius: 20px; background: var(--surface); color: var(--ink); }
+.income { display: flex; align-items: center; gap: 12px; padding: 14px 16px; }
+.income .icon {
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 44px; height: 44px; border-radius: 12px;
+  background: var(--accent-soft); color: var(--accent);
+}
+.income .text { flex-grow: 1; display: flex; flex-direction: column; gap: 2px; }
+.title { font-size: 16px; font-weight: 600; }
+.muted { font-size: 14px; color: var(--ink-muted); }
+
+.daily { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; }
+.row-between { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.bar { height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }
+.bar div { height: 8px; border-radius: 4px; background: var(--accent); }
+.warn { font-size: 13px; font-weight: 500; color: var(--warn); }
+
+.section-title { display: flex; justify-content: space-between; align-items: baseline; }
+.section-title a { font-size: 14px; font-weight: 600; }
+
+.wallets { display: flex; flex-direction: column; padding: 0 16px; }
+.wallet {
+  display: flex; align-items: center; gap: 10px;
+  min-height: 62px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+}
+.wallet:last-child { border-bottom: 0; }
+.wallet .name { flex-grow: 1; display: flex; flex-direction: column; gap: 2px; }
+.wallet .meta { font-size: 13px; color: var(--ink-muted); }
+.wallet .meta.minus { font-weight: 500; color: var(--warn); }
+
+/*
+ * Bottom menu: the phone menu, stretched like the other blocks.
+ * Narrow window: «+» above the menu on the right; from 600 px: «+» to the
+ * right of the menu, the same height; narrower than 360 px: icons only.
+ */
+.spacer { flex-grow: 1; }
+.menu {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  width: 100%;
+  max-width: calc(1180px + 2 * 20px);
+  margin: 22px auto 0;
+  padding: 0 20px;
+}
+.fab {
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 60px; height: 60px; border-radius: 20px;
+  background: var(--accent); color: #FFFFFF;
+  box-shadow: 0 2px 12px rgba(20, 33, 27, 0.12);
+}
+@container (min-width: 600px) {
+  .menu {
+    flex-direction: row-reverse;
+    align-items: stretch;
+    max-width: calc(1180px + 2 * 32px);
+    padding: 0 32px;
+  }
+  .fab { width: 64px; height: auto; }
+  .tabs { flex: 1; min-width: 0; }
+}
+@container (max-width: 359px) {
+  .tab .label { display: none; }
+}
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  width: 100%;
+  padding: 6px;
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: 0 2px 12px rgba(20, 33, 27, 0.06);
+}
+.tab {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  min-height: 52px;
+  padding: 0 4px;
+  border-radius: 14px;
+  font-size: 11px; font-weight: 500; line-height: 1.2; text-align: center;
+  color: var(--ink-muted);
+}
+.tab[aria-current="page"] { background: var(--accent-soft); color: var(--accent-strong); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <div class="group">
+    <span class="label">Ширина окна</span>
+    <button type="button" data-width="340">340</button>
+    <button type="button" data-width="390">Телефон 390</button>
+    <button type="button" data-width="600">600</button>
+    <button type="button" data-width="800">800</button>
+    <button type="button" data-width="1024">1024</button>
+    <button type="button" data-width="1280">1280</button>
+    <button type="button" data-width="1600">1600</button>
+  </div>
+  <div class="group">
+    <input type="range" id="width" min="320" max="1600" step="10" value="1280" aria-label="Ширина окна">
+    <span class="value" id="width-value">1280 px</span>
+    <span class="hint" id="scale-note"></span>
+  </div>
+</div>
+
+<div class="stage" id="stage">
+  <div class="holder" id="holder">
+    <div class="window" id="window">
+      <div class="window-bar" aria-hidden="true"><span></span><span></span><span></span></div>
+      <div class="frame" id="frame">
+        <div class="screen">
+          <main class="content">
+            <header class="header">
+              <div class="logo">dear money</div>
+              <div class="month">ноябрь</div>
+            </header>
+
+            <div class="layout">
+              <div class="col">
+                <section class="total">
+                  <div>
+                    <div class="caption">Всего в конвертах</div>
+                    <div class="sum">230&nbsp;350&nbsp;₽</div>
+                  </div>
+                  <div class="chips">
+                    <div class="chip">Откладывать 63&nbsp;750&nbsp;₽ в месяц</div>
+                    <div class="chip">3 конверта в минусе</div>
+                  </div>
+                </section>
+
+                <a href="#" class="card income">
+                  <div class="icon">
+                    <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>
+                  </div>
+                  <div class="text">
+                    <div class="title">Пришли деньги?</div>
+                    <div class="muted">Разложу зарплату по конвертам</div>
+                  </div>
+                  <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#55635C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+                </a>
+
+                <a href="#" class="card daily">
+                  <div class="row-between">
+                    <div class="title">На жизнь осталось</div>
+                    <div class="title">66&nbsp;770&nbsp;₽</div>
+                  </div>
+                  <div class="bar"><div style="width: 23%"></div></div>
+                  <div class="warn">Транспорт превышен на 2&nbsp;230&nbsp;₽</div>
+                </a>
+              </div>
+
+              <div class="col">
+                <div class="section-title">
+                  <div class="title">Кошельки</div>
+                  <a href="#">Настроить</a>
+                </div>
+                <div class="card wallets">
+                  <a href="#" class="wallet">
+                    <div class="name"><div class="title">Goals WB</div><div class="meta">3 конверта</div></div>
+                    <div class="title">60&nbsp;900&nbsp;₽</div>
+                  </a>
+                  <a href="#" class="wallet">
+                    <div class="name"><div class="title">Self-care</div><div class="meta minus">9 конвертов · 2 в минусе</div></div>
+                    <div class="title">55&nbsp;200&nbsp;₽</div>
+                  </a>
+                  <a href="#" class="wallet">
+                    <div class="name"><div class="title">Miscellaneous</div><div class="meta minus">4 конверта · 1 в минусе</div></div>
+                    <div class="title">42&nbsp;650&nbsp;₽</div>
+                  </a>
+                  <a href="#" class="wallet">
+                    <div class="name"><div class="title">Long term</div><div class="meta">6 конвертов</div></div>
+                    <div class="title">37&nbsp;900&nbsp;₽</div>
+                  </a>
+                  <a href="#" class="wallet">
+                    <div class="name"><div class="title">Clothes</div><div class="meta">2 конверта</div></div>
+                    <div class="title">33&nbsp;700&nbsp;₽</div>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </main>
+
+          <div class="spacer"></div>
+
+          <div class="menu">
+            <a href="#" class="fab" aria-label="Внести трату">
+              <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            </a>
+            <nav class="tabs" aria-label="Разделы">
+              <a href="#" class="tab" aria-current="page">
+                <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16v11H4z"/><path d="M4 7l8 6 8-6"/></svg>
+                <span class="label">Конверты</span>
+              </a>
+              <a href="#" class="tab">
+                <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
+                <span class="label">Траты</span>
+              </a>
+              <a href="#" class="tab">
+                <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>
+                <span class="label">Пришли деньги</span>
+              </a>
+              <a href="#" class="tab">
+                <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></svg>
+                <span class="label">Настройки</span>
+              </a>
+            </nav>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Mockup controls: set the window width and shrink the window to fit the browser when it is wider.
+const stage = document.getElementById("stage");
+const holder = document.getElementById("holder");
+const win = document.getElementById("window");
+const slider = document.getElementById("width");
+const widthValue = document.getElementById("width-value");
+const scaleNote = document.getElementById("scale-note");
+
+function fit() {
+  const available = stage.clientWidth - 48;
+  const width = win.offsetWidth;
+  const scale = Math.min(1, available / width);
+  win.style.transform = `scale(${scale})`;
+  holder.style.width = `${width * scale}px`;
+  holder.style.height = `${win.offsetHeight * scale}px`;
+  scaleNote.textContent = scale < 1 ? `показано в ${Math.round(scale * 100)}%` : "";
+}
+
+function setWidth(width) {
+  win.style.width = `${width}px`;
+  slider.value = width;
+  widthValue.textContent = `${width} px`;
+  document.querySelectorAll("[data-width]").forEach((b) => {
+    b.setAttribute("aria-pressed", String(Number(b.dataset.width) === width));
+  });
+  fit();
+}
+
+document.querySelectorAll("button[data-width]").forEach((b) => {
+  b.addEventListener("click", () => setWidth(Number(b.dataset.width)));
+});
+document.querySelectorAll("a[href='#']").forEach((a) => a.addEventListener("click", (e) => e.preventDefault()));
+slider.addEventListener("input", () => setWidth(Number(slider.value)));
+window.addEventListener("resize", fit);
+document.fonts.ready.then(fit);
+
+setWidth(1280);
+</script>
+</body>
+</html>

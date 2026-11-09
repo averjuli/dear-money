@@ -19,12 +19,12 @@ export default defineConfig({
   projects: [
     {
       name: "iphone",
-      testIgnore: /desktop\.spec\.ts/,
+      testIgnore: /computer\.spec\.ts/,
       use: { ...devices["iPhone 13"], browserName: "chromium" },
     },
     {
-      name: "desktop",
-      testMatch: /desktop\.spec\.ts/,
+      name: "computer",
+      testMatch: /computer\.spec\.ts/,
       dependencies: ["iphone"],
       use: {
         ...devices["Desktop Chrome"],
