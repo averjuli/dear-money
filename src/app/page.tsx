@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowUpIcon, ChevronIcon } from "@/components/icons";
-import { BottomNav, Screen, Spacer } from "@/components/screen";
+import { Screen } from "@/components/screen";
 import { Bar, Card, SectionTitle } from "@/components/ui-kit";
 import { categoryStatus, dailySummary, monthStart } from "@/domain/daily";
 import { formatMoney } from "@/domain/money";
@@ -184,9 +184,6 @@ export default async function HomePage() {
           ))}
         </Card>
       )}
-
-      <Spacer />
-      <BottomNav active="envelopes" />
     </Screen>
   );
 }

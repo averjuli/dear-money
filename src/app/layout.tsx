@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Golos_Text, Unbounded } from "next/font/google";
 import { DesktopFrame } from "@/components/desktop-frame";
+import { PhoneFrame } from "@/components/phone-frame";
 import { isDesktop } from "@/server/device";
 import "./globals.css";
 
@@ -40,7 +41,11 @@ export default async function RootLayout({
   return (
     <html lang="ru" className={`${golos.variable} ${unbounded.variable}`}>
       <body>
-        {desktop ? <DesktopFrame>{children}</DesktopFrame> : children}
+        {desktop ? (
+          <DesktopFrame>{children}</DesktopFrame>
+        ) : (
+          <PhoneFrame>{children}</PhoneFrame>
+        )}
       </body>
     </html>
   );
