@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { BackIcon, CloseIcon, PlusIcon } from "./icons";
-import { NavItem, SECTIONS, type SectionKey } from "./nav-sections";
+import { BackIcon, CloseIcon } from "./icons";
 
 /** Phone-width column with the paddings from the mockups. */
 export function Screen({
@@ -86,39 +85,4 @@ export function CloseHeader({
 
 export function Spacer() {
   return <div className="grow" />;
-}
-
-/**
- * Bottom row of the four sections; on «Конверты» and «Траты» the round «+»
- * for a new expense hangs above it on the right.
- */
-export function BottomNav({ active }: { active: SectionKey }) {
-  const withPlus = active === "envelopes" || active === "daily";
-  const from = active === "daily" ? "/daily" : "/";
-  return (
-    <div className="pointer-events-none sticky bottom-[max(12px,env(safe-area-inset-bottom))] mt-2 flex flex-col items-end gap-2.5">
-      {withPlus && (
-        <Link
-          href={`/expenses/new?from=${encodeURIComponent(from)}`}
-          aria-label="Внести трату"
-          className="pointer-events-auto flex size-[60px] shrink-0 items-center justify-center rounded-[20px] bg-accent text-white shadow-[0_2px_12px_rgba(20,33,27,0.12)]"
-        >
-          <PlusIcon />
-        </Link>
-      )}
-      <nav
-        aria-label="Разделы"
-        className="pointer-events-auto grid w-full grid-cols-4 gap-1 rounded-[20px] bg-surface p-1.5 shadow-[0_2px_12px_rgba(20,33,27,0.06)]"
-      >
-        {SECTIONS.map((section) => (
-          <NavItem
-            key={section.key}
-            section={section}
-            active={active === section.key}
-            layout="tab"
-          />
-        ))}
-      </nav>
-    </div>
-  );
 }

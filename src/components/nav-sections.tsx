@@ -58,6 +58,11 @@ export function activeSection(pathname: string): SectionKey | null {
   return found?.key ?? null;
 }
 
+/** On a phone the menu is shown only on the four section screens themselves. */
+export function phoneMenuSection(pathname: string): SectionKey | null {
+  return SECTIONS.find((s) => s.href === pathname)?.key ?? null;
+}
+
 /**
  * One section link. "tab": icon above a small label, for the bottom row;
  * "responsive": a tab in a narrow window, a side menu row from 800 px.

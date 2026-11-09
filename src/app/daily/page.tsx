@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ChevronIcon } from "@/components/icons";
-import { BottomNav, Screen, ScreenTitle, Spacer } from "@/components/screen";
+import { Screen, ScreenTitle } from "@/components/screen";
 import { AddLink, Bar, Card, SectionTitle } from "@/components/ui-kit";
 import { categoryStatus, dailySummary, monthStart } from "@/domain/daily";
 import { formatMoney } from "@/domain/money";
@@ -217,9 +217,6 @@ export default async function DailyPage() {
           </Card>
         </>
       )}
-
-      <Spacer />
-      <BottomNav active="daily" />
     </Screen>
   );
 }

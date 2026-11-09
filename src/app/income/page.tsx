@@ -1,5 +1,5 @@
 import { DesktopScreen } from "@/components/desktop";
-import { BottomNav, Screen, ScreenTitle } from "@/components/screen";
+import { Screen, ScreenTitle } from "@/components/screen";
 import { requireUserId } from "@/server/auth/current-user";
 import { isDesktop } from "@/server/device";
 import { loadWallets, toAllocationInput } from "@/server/queries";
@@ -33,7 +33,6 @@ export default async function IncomePage() {
         envelopes={input.envelopes}
         today={todayIso()}
       />
-      <BottomNav active="income" />
     </Screen>
   );
 }

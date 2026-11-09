@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { DesktopScreen } from "@/components/desktop";
 import { ChevronIcon } from "@/components/icons";
-import { BottomNav, Screen, ScreenTitle, Spacer } from "@/components/screen";
+import { Screen, ScreenTitle } from "@/components/screen";
 import { Card } from "@/components/ui-kit";
 import { logout } from "@/server/actions";
 import { requireUserId } from "@/server/auth/current-user";
@@ -50,8 +50,6 @@ export default async function SettingsPage() {
     <Screen>
       <ScreenTitle>Настройки</ScreenTitle>
       <SettingsList />
-      <Spacer />
-      <BottomNav active="settings" />
     </Screen>
   );
 }
