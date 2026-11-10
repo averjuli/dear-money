@@ -1,0 +1,1716 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Вход по почте — обзор</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Unbounded:wght@500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* Values copied from src/app/globals.css (design tokens of the app) */
+      :root {
+        --color-bg: #edf1ee;
+        --color-surface: #ffffff;
+        --color-surface-sunken: #f4f7f5;
+        --color-ink: #14211b;
+        --color-ink-muted: #55635c;
+        --color-accent: #1b6b4d;
+        --color-accent-strong: #14523b;
+        --color-accent-soft: #dcebe3;
+        --color-warn: #a34d14;
+        --color-warn-strong: #8a4315;
+        --color-warn-soft: #fbeadd;
+        --color-warn-bar: #c46a2b;
+        --color-line: #e3e9e5;
+        --color-dash: #9db5a9;
+        --font-sans: "Golos Text", system-ui, sans-serif;
+        --font-display: "Unbounded", "Golos Text", sans-serif;
+        --radius-card: 20px;
+        --radius-control: 14px;
+        --radius-button: 16px;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--color-bg);
+        color: var(--color-ink);
+        font-family: var(--font-sans);
+        font-size: 16px;
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+      }
+      .page {
+        max-width: 880px;
+        margin: 0 auto;
+        padding: 40px 16px 80px;
+      }
+      header.top {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-family: var(--font-display);
+        font-weight: 500;
+        font-size: 16px;
+        color: var(--color-accent);
+      }
+      .dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--color-accent);
+        flex-shrink: 0;
+      }
+      h1 {
+        font-family: var(--font-display);
+        font-weight: 600;
+        font-size: 36px;
+        line-height: 1.15;
+        letter-spacing: -0.02em;
+        margin: 16px 0 12px;
+      }
+      h2 {
+        font-family: var(--font-display);
+        font-weight: 600;
+        font-size: 24px;
+        margin: 56px 0 16px;
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+      }
+      h2 .num {
+        font-size: 15px;
+        color: var(--color-accent);
+      }
+      h3 {
+        font-family: var(--font-display);
+        font-weight: 500;
+        font-size: 17px;
+        margin: 28px 0 10px;
+      }
+      p {
+        margin: 8px 0;
+      }
+      .lead {
+        font-size: 18px;
+        color: var(--color-ink-muted);
+        max-width: 680px;
+      }
+      .muted {
+        color: var(--color-ink-muted);
+      }
+      .small {
+        font-size: 14px;
+      }
+      code {
+        font-family: ui-monospace, Menlo, Consolas, monospace;
+        font-size: 0.86em;
+        background: var(--color-surface-sunken);
+        border: 1px solid var(--color-line);
+        padding: 1px 5px;
+        border-radius: 4px;
+      }
+      ul.points,
+      ol.points {
+        padding-left: 20px;
+        margin: 8px 0;
+      }
+      ul.points li,
+      ol.points li {
+        margin: 4px 0;
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 16px;
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        border-radius: 999px;
+        background: var(--color-surface);
+        border: 1px solid var(--color-line);
+        font-size: 14px;
+      }
+      .chip.ok {
+        color: var(--color-accent-strong);
+        background: var(--color-accent-soft);
+        border-color: var(--color-dash);
+      }
+      .chip.warn {
+        color: var(--color-warn-strong);
+        background: var(--color-warn-soft);
+        border-color: var(--color-warn-bar);
+      }
+
+      /* Screen sketches */
+      .screens {
+        display: grid;
+        gap: 28px;
+      }
+      .screen-title {
+        font-family: var(--font-display);
+        font-size: 15px;
+        font-weight: 500;
+        margin: 0 0 8px;
+      }
+      .device {
+        background: var(--color-bg);
+        border: 1px solid var(--color-line);
+        border-radius: 16px;
+        padding: 16px;
+        max-width: 420px;
+      }
+      .logo {
+        font-family: var(--font-display);
+        font-weight: 600;
+        font-size: 22px;
+        color: var(--color-accent);
+        margin-bottom: 6px;
+      }
+      .card {
+        background: var(--color-surface);
+        border-radius: var(--radius-card);
+        padding: 16px;
+      }
+      .label {
+        font-weight: 600;
+        font-size: 15px;
+        margin-bottom: 8px;
+      }
+      .input {
+        background: var(--color-surface-sunken);
+        border-radius: var(--radius-control);
+        padding: 14px;
+        font-size: 17px;
+      }
+      .input.ph {
+        color: var(--color-ink-muted);
+      }
+      .err-text {
+        color: var(--color-warn);
+        font-weight: 600;
+        font-size: 14px;
+        margin-top: 8px;
+      }
+      .btn {
+        display: block;
+        text-align: center;
+        background: var(--color-accent);
+        color: #fff;
+        font-weight: 600;
+        font-size: 17px;
+        padding: 16px;
+        border-radius: var(--radius-button);
+        margin-top: 14px;
+      }
+      .notice {
+        border-radius: 16px;
+        padding: 12px 14px;
+        font-size: 15px;
+        font-weight: 600;
+        margin-top: 14px;
+        background: var(--color-accent-soft);
+        color: var(--color-accent-strong);
+      }
+      .notice.warn {
+        background: var(--color-warn-soft);
+        color: var(--color-warn-strong);
+      }
+      .link {
+        text-align: center;
+        color: var(--color-accent);
+        font-weight: 600;
+        font-size: 14px;
+        margin-top: 14px;
+      }
+      .row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 0;
+        border-bottom: 1px solid var(--color-line);
+        font-size: 16px;
+      }
+      .row:last-child {
+        border-bottom: 0;
+      }
+      .row .warnt {
+        color: var(--color-warn);
+        font-weight: 600;
+      }
+      .title-s {
+        font-family: var(--font-display);
+        font-weight: 600;
+        font-size: 22px;
+        margin: 8px 0 14px;
+      }
+      .is-new {
+        position: relative;
+        outline: 2px dashed var(--color-accent);
+        outline-offset: 4px;
+        border-radius: 12px;
+      }
+      .new-tag {
+        position: absolute;
+        top: -13px;
+        right: 10px;
+        background: var(--color-accent);
+        color: #fff;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        padding: 2px 8px;
+        border-radius: 999px;
+        z-index: 1;
+      }
+      .callouts {
+        margin: 10px 0 0;
+        padding-left: 20px;
+        font-size: 14px;
+        color: var(--color-ink-muted);
+      }
+      .callouts li {
+        margin: 3px 0;
+      }
+      .mail {
+        background: #fff;
+        border: 1px solid var(--color-line);
+        border-radius: 12px;
+        overflow: hidden;
+        font-size: 14px;
+      }
+      .mail .hd {
+        background: var(--color-surface-sunken);
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--color-line);
+        color: var(--color-ink-muted);
+      }
+      .mail .hd b {
+        color: var(--color-ink);
+      }
+      .mail .bd {
+        padding: 16px 14px;
+        background: var(--color-bg);
+      }
+      .mail .go {
+        display: inline-block;
+        background: var(--color-accent);
+        color: #fff;
+        font-weight: 700;
+        padding: 12px 26px;
+        border-radius: 16px;
+        margin: 8px 0 12px;
+      }
+
+      /* Rules */
+      .rules {
+        display: grid;
+        gap: 12px;
+      }
+      .rule {
+        background: var(--color-surface);
+        border: 1px solid var(--color-line);
+        border-radius: 16px;
+        padding: 14px 18px;
+      }
+      .rule .h {
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      .example {
+        font-size: 14px;
+        color: var(--color-ink-muted);
+        background: var(--color-surface-sunken);
+        border-left: 3px solid var(--color-accent);
+        padding: 6px 10px;
+        margin-top: 8px;
+        border-radius: 0 8px 8px 0;
+      }
+      table.simple {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 14px;
+        margin-top: 8px;
+      }
+      table.simple th,
+      table.simple td {
+        text-align: left;
+        padding: 6px 10px;
+        border-bottom: 1px solid var(--color-line);
+      }
+      table.simple th {
+        color: var(--color-ink-muted);
+        font-weight: 500;
+      }
+
+      /* Data model */
+      .legend {
+        display: flex;
+        gap: 20px;
+        font-size: 14px;
+        color: var(--color-ink-muted);
+        margin: 6px 0 12px;
+      }
+      .legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .sw {
+        width: 16px;
+        height: 16px;
+        border-radius: 4px;
+        border: 1px solid var(--color-line);
+        background: var(--color-surface);
+        display: inline-block;
+      }
+      .sw.new {
+        background: var(--color-accent-soft);
+        outline: 2px dashed var(--color-accent);
+        outline-offset: -2px;
+        border: 0;
+      }
+      .er {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        gap: 14px;
+        align-items: start;
+      }
+      .table {
+        background: var(--color-surface);
+        border: 1px solid var(--color-line);
+        border-radius: 12px;
+        overflow: hidden;
+        font-size: 13px;
+      }
+      .table.new {
+        outline: 2px dashed var(--color-accent);
+        outline-offset: 3px;
+      }
+      .table .tn {
+        background: var(--color-ink);
+        color: var(--color-bg);
+        padding: 6px 12px;
+        font-family: ui-monospace, Menlo, Consolas, monospace;
+        font-weight: 600;
+      }
+      .table.new .tn {
+        background: var(--color-accent);
+      }
+      .table .tn span {
+        font-family: var(--font-sans);
+        font-weight: 400;
+        opacity: 0.8;
+        margin-left: 6px;
+      }
+      .table .f {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 4px 12px;
+        border-top: 1px solid var(--color-line);
+        font-family: ui-monospace, Menlo, Consolas, monospace;
+      }
+      .table .f .ty {
+        color: var(--color-ink-muted);
+        font-family: var(--font-sans);
+        text-align: right;
+      }
+      .table .f.added {
+        background: var(--color-accent-soft);
+        outline: 2px dashed var(--color-accent);
+        outline-offset: -2px;
+      }
+      .table .f.added::before {
+        content: "+ ";
+        color: var(--color-accent);
+        font-weight: 700;
+      }
+      .table .f.removed {
+        background: var(--color-warn-soft);
+        color: var(--color-warn-strong);
+        text-decoration: line-through;
+      }
+      .table .f.removed::before {
+        content: "− ";
+        font-weight: 700;
+        text-decoration: none;
+        display: inline-block;
+      }
+      .link-note {
+        font-size: 13px;
+        color: var(--color-ink-muted);
+        margin: 10px 0 0;
+      }
+      .mig {
+        background: var(--color-surface);
+        border: 1px solid var(--color-line);
+        border-radius: 16px;
+        padding: 14px 18px;
+        margin: 10px 0;
+      }
+      .mig .h {
+        font-weight: 600;
+      }
+      .tag {
+        display: inline-block;
+        font-size: 12px;
+        font-weight: 600;
+        border-radius: 999px;
+        padding: 1px 10px;
+        margin-left: 8px;
+        vertical-align: 1px;
+      }
+      .tag.safe {
+        background: var(--color-accent-soft);
+        color: var(--color-accent-strong);
+      }
+      .tag.data {
+        background: var(--color-warn-soft);
+        color: var(--color-warn-strong);
+      }
+      .query {
+        font-family: ui-monospace, Menlo, Consolas, monospace;
+        font-size: 13px;
+        background: var(--color-ink);
+        color: var(--color-bg);
+        padding: 12px 14px;
+        border-radius: 12px;
+        overflow-x: auto;
+        white-space: pre;
+      }
+
+      /* Checklist */
+      .check-group {
+        margin-bottom: 18px;
+      }
+      .check {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        padding: 10px 14px;
+        background: var(--color-surface);
+        border: 1px solid var(--color-line);
+        border-radius: 12px;
+        margin: 6px 0;
+        cursor: pointer;
+      }
+      .check input {
+        margin-top: 5px;
+        accent-color: var(--color-accent);
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+      }
+      .check .sc {
+        font-weight: 600;
+      }
+      .check .st {
+        font-size: 14px;
+        color: var(--color-ink-muted);
+      }
+      .check .st .arrow {
+        color: var(--color-accent);
+        font-weight: 700;
+      }
+      .check .auto {
+        font-size: 12px;
+        color: var(--color-accent-strong);
+        margin-left: 6px;
+        font-weight: 500;
+      }
+      .prep {
+        background: var(--color-accent-soft);
+        border-radius: 12px;
+        padding: 12px 16px;
+        font-size: 14px;
+        color: var(--color-accent-strong);
+      }
+      .two {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+      .box {
+        background: var(--color-surface);
+        border: 1px solid var(--color-line);
+        border-radius: 16px;
+        padding: 14px 18px;
+      }
+      .box h3 {
+        margin-top: 0;
+      }
+      footer {
+        margin-top: 64px;
+        font-size: 13px;
+        color: var(--color-ink-muted);
+      }
+      @media (max-width: 720px) {
+        h1 {
+          font-size: 28px;
+        }
+        h2 {
+          font-size: 20px;
+        }
+        .two {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="top">
+        <span class="dot"></span>Dear Money · обзор фичи
+      </header>
+      <h1>Вход по ссылке из письма</h1>
+      <p class="lead">
+        Приложение открыто для всех: человек вводит свою почту, получает письмо
+        со ссылкой, нажимает «Войти» и попадает к своим кошелькам. Паролей нет,
+        чужие данные не видны. Ваши нынешние кошельки и конверты достаются вашей
+        почте.
+      </p>
+      <div class="chips">
+        <span class="chip ok">✓ Сделана в коде</span>
+        <span class="chip warn">Не влита: коммита и PR ещё нет</span>
+        <span class="chip ok">✓ Задачи: 30 из 33</span>
+        <span class="chip ok">✓ Автотесты: 182 юнит + 68 в браузере</span>
+        <span class="chip">Изменение <code>login</code> в OpenSpec</span>
+      </div>
+
+      <!-- 1 -->
+      <h2><span class="num">1</span>Коротко</h2>
+      <ul class="points">
+        <li>
+          Вместо одного логина и пароля из <code>.env</code> теперь вход по
+          почте. Первый вход по ссылке и есть регистрация: формы и вопроса про
+          имя нет.
+        </li>
+        <li>
+          Ссылка работает один раз и 15 минут. Больше 3 писем на одну почту за
+          10 минут не отправляется. Вход держится 30 дней с последнего захода,
+          можно сидеть с нескольких устройств.
+        </li>
+        <li>
+          Каждый видит и меняет только своё. Чужой кошелёк или конверт по прямой
+          ссылке выглядит как несуществующий.
+        </li>
+        <li>
+          Всё, что уже есть в базе, при выкатке достаётся почте из строки
+          <code>OWNER_EMAIL</code> в <code>.env</code>. Записи не теряются.
+        </li>
+        <li>
+          Статус: <b>сделана на компьютере</b>. Задач отмечено 30 из 33.
+          Автотест (программа, которая сама проходит сценарий и сверяет
+          результат) есть почти на каждый сценарий: 182 проверки логики и 68
+          прогонов в настоящем браузере, из них 27 про вход и разделение данных.
+          Вход вы проверили руками: письмо пришло, вошли.
+        </li>
+        <li>
+          Осталось три задачи, все за вами: строки в <code>.env.example</code>,
+          просмотр SQL миграции и Resend на сервере (без него после выкатки
+          никто не сможет войти).
+        </li>
+      </ul>
+
+      <!-- 2 -->
+      <h2><span class="num">2</span>Что появится на экранах</h2>
+      <p class="muted small">
+        Наброски, не точные макеты. Новое обведено пунктиром. Адреса и имена
+        выдуманы.
+      </p>
+
+      <div class="screens">
+        <div>
+          <p class="screen-title">Вход</p>
+          <div class="device">
+            <div class="logo">dear money</div>
+            <p class="muted small" style="margin: 0 0 14px">
+              Хватит ли мне на то, что важно, и сколько для этого откладывать.
+            </p>
+            <div class="is-new">
+              <span class="new-tag">новое</span>
+              <div class="card">
+                <div class="label">Почта</div>
+                <div class="input ph">anna@example.com</div>
+              </div>
+              <div class="btn">Получить ссылку</div>
+            </div>
+            <div class="link">Как установить на iPhone</div>
+          </div>
+          <ul class="callouts">
+            <li>
+              Раньше здесь были поля «Логин» и «Пароль» и кнопка «Войти». Теперь
+              одно поле и кнопка «Получить ссылку».
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <p class="screen-title">Вход: после нажатия и при ошибках</p>
+          <div class="two">
+            <div>
+              <div class="device">
+                <div class="card">
+                  <div class="label">Почта</div>
+                  <div class="input">anna@example.com</div>
+                </div>
+                <div class="is-new" style="margin-top: 18px">
+                  <span class="new-tag">новое</span>
+                  <div class="notice" style="margin-top: 0">
+                    Ссылка для входа отправлена на anna@example.com
+                  </div>
+                </div>
+                <div class="btn">Получить ссылку</div>
+              </div>
+              <ul class="callouts">
+                <li>
+                  Одинаково для новой и для знакомой почты: по ответу не узнать,
+                  есть ли такой человек.
+                </li>
+                <li>
+                  Форма остаётся: можно запросить ещё раз или другую почту.
+                </li>
+              </ul>
+            </div>
+            <div>
+              <div class="device">
+                <div class="card">
+                  <div class="label">Почта</div>
+                  <div class="input">anna@</div>
+                  <div class="is-new" style="margin-top: 12px">
+                    <span class="new-tag">новое</span>
+                    <div class="err-text" style="margin: 0">
+                      Проверьте адрес почты
+                    </div>
+                  </div>
+                </div>
+                <div class="btn">Получить ссылку</div>
+              </div>
+              <ul class="callouts">
+                <li>Письмо не уходит.</li>
+              </ul>
+            </div>
+          </div>
+          <div class="two" style="margin-top: 20px">
+            <div>
+              <div class="device">
+                <div class="is-new">
+                  <span class="new-tag">новое</span>
+                  <div class="notice warn" style="margin-top: 0">
+                    Слишком часто, попробуйте через несколько минут
+                  </div>
+                </div>
+              </div>
+              <ul class="callouts">
+                <li>Четвёртый запрос на ту же почту за 10 минут.</li>
+              </ul>
+            </div>
+            <div>
+              <div class="device">
+                <div class="is-new">
+                  <span class="new-tag">новое</span>
+                  <div class="notice warn" style="margin-top: 0">
+                    Не удалось отправить письмо, попробуйте ещё раз
+                  </div>
+                </div>
+              </div>
+              <ul class="callouts">
+                <li>
+                  Почтовый сервис недоступен. Этого текста в спеке не было.
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <p class="screen-title">Письмо со ссылкой</p>
+          <div class="mail is-new">
+            <span class="new-tag">новое</span>
+            <div class="hd">
+              <div>
+                От: <b>Dear Money</b> &lt;noreply@mail.dearmoney.space&gt;
+              </div>
+              <div>Кому: anna@example.com</div>
+              <div>Тема: <b>Вход в Dear Money</b></div>
+            </div>
+            <div class="bd">
+              <div class="logo" style="font-size: 18px">dear money</div>
+              <p>Нажмите кнопку, чтобы войти в Dear Money.</p>
+              <div class="go">Войти</div>
+              <p class="muted small" style="margin: 0">
+                Ссылка работает 15 минут.
+              </p>
+              <p class="muted small" style="margin: 0">
+                Если вы не запрашивали вход - просто проигнорируйте письмо
+              </p>
+            </div>
+          </div>
+          <ul class="callouts">
+            <li>
+              Тексты письма из спеки: отправитель, тема, «Войти», 15 минут и
+              «Если вы не запрашивали вход…». Логотип и фраза «Нажмите кнопку…»
+              добавлены без спеки.
+            </li>
+            <li>
+              На компьютере письмо не уходит наружу: оно лежит в почтовой
+              заглушке Mailpit, <code>http://localhost:8025</code>.
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <p class="screen-title">Ссылка устарела</p>
+          <div class="device">
+            <div class="is-new">
+              <span class="new-tag">новое</span>
+              <div class="logo">dear money</div>
+              <div class="title-s">Ссылка устарела, запросите новую</div>
+              <div class="btn" style="margin-top: 0">
+                Запросить новую ссылку
+              </div>
+            </div>
+          </div>
+          <ul class="callouts">
+            <li>
+              Один и тот же экран для любой причины: прошло 15 минут, ссылку уже
+              открывали, её отменила более новая, или это вообще не ссылка.
+            </li>
+            <li>Кнопка ведёт на страницу входа.</li>
+          </ul>
+        </div>
+
+        <div>
+          <p class="screen-title">Настройки</p>
+          <div class="device">
+            <div class="title-s">Настройки</div>
+            <div class="card" style="padding: 0 16px">
+              <div class="is-new" style="margin: 6px 0">
+                <span class="new-tag">новое</span>
+                <div class="row" style="color: var(--color-ink-muted)">
+                  anna@example.com
+                </div>
+              </div>
+              <div class="row">
+                <span style="font-weight: 600">Как установить на iPhone</span
+                ><span class="muted">›</span>
+              </div>
+              <div class="row"><span class="warnt">Выйти</span></div>
+            </div>
+          </div>
+          <ul class="callouts">
+            <li>
+              Почта стоит первой строкой в той же карточке, обычным текстом, не
+              ссылкой. Шапка главной не меняется: логотип и месяц.
+            </li>
+            <li>«Выйти» завершает вход только на этом устройстве.</li>
+          </ul>
+        </div>
+
+        <div>
+          <p class="screen-title">Главная у нового пользователя</p>
+          <div class="device">
+            <div class="muted small" style="margin-bottom: 4px">Кошельки</div>
+            <div class="is-new">
+              <span class="new-tag">новое</span>
+              <div
+                class="card"
+                style="font-weight: 600; color: var(--color-accent)"
+              >
+                Создайте первый кошелёк
+              </div>
+            </div>
+          </div>
+          <ul class="callouts">
+            <li>
+              Вместо «Кошельков пока нет. Создать первый». «Всего в конвертах» —
+              0 ₽, «На жизнь осталось» — «—». Ссылка ведёт на создание кошелька.
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <p class="screen-title">Кошелёк не найден и Конверт не найден</p>
+          <div class="device">
+            <div class="is-new">
+              <span class="new-tag">новое</span>
+              <div class="title-s">Кошелёк не найден</div>
+              <div class="btn" style="margin-top: 0">На главную</div>
+            </div>
+          </div>
+          <ul class="callouts">
+            <li>
+              Так отвечает чужой кошелёк (<code>/wallets/…</code>, его
+              изменение, новый конверт в нём) и чужой конверт («Конверт не
+              найден»). Выглядит так же, как несуществующий: про владельца не
+              сказано ничего.
+            </li>
+            <li>Раньше на этом месте была общая страница 404.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 3 -->
+      <h2><span class="num">3</span>Как это работает</h2>
+      <div class="rules">
+        <div class="rule">
+          <div class="h">Ссылка: один раз и 15 минут</div>
+          <p>
+            Любая из причин делает ссылку негодной: прошло 15 минут, её уже
+            открыли, запросили новую. Тогда человек видит «Ссылка устарела,
+            запросите новую» и в приложение не попадает.
+          </p>
+          <div class="example">
+            Анна запросила ссылку в 12:00 и ещё одну в 12:02. Первая ссылка уже
+            не работает, вторая пускает. Открыв вторую в 12:05, Анна войдёт;
+            если откроет её ещё раз на другом телефоне — «Ссылка устарела».
+          </div>
+        </div>
+        <div class="rule">
+          <div class="h">Лимит писем: 3 за 10 минут на одну почту</div>
+          <p>
+            Считается отдельно для каждой почты. Письмо, отправленное ровно 10
+            минут назад, уже не считается.
+          </p>
+          <div class="example">
+            Письма в 12:00, 12:03 и 12:05. В 12:06 и в 12:09:59 четвёртое
+            нельзя. В 12:10 можно. На почту Бориса в 12:06 можно: у него свой
+            счёт.
+          </div>
+        </div>
+        <div class="rule">
+          <div class="h">Почта без пробелов и регистра</div>
+          <p>
+            Пробелы по краям убираются, большие и маленькие буквы не
+            различаются. Это работает при входе, при поиске пользователя и при
+            загрузке данных. Адрес проверяется на сервере, а не только в форме.
+          </p>
+          <div class="example">
+            « Anna@Example.COM » — это <code>anna@example.com</code>, тот же
+            пользователь, а не новый пустой. Неверные: <code>anna</code>,
+            <code>anna@</code>, <code>@example.com</code>,
+            <code>anna@example</code>, <code>anna example.com</code>,
+            <code>anna@@example.com</code>, адрес длиннее 254 символов.
+          </div>
+        </div>
+        <div class="rule">
+          <div class="h">Вход держится 30 дней с последнего захода</div>
+          <p>
+            Каждый заход продлевает срок ещё на 30 дней (не чаще раза в сутки).
+            Каждое устройство входит отдельно, поэтому выход на компьютере не
+            выкидывает телефон.
+          </p>
+          <div class="example">
+            Вошла 1 марта, зашла 21-го: внутри без новой ссылки, вход теперь
+            держится до 20 апреля. Не заходила 31 день — страница входа.
+          </div>
+        </div>
+        <div class="rule">
+          <div class="h">Своё только своё</div>
+          <p>
+            Главная, кошельки и конверты, траты, повседневные траты и категории,
+            раскладка дохода, «Всего в конвертах» и «На жизнь осталось»
+            считаются только по записям текущего человека. Чужая запись не
+            открывается ни на экране, ни запросом к серверу с чужим номером:
+            ответ такой же, как для несуществующей. У разных людей могут быть
+            кошельки с одинаковыми названиями.
+          </p>
+          <div class="example">
+            У Анны кошелёк «Self-care» с конвертом «Маникюр» (1 000 ₽), у Бориса
+            «Self-care» с конвертом «Стрижка» (2 000 ₽). У Бориса на главной
+            «Всего в конвертах» 2 000 ₽, чужой суммы нет, а ссылка на кошелёк
+            Анны даёт «Кошелёк не найден».
+          </div>
+        </div>
+        <div class="rule">
+          <div class="h">Ваши данные достаются почте владельца</div>
+          <p>
+            При выкатке миграция отдаёт единственному пользователю в базе почту
+            из <code>OWNER_EMAIL</code>. Без неё миграция падает: база не
+            меняется, новая версия не стартует, работает прежняя. Если
+            пользователей в базе больше одного, миграция тоже останавливается:
+            чьи это данные, решает человек. Загрузка
+            <code>data/*.local.json</code>
+            и демо-данных идёт на ту же почту, если не указать другую
+            (<code>--email</code>).
+          </p>
+        </div>
+        <div class="rule">
+          <div class="h">Куда уходят письма — решают настройки, не код</div>
+          <table class="simple">
+            <tr>
+              <th>Где</th>
+              <th>Куда письмо</th>
+            </tr>
+            <tr>
+              <td>На компьютере</td>
+              <td>В Mailpit, никуда наружу. Войти можно под любым адресом</td>
+            </tr>
+            <tr>
+              <td>В автотестах, в том числе на GitHub</td>
+              <td>В тот же Mailpit, автотест берёт ссылку оттуда</td>
+            </tr>
+            <tr>
+              <td>На сервере</td>
+              <td>Настоящее письмо через Resend</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- 4 -->
+      <h2><span class="num">4</span>Модель данных до и после</h2>
+      <p>
+        База меняется. Таблица <code>users</code> перестаёт быть списком
+        «логинов» и становится списком людей с почтой, появляются таблицы для
+        входов на устройствах и для ссылок.
+      </p>
+
+      <h3>Сейчас</h3>
+      <div class="er">
+        <div class="table">
+          <div class="tn">users<span>пользователи</span></div>
+          <div class="f"><span>id</span><span class="ty">номер</span></div>
+          <div class="f">
+            <span>login</span><span class="ty">логин, уникален</span>
+          </div>
+          <div class="f">
+            <span>created_at</span><span class="ty">когда создан</span>
+          </div>
+        </div>
+        <div class="table">
+          <div class="tn">wallets, envelopes, …<span>данные</span></div>
+          <div class="f">
+            <span>user_id</span><span class="ty">→ users.id</span>
+          </div>
+          <div class="f">
+            <span>…</span><span class="ty">остальные поля</span>
+          </div>
+        </div>
+      </div>
+      <p class="link-note">
+        Данные: <code>wallets</code>, <code>envelopes</code>,
+        <code>spend_categories</code>, <code>incomes</code>,
+        <code>pay_days</code>, <code>allocations</code>, <code>expenses</code>,
+        <code>transfers</code>, <code>daily_moves</code>. У каждой записи уже
+        есть <code>user_id</code> с каскадным удалением; это не меняется. Вход
+        идёт по одному логину и паролю из <code>.env</code>, сессии нигде не
+        хранятся (подписанная cookie).
+      </p>
+
+      <h3>После</h3>
+      <div class="legend">
+        <span><i class="sw new"></i>новое</span>
+        <span><i class="sw"></i>как было</span>
+      </div>
+      <div class="er">
+        <div class="table">
+          <div class="tn">users<span>пользователи</span></div>
+          <div class="f">
+            <span>id</span><span class="ty">тот же номер</span>
+          </div>
+          <div class="f removed">
+            <span>login</span><span class="ty">убирается</span>
+          </div>
+          <div class="f added">
+            <span>email</span><span class="ty">почта, уникальна</span>
+          </div>
+          <div class="f added">
+            <span>name</span><span class="ty">пусто, имя не спрашиваем</span>
+          </div>
+          <div class="f added">
+            <span>email_verified</span
+            ><span class="ty">да, раз вошёл по ссылке</span>
+          </div>
+          <div class="f added">
+            <span>image</span><span class="ty">не используется</span>
+          </div>
+          <div class="f">
+            <span>created_at</span><span class="ty">как было</span>
+          </div>
+          <div class="f added">
+            <span>updated_at</span><span class="ty">когда менялся</span>
+          </div>
+        </div>
+        <div class="table new">
+          <div class="tn">sessions<span>вход на устройстве</span></div>
+          <div class="f">
+            <span>id, token</span><span class="ty">номер и секрет входа</span>
+          </div>
+          <div class="f">
+            <span>user_id</span><span class="ty">→ users.id, каскад</span>
+          </div>
+          <div class="f">
+            <span>expires_at</span><span class="ty">до какого дня вход</span>
+          </div>
+          <div class="f">
+            <span>ip_address, user_agent</span><span class="ty">откуда</span>
+          </div>
+          <div class="f">
+            <span>created_at, updated_at</span><span class="ty"></span>
+          </div>
+        </div>
+        <div class="table new">
+          <div class="tn">verifications<span>ссылки входа</span></div>
+          <div class="f"><span>id</span><span class="ty"></span></div>
+          <div class="f">
+            <span>identifier</span><span class="ty">по нему ищут ссылку</span>
+          </div>
+          <div class="f">
+            <span>value</span><span class="ty">чья ссылка</span>
+          </div>
+          <div class="f">
+            <span>expires_at</span><span class="ty">через 15 минут</span>
+          </div>
+          <div class="f">
+            <span>created_at, updated_at</span><span class="ty"></span>
+          </div>
+        </div>
+        <div class="table new">
+          <div class="tn">sign_in_links<span>журнал писем</span></div>
+          <div class="f"><span>id</span><span class="ty"></span></div>
+          <div class="f">
+            <span>email</span><span class="ty">кому ушло письмо</span>
+          </div>
+          <div class="f">
+            <span>token_hash</span><span class="ty">отпечаток ссылки</span>
+          </div>
+          <div class="f">
+            <span>created_at</span><span class="ty">когда ушло</span>
+          </div>
+        </div>
+        <div class="table new">
+          <div class="tn">accounts<span>требует Better Auth</span></div>
+          <div class="f">
+            <span>id, user_id</span><span class="ty">→ users.id, каскад</span>
+          </div>
+          <div class="f">
+            <span>account_id, provider_id</span
+            ><span class="ty">пока пусто</span>
+          </div>
+          <div class="f">
+            <span>…</span><span class="ty">поля для входа через соцсети</span>
+          </div>
+        </div>
+        <div class="table">
+          <div class="tn">wallets, envelopes, …<span>данные</span></div>
+          <div class="f">
+            <span>user_id</span><span class="ty">→ users.id, как было</span>
+          </div>
+          <div class="f">
+            <span>…</span><span class="ty">без изменений</span>
+          </div>
+        </div>
+      </div>
+      <p class="link-note">
+        Что с чем связано: <code>sessions</code> и <code>accounts</code> смотрят
+        на <code>users.id</code> (у человека много устройств); все таблицы с
+        данными смотрят на <code>users.id</code> как раньше. У
+        <code>sign_in_links</code> и <code>verifications</code> связи с
+        <code>users</code> нет: запись о ссылке появляется до того, как человек
+        существует. Журнал <code>sign_in_links</code> нужен для двух правил: «3
+        письма за 10 минут» и «работает только последняя ссылка». Записи старше
+        суток стираются.
+      </p>
+
+      <h3>Как запрос находит своё и не находит чужое</h3>
+      <div class="box">
+        <p class="small muted" style="margin-top: 0">
+          Каждый запрос к данным сервер строит от номера текущего пользователя
+          (он берёт его из сессии, а не из адреса страницы). Простыми словами,
+          «Покажи мои кошельки» выглядит так:
+        </p>
+        <div class="query">
+          select * from wallets where user_id = '<номер Анны из её входа>'
+        </div>
+        <p class="small" style="margin-bottom: 0">
+          У Бориса номер другой, поэтому его запрос не вернёт кошелёк Анны, даже
+          если он подставит в адрес её номер кошелька: сервер ищет запись только
+          среди «своих» и отвечает «не найден».
+        </p>
+      </div>
+
+      <h3>Миграция (одна, <code>drizzle/0004_email_login.sql</code>)</h3>
+      <p class="small muted">
+        Все шаги идут одной транзакцией: либо всё применилось, либо ничего.
+      </p>
+      <div class="mig">
+        <div class="h">
+          1. Новые колонки и таблицы<span class="tag safe"
+            >данные не меняет</span
+          >
+        </div>
+        <p class="small muted" style="margin-bottom: 0">
+          В <code>users</code> добавляются <code>email</code> (пока пустая),
+          <code>name</code>, <code>email_verified</code>, <code>image</code>,
+          <code>updated_at</code>; создаются <code>sessions</code>,
+          <code>accounts</code>, <code>verifications</code>,
+          <code>sign_in_links</code>.
+        </p>
+      </div>
+      <div class="mig">
+        <div class="h">
+          2. Передача данных владельцу<span class="tag data"
+            >меняет существующие данные</span
+          >
+        </div>
+        <p class="small" style="margin-bottom: 0">
+          Если в базе нет пользователей (новая база, CI), ничего не делает. Если
+          пользователь один, ставит ему почту из <code>OWNER_EMAIL</code>. Его
+          номер не меняется, поэтому кошельки, конверты, категории, траты и
+          доходы остаются на месте. Если пользователей больше одного или почта
+          не задана, останавливается с понятным текстом, а база остаётся как
+          была.
+        </p>
+      </div>
+      <div class="mig">
+        <div class="h">
+          3. Почта становится обязательной, логин убирается<span
+            class="tag data"
+            >убирает колонку</span
+          >
+        </div>
+        <p class="small muted" style="margin-bottom: 0">
+          <code>email</code> получает «не пусто» и «уникально», колонка
+          <code>login</code> удаляется. Старый логин после этого нигде не
+          хранится.
+        </p>
+      </div>
+      <p class="small">
+        <b>Проверено на копиях вашей локальной базы:</b> записей столько же,
+        сколько до (кошельков 6, конвертов 22, категорий 5, трат 2, доходов 3,
+        раскладок 28, переводов 1); без <code>OWNER_EMAIL</code> миграция падает
+        и копия не меняется; с двумя пользователями или неверной почтой тоже
+        останавливается; на пустой базе проходит.
+      </p>
+
+      <h3>Как откатиться</h3>
+      <div class="box">
+        <p class="small" style="margin-top: 0">
+          Прошлая версия с новой базой не работает (колонки <code>login</code>
+          больше нет), поэтому откат — только вместе:
+        </p>
+        <ol class="points small">
+          <li>
+            <code>sudo dear-money-deploy rollback</code> — прошлая версия
+            приложения;
+          </li>
+          <li>
+            <code
+              >sudo dear-money-deploy restore &lt;копия, снятая этой
+              выкаткой&gt;</code
+            >
+            — база как до выкатки (копия подписана версией, которая стояла до
+            неё, поэтому версии совпадут).
+          </li>
+        </ol>
+        <p class="small muted" style="margin-bottom: 0">
+          Прошлая версия стартует, потому что <code>AUTH_USERNAME</code> и
+          <code>AUTH_PASSWORD_HASH</code> пока остаются в <code>.env</code> на
+          сервере. Убрать их можно отдельной правкой, когда вход по почте
+          проверен. Если упадёт сама миграция, откатывать нечего: работает
+          прежняя версия на прежней базе.
+        </p>
+      </div>
+
+      <!-- 5 -->
+      <h2><span class="num">5</span>Как проверить руками</h2>
+      <div class="prep">
+        <b>Подготовка.</b> В <code>.env</code> есть <code>OWNER_EMAIL</code>,
+        <code>BETTER_AUTH_URL=http://localhost:3000</code>,
+        <code>SMTP_HOST=localhost</code>, <code>SMTP_PORT=1025</code>. Запустите
+        <code>docker compose up -d db mailpit</code>, затем
+        <code>pnpm db:migrate</code>, <code>pnpm build</code> и
+        <code>pnpm start</code> (в PowerShell отдельными командами, без
+        <code>&amp;&amp;</code>). Открывайте именно
+        <code>http://localhost:3000</code>. Письма смотрите в
+        <code>http://localhost:8025</code>. Отметка «автотест» значит, что
+        сценарий уже проверяет программа.
+      </div>
+
+      <div class="check-group">
+        <h3>Вход</h3>
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Без входа <span class="auto">автотест</span></div>
+            <div class="st">
+              Откройте <code>/wallets</code> в окне без входа
+              <span class="arrow">→</span> страница входа с полем «Почта» и
+              кнопкой «Получить ссылку».
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Вход по ссылке <span class="auto">автотест</span>
+            </div>
+            <div class="st">
+              Введите <code>OWNER_EMAIL</code>, откройте письмо в Mailpit,
+              нажмите «Войти» <span class="arrow">→</span> вы на главной и
+              видите свои кошельки.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Первый вход <span class="auto">автотест</span></div>
+            <div class="st">
+              Введите новую почту, например <code>test@example.com</code>, и
+              пройдите по ссылке <span class="arrow">→</span> вы внутри, без
+              формы регистрации и без вопроса об имени; главная пустая,
+              «Создайте первый кошелёк».
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Ссылка отправлена, новая и знакомая почта неотличимы
+              <span class="auto">автотест</span>
+            </div>
+            <div class="st">
+              Запросите ссылку на знакомую и на новую почту
+              <span class="arrow">→</span> оба раза «Ссылка для входа отправлена
+              на …», и письмо в Mailpit.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Неверный адрес <span class="auto">автотест</span>
+            </div>
+            <div class="st">
+              Введите <code>anna@</code> и <code>anna example.com</code>
+              <span class="arrow">→</span> под полем «Проверьте адрес почты»,
+              новых писем в Mailpit нет.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Неверный адрес в обход формы <span class="auto">автотест</span>
+            </div>
+            <div class="st">
+              Проверяет только программа: сервер отвечает отказом (400) на
+              запрос с <code>anna@</code>.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Та же почта в другом написании <span class="auto">автотест</span>
+            </div>
+            <div class="st">
+              Введите « Anna@Example.COM » для почты, под которой уже входили
+              <span class="arrow">→</span> «отправлена на anna@example.com»,
+              после входа ваши данные, а не пустой аккаунт.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Содержимое письма <span class="auto">автотест</span>
+            </div>
+            <div class="st">
+              Откройте письмо в Mailpit <span class="arrow">→</span> от «Dear
+              Money» <code>noreply@mail.dearmoney.space</code>, тема «Вход в
+              Dear Money», кнопка «Войти», «15 минут», «Если вы не запрашивали
+              вход - просто проигнорируйте письмо».
+            </div>
+          </div></label
+        >
+      </div>
+
+      <div class="check-group">
+        <h3>Срок и отмена ссылки</h3>
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Ссылка через 16 минут
+              <span class="auto">автотест, время сдвигается в базе</span>
+            </div>
+            <div class="st">
+              Руками долго ждать: проверьте, что через 16 минут после письма
+              ссылка даёт «Ссылка устарела, запросите новую».
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Ссылка второй раз <span class="auto">автотест</span>
+            </div>
+            <div class="st">
+              Войдите по ссылке, откройте её ещё раз в другом браузере
+              <span class="arrow">→</span> «Ссылка устарела», входа нет.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Новая ссылка отменяет старую <span class="auto">автотест</span>
+            </div>
+            <div class="st">
+              Запросите два письма подряд, откройте первое
+              <span class="arrow">→</span> «Ссылка устарела»; второе пускает.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Кнопка на экране устаревшей ссылки
+              <span class="auto">автотест</span>
+            </div>
+            <div class="st">
+              Нажмите «Запросить новую ссылку»
+              <span class="arrow">→</span> страница входа.
+            </div>
+          </div></label
+        >
+      </div>
+
+      <div class="check-group">
+        <h3>Лимит писем</h3>
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Четвёртый запрос <span class="auto">автотест</span>
+            </div>
+            <div class="st">
+              Запросите ссылку на одну почту 4 раза подряд
+              <span class="arrow">→</span> на четвёртый «Слишком часто,
+              попробуйте через несколько минут», в Mailpit три письма.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Через 10 минут снова можно
+              <span class="auto">автотест, время сдвигается в базе</span>
+            </div>
+            <div class="st">
+              Подождите 10 минут после первого из трёх писем
+              <span class="arrow">→</span> новый запрос отправляет письмо.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Другая почта <span class="auto">автотест</span>
+            </div>
+            <div class="st">
+              Пока одна почта на лимите, запросите ссылку на другую
+              <span class="arrow">→</span> письмо уходит.
+            </div>
+          </div></label
+        >
+      </div>
+
+      <div class="check-group">
+        <h3>Вход на устройстве и выход</h3>
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Почта в настройках <span class="auto">автотест</span>
+            </div>
+            <div class="st">
+              Откройте «Настройки» <span class="arrow">→</span> в карточке ваша
+              почта, «Как установить на iPhone» и «Выйти»; шапка главной та же.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Выход <span class="auto">автотест</span></div>
+            <div class="st">
+              Нажмите «Выйти» <span class="arrow">→</span> страница входа, любая
+              страница приложения снова ведёт на вход.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Два устройства, выход на одном <span class="auto">автотест</span>
+            </div>
+            <div class="st">
+              Войдите в двух браузерах под одной почтой, выйдите в одном
+              <span class="arrow">→</span> в другом вы всё ещё внутри.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Заход продлевает вход, 30 дней без захода
+              <span class="auto">автотест, время сдвигается в базе</span>
+            </div>
+            <div class="st">
+              Руками не проверить без ожидания: после 20 дней заход держит вход
+              ещё 30 дней, после 31 дня без захода — страница входа.
+            </div>
+          </div></label
+        >
+      </div>
+
+      <div class="check-group">
+        <h3>Свои данные</h3>
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Два пользователя, одинаковые названия
+              <span class="auto">автотест</span>
+            </div>
+            <div class="st">
+              В двух браузерах войдите под двумя почтами, в каждом создайте
+              кошелёк «Self-care» с конвертом, категорию и трату
+              <span class="arrow">→</span> у каждого на главной, в «Тратах» и в
+              форме траты только своё; «Всего в конвертах» и «На жизнь осталось»
+              считаются только по своему.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Чужой кошелёк или конверт по прямой ссылке
+              <span class="auto">автотест</span>
+            </div>
+            <div class="st">
+              Скопируйте адрес вашего кошелька и откройте его под второй почтой
+              (то же с изменением кошелька и конвертом)
+              <span class="arrow">→</span> «Кошелёк не найден» / «Конверт не
+              найден» и ссылка «На главную».
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Прямой запрос с чужим номером
+              <span class="auto">проверено чтением кода, автотеста нет</span>
+            </div>
+            <div class="st">
+              Не проверяется руками. Каждое действие сервера ищет запись только
+              среди записей текущего человека; список проверенных экранов и
+              действий будет в описании PR.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Данные владельца после миграции</div>
+            <div class="st">
+              Войдите на <code>OWNER_EMAIL</code> после
+              <code>pnpm db:migrate</code> <span class="arrow">→</span> все ваши
+              кошельки, конверты, траты и доходы на месте, числа те же. Вы это
+              уже проверили.
+            </div>
+          </div></label
+        >
+      </div>
+
+      <div class="check-group">
+        <h3>Выкатка и сервер (после Resend)</h3>
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Почта владельца не задана</div>
+            <div class="st">
+              Без <code>OWNER_EMAIL</code> в <code>.env</code> сервера выкатка
+              останавливается на миграции, работает прежняя версия.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">После выкатки</div>
+            <div class="st">
+              На <code>app.dearmoney.space</code> запросите ссылку на свою почту
+              <span class="arrow">→</span> письмо пришло в настоящий ящик от
+              «Dear Money» <code>noreply@mail.dearmoney.space</code>; вошли,
+              кошельки, конверты, траты и доходы на месте.
+            </div>
+          </div></label
+        >
+      </div>
+
+      <!-- 6 -->
+      <h2><span class="num">6</span>Что агент решил сам</h2>
+      <div class="two">
+        <div class="box">
+          <h3>Продуктовые решения (стоит просмотреть)</h3>
+          <ul class="points small">
+            <li>
+              Кнопка на экране устаревшей ссылки называется «Запросить новую
+              ссылку».
+            </li>
+            <li>
+              Письмо не ушло: «Не удалось отправить письмо, попробуйте ещё раз».
+            </li>
+            <li>
+              После «Ссылка для входа отправлена…» форма остаётся на месте.
+            </li>
+            <li>
+              На экранах «Кошелёк не найден» и «Конверт не найден» ссылка «На
+              главную».
+            </li>
+            <li>
+              Один экран «Ссылка устарела» на любую причину (в том числе
+              неизвестную).
+            </li>
+            <li>
+              Подсказка на пустой главной — «Создайте первый кошелёк» вместо
+              «Кошельков пока нет. Создать первый».
+            </li>
+            <li>
+              В письме добавлены логотип «dear money» и фраза «Нажмите кнопку,
+              чтобы войти в Dear Money», цвета из токенов приложения.
+            </li>
+            <li>
+              Почта в «Настройках» — первая строка карточки обычным серым
+              текстом.
+            </li>
+            <li>
+              Вошедший человек, открыв <code>/login</code>, видит форму входа, а
+              не главную (в спеке про это нет).
+            </li>
+          </ul>
+        </div>
+        <div class="box">
+          <h3>Технические решения (на экраны не влияют)</h3>
+          <ul class="points small">
+            <li>
+              Вход — Better Auth 1.7.18 с Drizzle; письма — Nodemailer 10.4.0.
+              Выбраны не самые свежие 1.7.20 и 10.5.0: их выпустили несколько
+              часов назад, а защита pnpm от таких версий осталась включённой.
+            </li>
+            <li>
+              Проверка адреса и лимит стоят в серверном «хуке» Better Auth,
+              поэтому работают и для запросов в обход формы.
+            </li>
+            <li>
+              Журнал ссылок хранит только отпечаток (SHA-256) ссылки, не саму
+              ссылку.
+            </li>
+            <li>
+              Продление входа делает <code>src/proxy.ts</code>: иначе cookie в
+              браузере кончилась бы через 30 дней после входа, а не после
+              последнего захода.
+            </li>
+            <li>
+              Встроенный лимит Better Auth по адресу клиента оставлен как защита
+              от потока запросов (30 в минуту).
+            </li>
+            <li>
+              Проверена и настоящая продакшн-сборка (как в Docker-образе):
+              письмо уходит, по ссылке пускает.
+            </li>
+            <li>
+              База <code>dear_money_e2e</code> в автотестах теперь пересоздаётся
+              с нуля при каждом запуске; перед этим стоит защита: имя базы
+              должно содержать «e2e».
+            </li>
+            <li>
+              Вход в автотестах происходит один раз и сохраняется; «Выйти»
+              убрано из главного сценария (оно проверяется в тесте входа, иначе
+              гасило бы общий вход).
+            </li>
+            <li>
+              Удалены самодельные пароль и подпись cookie, команда
+              <code>pnpm auth:setup</code> и их тесты.
+            </li>
+            <li>
+              В продакшн-настройках <code>AUTH_USERNAME</code> и
+              <code>AUTH_PASSWORD_HASH</code> остаются необязательными только
+              ради отката.
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 7 -->
+      <h2><span class="num">7</span>Что осталось неясным</h2>
+      <ul class="points">
+        <li>
+          <b>Строки в <code>.env.example</code>.</b> Добавить
+          <code>OWNER_EMAIL</code>, <code>BETTER_AUTH_URL</code>,
+          <code>SMTP_HOST</code>, <code>SMTP_PORT</code>, убрать
+          <code>AUTH_USERNAME</code> и <code>AUTH_PASSWORD_HASH</code>. Файл
+          закрыт для меня: правите вы или открываете доступ.
+        </li>
+        <li>
+          <b>Просмотр SQL миграции</b> до слияния (по правилам проекта, раз она
+          меняет данные). Нужен ваш ответ «понятно» или вопросы.
+        </li>
+        <li>
+          <b>Resend.</b> Регистрация, домен <code>mail.dearmoney.space</code>,
+          записи DNS, ключ API, строки <code>OWNER_EMAIL</code> и
+          <code>SMTP_PASSWORD</code> в <code>/opt/dear-money/.env</code> на
+          сервере. Пока этого нет, автовлитие включать нельзя.
+        </li>
+        <li>
+          Согласны ли вы с продуктовыми решениями из раздела 6, особенно с
+          текстом при сбое отправки и с тем, что вошедший видит форму на
+          <code>/login</code>?
+        </li>
+        <li>
+          Когда убирать <code>AUTH_USERNAME</code> и
+          <code>AUTH_PASSWORD_HASH</code> из <code>deploy/compose.yaml</code> и
+          с сервера: после проверки новой версии, отдельной правкой.
+        </li>
+      </ul>
+
+      <footer>
+        Обзор собран по изменению <code>login</code> и по коду в рабочей папке
+        на 10.11.2026. Ничего в проекте он не меняет.
+      </footer>
+    </div>
+  </body>
+</html>

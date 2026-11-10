@@ -1,5 +1,4 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
-import { E2E_LOGIN, E2E_PASSWORD } from "./env";
 
 // Transfers, back-dated expenses and the «i» note. They run after the main
 // scenario on the same database: the income is already allocated, and every
@@ -34,14 +33,6 @@ function shiftDay(iso: string, days: number): string {
   const d = new Date(`${iso}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + days);
   return d.toISOString().slice(0, 10);
-}
-
-async function login(page: Page) {
-  await page.goto("/login");
-  await page.getByLabel("Логин").fill(E2E_LOGIN);
-  await page.getByLabel("Пароль").fill(E2E_PASSWORD);
-  await page.getByRole("button", { name: "Войти" }).click();
-  await expect(page).toHaveURL("/");
 }
 
 async function openWallet(page: Page, wallet: string) {
@@ -108,7 +99,7 @@ test.describe.configure({ mode: "serial" });
 test("between wallets: made, fixed, moved to another envelope, deleted", async ({
   page,
 }) => {
-  await login(page);
+  await page.goto("/");
   const m0 = await envelopeBalance(page, "Self-care", "Маникюр");
   const k0 = await envelopeBalance(page, "Self-care", "Косметология");
   const o0 = await envelopeBalance(page, "Clothes", "Одежда");
@@ -201,7 +192,7 @@ test("between wallets: made, fixed, moved to another envelope, deleted", async (
 test("«на жизнь»: top-up from an envelope, fix, back to an envelope, delete", async ({
   page,
 }) => {
-  await login(page);
+  await page.goto("/");
   const m0 = await envelopeBalance(page, "Self-care", "Маникюр");
   const o0 = await envelopeBalance(page, "Clothes", "Одежда");
   const d0 = await dailyLeft(page);
@@ -309,7 +300,7 @@ test("«на жизнь»: top-up from an envelope, fix, back to an envelope, de
 test("a deleted envelope: its transfer stays, can be fixed and deleted", async ({
   page,
 }) => {
-  await login(page);
+  await page.goto("/");
   const m0 = await envelopeBalance(page, "Self-care", "Маникюр");
 
   // «Тест» with 1 100 in Self-care.
@@ -369,7 +360,7 @@ test("a deleted envelope: its transfer stays, can be fixed and deleted", async (
 test("protection: other people's envelopes, unknown transfers, a date in the future", async ({
   page,
 }) => {
-  await login(page);
+  await page.goto("/");
   await page.goto("/transfers/new");
   await page.getByRole("group", { name: "Откуда", exact: true }).waitFor();
   await expect(page.getByText("Чужой кошелёк")).toHaveCount(0);
@@ -398,7 +389,7 @@ test("protection: other people's envelopes, unknown transfers, a date in the fut
 test("daily expense back-dated: «на жизнь» changes at once", async ({
   page,
 }) => {
-  await login(page);
+  await page.goto("/");
   const d0 = await dailyLeft(page);
 
   // The day of the expense does not matter: «на жизнь» changes at once.
@@ -452,7 +443,7 @@ test("the «i» note on «Осталось на жизнь» opens and closes", 
 }) => {
   // The clock is controlled so that the 8 seconds need not be waited for.
   await page.clock.install();
-  await login(page);
+  await page.goto("/");
   await page.goto("/daily");
   const note = page.getByText(/^Это деньги, оставшиеся после распределения/);
   const open = page.getByRole("button", { name: "Пояснение" });

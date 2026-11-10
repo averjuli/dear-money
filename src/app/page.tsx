@@ -118,10 +118,9 @@ export default async function HomePage() {
       </SectionTitle>
 
       {wallets.length === 0 ? (
-        <Card className="p-4 text-[15px] text-ink-muted">
-          Кошельков пока нет.{" "}
+        <Card className="p-4 text-[15px]">
           <Link href="/wallets/new" className="font-semibold">
-            Создать первый
+            Создайте первый кошелёк
           </Link>
         </Card>
       ) : (

@@ -4,52 +4,55 @@ import { useActionState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Notice, primaryButtonClass } from "@/components/ui-kit";
-import { login } from "@/server/actions";
+import { requestSignInLink } from "@/server/actions";
 
 const fieldClass =
   "h-[52px] rounded-[14px] border-none bg-surface-sunken px-3.5 text-[17px] shadow-none focus-visible:ring-2 focus-visible:ring-accent";
 
-export function LoginForm({ configured }: { configured: boolean }) {
-  const [state, action, pending] = useActionState(login, null);
+export function LoginForm() {
+  const [state, action, pending] = useActionState(requestSignInLink, null);
+  const emailInvalid = state?.error === "email";
   return (
-    <form action={action} className="flex flex-col gap-3.5">
-      {!configured && (
-        <Notice tone="warn" title="Вход ещё не настроен">
-          Выполните в папке проекта команду pnpm auth:setup и перезапустите
-          приложение.
-        </Notice>
-      )}
-      <div className="flex flex-col gap-4 rounded-[20px] bg-surface p-4">
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="username" className="text-[15px] font-semibold">
-            Логин
-          </Label>
-          <Input
-            id="username"
-            name="username"
-            autoComplete="username"
-            autoCapitalize="none"
-            required
-            className={fieldClass}
-          />
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="password" className="text-[15px] font-semibold">
-            Пароль
-          </Label>
-          <Input
-            id="password"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            required
-            className={fieldClass}
-          />
-        </div>
+    <form action={action} noValidate className="flex flex-col gap-3.5">
+      <div className="flex flex-col gap-2 rounded-[20px] bg-surface p-4">
+        <Label htmlFor="email" className="text-[15px] font-semibold">
+          Почта
+        </Label>
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          autoCapitalize="none"
+          defaultValue={state?.typed ?? ""}
+          aria-invalid={emailInvalid}
+          aria-describedby={emailInvalid ? "email-error" : undefined}
+          className={fieldClass}
+        />
+        {emailInvalid && (
+          <p id="email-error" className="m-0 text-sm font-semibold text-warn">
+            Проверьте адрес почты
+          </p>
+        )}
       </div>
-      {state?.error && <Notice tone="warn" title={state.error} />}
+      {state?.error === "too-often" && (
+        <Notice
+          tone="warn"
+          title="Слишком часто, попробуйте через несколько минут"
+        />
+      )}
+      {state?.error === "failed" && (
+        <Notice
+          tone="warn"
+          title="Не удалось отправить письмо, попробуйте ещё раз"
+        />
+      )}
+      {state?.sentTo && (
+        <Notice title={`Ссылка для входа отправлена на ${state.sentTo}`} />
+      )}
       <button type="submit" disabled={pending} className={primaryButtonClass}>
-        {pending ? "Входим…" : "Войти"}
+        {pending ? "Отправляем…" : "Получить ссылку"}
       </button>
     </form>
   );

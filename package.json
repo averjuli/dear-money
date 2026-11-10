@@ -17,14 +17,16 @@
     "test:e2e": "playwright test",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx --env-file-if-exists=.env src/db/migrate.ts",
-    "db:seed": "tsx --env-file-if-exists=.env src/db/seed-cli.ts",
-    "auth:setup": "tsx scripts/auth-setup.ts"
+    "db:seed": "tsx --env-file-if-exists=.env src/db/seed-cli.ts"
   },
   "dependencies": {
+    "@better-auth/drizzle-adapter": "1.7.18",
+    "better-auth": "1.7.18",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.5.0",
     "drizzle-orm": "0.45.4",
     "next": "16.4.3",
+    "nodemailer": "10.4.0",
     "postgres": "3.4.9",
     "radix-ui": "^1.8.1",
     "react": "19.3.1",
@@ -34,6 +36,7 @@
     "@playwright/test": "1.64.1",
     "@tailwindcss/postcss": "4.3.3",
     "@types/node": "24.19.2",
+    "@types/nodemailer": "8.0.2",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "drizzle-kit": "0.31.11",

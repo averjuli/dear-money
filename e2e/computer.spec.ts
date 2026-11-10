@@ -5,7 +5,7 @@ import {
   type Locator,
   type Page,
 } from "@playwright/test";
-import { E2E_LOGIN, E2E_PASSWORD, E2E_PORT } from "./env";
+import { DEMO_AUTH_FILE, E2E_BASE_URL } from "./env";
 
 // Layout by window width: openspec/specs/screen-layout (change width-based-layout).
 // Runs on a computer after the iPhone scenario on the same data: salary 150 000
@@ -13,14 +13,6 @@ import { E2E_LOGIN, E2E_PASSWORD, E2E_PORT } from "./env";
 
 const NBSP = " ";
 const rub = (text: string) => `${text.replace(/ /g, NBSP)}${NBSP}₽`;
-
-async function login(page: Page) {
-  await page.goto("/login");
-  await page.getByLabel("Логин").fill(E2E_LOGIN);
-  await page.getByLabel("Пароль").fill(E2E_PASSWORD);
-  await page.getByRole("button", { name: "Войти" }).click();
-  await expect(page).toHaveURL("/");
-}
 
 const menu = (page: Page) => page.getByRole("navigation", { name: "Разделы" });
 const plus = (page: Page) => page.getByRole("link", { name: "Внести трату" });
@@ -72,7 +64,7 @@ test.describe.configure({ mode: "serial" });
 test("1440 px: blocks 1180 px in the center, one menu with «+» on the right", async ({
   page,
 }) => {
-  await login(page);
+  await page.goto("/");
   await expect(menu(page)).toHaveCount(1);
   await expect(
     menu(page).getByRole("link", { name: "Конверты" }),
@@ -116,7 +108,7 @@ test("1440 px: blocks 1180 px in the center, one menu with «+» on the right", 
 test("1440 px: «Пришли деньги» and «Настройки» have «+» beside the menu, together 1180 px", async ({
   page,
 }) => {
-  await login(page);
+  await page.goto("/");
   for (const [name, path] of [
     ["Пришли деньги", "/income"],
     ["Настройки", "/settings"],
@@ -154,7 +146,7 @@ test("1440 px: «Пришли деньги» and «Настройки» have «+
 test("menu stands at the same height on every section screen", async ({
   page,
 }) => {
-  await login(page);
+  await page.goto("/");
   for (const [width, height] of [
     [1440, 1000],
     [390, 844],
@@ -181,11 +173,10 @@ test("menu does not shift between screens when a scrollbar appears", async () =>
   const page = await browser.newPage({
     viewport: { width: 1440, height: 700 },
     locale: "ru-RU",
+    baseURL: E2E_BASE_URL,
+    storageState: DEMO_AUTH_FILE,
   });
-  await page.goto(`http://localhost:${E2E_PORT}/login`);
-  await page.getByLabel("Логин").fill(E2E_LOGIN);
-  await page.getByLabel("Пароль").fill(E2E_PASSWORD);
-  await page.getByRole("button", { name: "Войти" }).click();
+  await page.goto("/");
   await expect(page).toHaveURL("/");
 
   const seen: Record<string, string> = {};
@@ -209,7 +200,7 @@ test("800 px: blocks 736 px, «+» on the right of the menu", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 800, height: 900 });
-  await login(page);
+  await page.goto("/");
   const total = await box(totalBlock(page));
   expect(total.width).toBeCloseTo((await area(page)).content, 0);
   expect(total.x).toBeCloseTo((await area(page)).left, 0);
@@ -228,7 +219,7 @@ test("390 px on a computer: like a phone, «+» above the menu", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await login(page);
+  await page.goto("/");
   await expect(menu(page)).toHaveCount(1);
   const total = await box(totalBlock(page));
   expect(total.width).toBeCloseTo((await area(page)).content, 0);
@@ -255,7 +246,7 @@ test("599 px: «+» above the menu, 600 px: «+» on the right", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 599, height: 900 });
-  await login(page);
+  await page.goto("/");
   let nav = await box(menu(page));
   let fab = await box(plus(page));
   expect(fab.y + fab.height).toBeLessThanOrEqual(nav.y);
@@ -271,7 +262,7 @@ test("340 px: menu has icons only, links keep their names; 360 px: labels", asyn
   page,
 }) => {
   await page.setViewportSize({ width: 340, height: 740 });
-  await login(page);
+  await page.goto("/");
   for (const name of ["Конверты", "Траты", "Пришли деньги", "Настройки"]) {
     await expect(menu(page).getByRole("link", { name })).toHaveCount(1);
     // Hidden visually: the label takes no room.
@@ -295,7 +286,7 @@ test("340 px: menu has icons only, links keep their names; 360 px: labels", asyn
 test("1440 px: wallet has no menu, back arrow, envelopes by priority", async ({
   page,
 }) => {
-  await login(page);
+  await page.goto("/");
   await page.getByRole("link", { name: /^Self-care/ }).click();
   await expect(page.getByRole("heading", { name: "Self-care" })).toBeVisible();
   await expect(menu(page)).toHaveCount(0);
@@ -309,7 +300,7 @@ test("1440 px: wallet has no menu, back arrow, envelopes by priority", async ({
 test("1440 px: the expense form is stretched like the other blocks", async ({
   page,
 }) => {
-  await login(page);
+  await page.goto("/");
   await page.goto("/expenses/new");
   await expect(
     page.getByRole("heading", { name: "Новая трата" }),
@@ -322,7 +313,7 @@ test("1440 px: the expense form is stretched like the other blocks", async ({
 });
 
 test("1440 px: the transfer screen and the «i» note", async ({ page }) => {
-  await login(page);
+  await page.goto("/");
   await page.goto("/transfers/new");
   await expect(page.getByRole("heading", { name: "Перевод" })).toBeVisible();
   await expect(menu(page)).toHaveCount(0);
@@ -352,7 +343,7 @@ test("1440 px: the transfer screen and the «i» note", async ({ page }) => {
 test("expense 1 000 in «Продукты»: daily hint, saved, daily balance drops", async ({
   page,
 }) => {
-  await login(page);
+  await page.goto("/");
   await menu(page).getByRole("link", { name: "Траты" }).click();
   // «+» opens the form from the active section: wait until «Траты» is active.
   await expect(page).toHaveURL("/daily");
@@ -377,7 +368,7 @@ test("income is short: uncheck a wallet, it gets nothing, the rest is saved", as
   // «Массаж» was added on the iPhone run: contributions per income are
   // Clothes 4 800, Self-care 6 675, Miscellaneous 6 550, Long term 5 700,
   // Goals WB 7 800 = 31 525.
-  await login(page);
+  await page.goto("/");
   await menu(page).getByRole("link", { name: "Пришли деньги" }).click();
   await page.getByLabel("Сколько пришло").fill("20 000");
   await expect(
@@ -429,7 +420,7 @@ test("income is short: uncheck a wallet, it gets nothing, the rest is saved", as
 test("income: a wallet with only full envelopes keeps its contributions above the ceiling", async ({
   page,
 }) => {
-  await login(page);
+  await page.goto("/");
   await page.goto("/wallets/new");
   await page.getByLabel("Название").fill("Резерв");
   await page.getByRole("button", { name: "Сохранить" }).click();
@@ -459,7 +450,7 @@ test("both days erased: the balance grows, no date and no per-day line", async (
 }) => {
   const amount = (text: string) =>
     Number(text.replace(/[^\d−-]/g, "").replace("−", "-"));
-  await login(page);
+  await page.goto("/");
   await page.goto("/daily");
   const before = amount(await page.getByTestId("daily-left").innerText());
   await page.goto("/income");
@@ -482,7 +473,7 @@ test("both days erased: the balance grows, no date and no per-day line", async (
 test("settings through the menu: install guide and logout", async ({
   page,
 }) => {
-  await login(page);
+  await page.goto("/");
   await menu(page).getByRole("link", { name: "Настройки" }).click();
   await expect(page).toHaveURL("/settings");
   await expect(

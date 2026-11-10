@@ -23,5 +23,19 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # Mail catcher for local runs and e2e: sign-in emails land here instead of going out.
+  # SMTP on 1025, web page and API on 8025.
+  mailpit:
+    image: axllent/mailpit:v1.33.1
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:1025:1025"
+      - "127.0.0.1:8025:8025"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 volumes:
   db-data:
