@@ -94,6 +94,25 @@ test("opened: all wallets with sums, total in envelopes and daily", async ({
   await expect(page.getByText("Чужой кошелёк")).toHaveCount(0);
 });
 
+test("wallet screen: each envelope row shows the saved amount, the contribution under it", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByRole("link", { name: /^Self-care/ }).click();
+
+  // Full envelope: 6 000 × 3 times saved, contribution 3 000 a month.
+  const full = page.getByRole("link", { name: /Здоровье/ });
+  await expect(full).toContainText(rub("18 000"));
+  await expect(full).toContainText(`${rub("3 000")}/мес`);
+
+  // Minus: the amount with a minus sign is only on the right, the status has no amount.
+  const minus = page.getByRole("link", { name: /Косметология/ });
+  await expect(minus).toContainText(`−${rub("27 400")}`);
+  await expect(minus).toContainText(`${rub("1 500")}/мес`);
+  await expect(minus).toContainText("минус");
+  await expect(minus).not.toContainText(`минус ${rub("27 400")}`);
+});
+
 test("salary 150 000: preview, surplus to «Косметология», allocate", async ({
   page,
 }) => {
@@ -162,6 +181,9 @@ test("expense 3 900 from «Маникюр» needs a category: balance 8 700, dai
   await expect(page.getByTestId("daily-remaining")).toHaveText(rub("119 225"));
 
   await page.getByRole("link", { name: /^Self-care/ }).click();
+  await expect(page.getByRole("link", { name: /Маникюр/ })).toContainText(
+    rub("8 700"),
+  );
   await page.getByRole("link", { name: /Маникюр/ }).click();
   await expect(page.getByText(`накоплено ${rub("8 700")}`)).toBeVisible();
 });
@@ -456,9 +478,9 @@ test("envelope settings: 3 000 once in 2 months → 1 500 a month", async ({
     page.getByText(`Считается само: ${rub("3 000")} ÷ 2 месяца`),
   ).toBeVisible();
   await page.getByRole("button", { name: "Сохранить" }).click();
-  await expect(page.getByRole("link", { name: /Массаж/ })).toContainText(
-    `${rub("1 500")}/мес`,
-  );
+  const row = page.getByRole("link", { name: /Массаж/ });
+  await expect(row).toContainText(`${rub("1 500")}/мес`);
+  await expect(row).toContainText(rub("0"));
 });
 
 test("drag «Маникюр» from 4th to 1st place", async ({ page }) => {

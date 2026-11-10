@@ -23,8 +23,9 @@ export interface StatusInfo {
   ceiling: number;
 }
 
-function statusText(info: StatusInfo, balance: number): string {
-  if (info.status === "minus") return `минус ${formatMoney(-balance)}`;
+// A minus status has no amount: the balance with its sign stands on the right.
+function statusText(info: StatusInfo): string {
+  if (info.status === "minus") return "минус";
   if (info.status === "full") return `накоплено на ${countTimes(info.times)}`;
   return `копится · на ${countTimes(info.times)}`;
 }
@@ -156,17 +157,28 @@ export function EnvelopePriorities({
                     {e.name}
                   </div>
                   <div className={cn("text-[13px]", tone)}>
-                    {statusText(info, e.balance)}
+                    {statusText(info)}
                     {receiver && " · получит излишек"}
                   </div>
                 </div>
-                <div
-                  className={cn(
-                    "whitespace-nowrap text-sm",
-                    receiver ? "text-warn-strong" : "text-ink-muted",
-                  )}
-                >
-                  {formatMoney(info.contribution)}/мес
+                <div className="flex shrink-0 flex-col items-end gap-px whitespace-nowrap">
+                  <div
+                    className={cn(
+                      "text-[15px] font-semibold",
+                      // Muted is for the status line; the amount is regular ink.
+                      tone === "text-ink-muted" ? "text-ink" : tone,
+                    )}
+                  >
+                    {formatMoney(e.balance)}
+                  </div>
+                  <div
+                    className={cn(
+                      "text-[13px]",
+                      receiver ? "text-warn-strong" : "text-ink-muted",
+                    )}
+                  >
+                    {formatMoney(info.contribution)}/мес
+                  </div>
                 </div>
               </Link>
             );
