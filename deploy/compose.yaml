@@ -45,9 +45,21 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-      AUTH_USERNAME: ${AUTH_USERNAME:?set AUTH_USERNAME in .env}
-      AUTH_PASSWORD_HASH: ${AUTH_PASSWORD_HASH:?set AUTH_PASSWORD_HASH in .env}
       AUTH_SECRET: ${AUTH_SECRET:?set AUTH_SECRET in .env}
+      # Email of the person who owns the data that exists before sign-in by email:
+      # the migration hands it over to this address. Without it the migration fails.
+      OWNER_EMAIL: ${OWNER_EMAIL:?set OWNER_EMAIL in .env}
+      # Sign-in links point here; not a secret
+      BETTER_AUTH_URL: https://app.dearmoney.space
+      # Sign-in emails go out through Resend over SMTP; only the API key is secret
+      SMTP_HOST: ${SMTP_HOST:-smtp.resend.com}
+      SMTP_PORT: ${SMTP_PORT:-465}
+      SMTP_USER: ${SMTP_USER:-resend}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:?set SMTP_PASSWORD in .env (the Resend API key)}
+      # Only for a rollback: the previous version signs in by login and password and
+      # needs these two. The current version ignores them.
+      AUTH_USERNAME: ${AUTH_USERNAME:-}
+      AUTH_PASSWORD_HASH: ${AUTH_PASSWORD_HASH:-}
       APP_TIME_ZONE: ${APP_TIME_ZONE:-Europe/Moscow}
     ports:
       # nginx proxies app.dearmoney.space here; 3000 on the server belongs to the CRM

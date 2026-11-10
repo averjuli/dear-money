@@ -2,7 +2,7 @@
 
 import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { cookies } from "next/headers";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getDb, type Db } from "@/db/client";
 import {
@@ -14,7 +14,6 @@ import {
   payDays,
   spendCategories,
   transfers,
-  users,
   wallets,
 } from "@/db/schema";
 import { planAllocation } from "@/domain/allocation";
@@ -26,17 +25,9 @@ import {
   type SavedTransfer,
   type TransferSide,
 } from "@/domain/transfer";
-import {
-  authSecret,
-  isAuthConfigured,
-  requireUserId,
-} from "./auth/current-user";
-import { verifyPassword } from "./auth/password";
-import {
-  SESSION_COOKIE,
-  sessionMaxAgeSeconds,
-  signSession,
-} from "./auth/session";
+import { getAuth } from "./auth/auth";
+import { requireUserId } from "./auth/current-user";
+import { normalizeEmail } from "./auth/email";
 import {
   isUuid,
   loadLatestIncome,
@@ -123,46 +114,51 @@ async function recordDailyMove(
 
 // ---------- Auth ----------
 
-export async function login(
-  _prev: { error: string } | null,
+export type SignInLinkState = {
+  /** What the person typed, kept in the field. */
+  typed: string;
+  /** The normalized address the link went to. */
+  sentTo?: string;
+  /** A message to show under the form. */
+  error?: "email" | "too-often" | "failed";
+} | null;
+
+/**
+ * Sends a sign-in link. The address is checked and the limit applied by the
+ * Better Auth hook, so a request that does not come from this form is
+ * treated the same way. A new and a known address get the same answer.
+ */
+export async function requestSignInLink(
+  _prev: SignInLinkState,
   formData: FormData,
-): Promise<{ error: string } | null> {
-  if (!isAuthConfigured()) {
-    return { error: "Вход ещё не настроен: выполните pnpm auth:setup" };
+): Promise<SignInLinkState> {
+  const typed = String(formData.get("email") ?? "");
+  const email = normalizeEmail(typed);
+  try {
+    await getAuth().api.signInMagicLink({
+      body: {
+        email,
+        callbackURL: "/",
+        newUserCallbackURL: "/",
+        errorCallbackURL: "/login/expired",
+      },
+      headers: await headers(),
+    });
+  } catch (error) {
+    // Not `instanceof APIError`: the class can be a different copy here and in Better Auth.
+    const status = (error as { statusCode?: unknown } | null)?.statusCode;
+    // The only field of the request is the address: any 400 is about it.
+    if (status === 400) return { typed, error: "email" };
+    if (status === 429) return { typed, error: "too-often" };
+    console.error("Sign-in link was not sent:", error);
+    return { typed, error: "failed" };
   }
-  const username = String(formData.get("username") ?? "").trim();
-  const password = String(formData.get("password") ?? "");
-  const expectedUser = process.env.AUTH_USERNAME!.trim();
-  const passwordOk = await verifyPassword(
-    password,
-    process.env.AUTH_PASSWORD_HASH!,
-  );
-  if (username !== expectedUser || !passwordOk) {
-    return { error: "Неверный логин или пароль" };
-  }
-
-  const db = getDb();
-  await db.insert(users).values({ login: username }).onConflictDoNothing();
-  const [user] = await db
-    .select({ id: users.id })
-    .from(users)
-    .where(eq(users.login, username));
-
-  const token = await signSession({ userId: user.id }, authSecret()!);
-  (await cookies()).set(SESSION_COOKIE, token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure:
-      process.env.NODE_ENV === "production" &&
-      process.env.INSECURE_COOKIES !== "1",
-    path: "/",
-    maxAge: sessionMaxAgeSeconds,
-  });
-  redirect("/");
+  return { typed: email, sentTo: email };
 }
 
+/** Signs out on this device only; other devices stay signed in. */
 export async function logout(): Promise<void> {
-  (await cookies()).delete(SESSION_COOKIE);
+  await getAuth().api.signOut({ headers: await headers() });
   redirect("/login");
 }
 

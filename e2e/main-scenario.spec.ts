@@ -2,21 +2,13 @@ import { expect, test, type Page } from "@playwright/test";
 import postgres from "postgres";
 import { daysUntil, nextPayDate } from "../src/domain/daily";
 import { formatDay } from "../src/lib/text";
-import { E2E_LOGIN, E2E_PASSWORD, e2eEnv } from "./env";
+import { DEMO_EMAIL, e2eEnv } from "./env";
 
 // Success criteria from specs/01-продуктовая-идея.md on the demo data.
 // Tests run in order and build on each other.
 
 const NBSP = " ";
 const rub = (text: string) => `${text.replace(/ /g, NBSP)}${NBSP}₽`;
-
-async function login(page: Page) {
-  await page.goto("/login");
-  await page.getByLabel("Логин").fill(E2E_LOGIN);
-  await page.getByLabel("Пароль").fill(E2E_PASSWORD);
-  await page.getByRole("button", { name: "Войти" }).click();
-  await expect(page).toHaveURL("/");
-}
 
 /** Rows of the «Траты» screen: categories and recent expenses. */
 const categoryRow = (page: Page, name: string) =>
@@ -66,24 +58,10 @@ test("/health answers without login and without data", async ({ request }) => {
   expect(await response.json()).toEqual({ status: "ok" });
 });
 
-test("without login any page leads to the login screen", async ({ page }) => {
-  await page.goto("/wallets");
-  await expect(page).toHaveURL("/login");
-});
-
-test("wrong password is rejected", async ({ page }) => {
-  await page.goto("/login");
-  await page.getByLabel("Логин").fill(E2E_LOGIN);
-  await page.getByLabel("Пароль").fill("wrong-password");
-  await page.getByRole("button", { name: "Войти" }).click();
-  await expect(page.getByText("Неверный логин или пароль")).toBeVisible();
-  await expect(page).toHaveURL("/login");
-});
-
 test("opened: all wallets with sums, total in envelopes and daily", async ({
   page,
 }) => {
-  await login(page);
+  await page.goto("/");
   await expect(page.getByTestId("total-in-envelopes")).toHaveText(
     rub("230 350"),
   );
@@ -119,7 +97,7 @@ test("opened: all wallets with sums, total in envelopes and daily", async ({
 test("salary 150 000: preview, surplus to «Косметология», allocate", async ({
   page,
 }) => {
-  await login(page);
+  await page.goto("/");
   await page.getByRole("link", { name: "Пришли деньги", exact: true }).click();
   await page.getByLabel("Сколько пришло").fill("150 000");
   await expect(page.getByTestId("to-envelopes")).toHaveText(rub("30 775"));
@@ -156,7 +134,7 @@ test("salary 150 000: preview, surplus to «Косметология», allocate
 test("expense 3 900 from «Маникюр» needs a category: balance 8 700, daily unchanged", async ({
   page,
 }) => {
-  await login(page);
+  await page.goto("/");
   await page.getByRole("link", { name: "Внести трату" }).click();
   await page.getByLabel("Сумма").fill("3 900");
   await page.getByRole("button", { name: "Из конверта" }).click();
@@ -191,7 +169,7 @@ test("expense 3 900 from «Маникюр» needs a category: balance 8 700, dai
 test("«Траты» shows the envelope expense: category, month total, envelope mark", async ({
   page,
 }) => {
-  await login(page);
+  await page.goto("/");
   await page.goto("/daily");
   await expect(page.getByTestId("daily-left")).toHaveText(rub("119 225"));
   // The card counts down to the nearest of the 25th and the 10th.
@@ -230,7 +208,7 @@ test("«Траты» shows the envelope expense: category, month total, envelope
 test("delete returns the money; a mistaken 39 000 fixed to 3 900 gives 8 700", async ({
   page,
 }) => {
-  await login(page);
+  await page.goto("/");
   await page.goto("/daily");
   await expenseRow(page, "Красота").click();
   await expect(page.getByLabel("Сумма")).toHaveValue("3 900");
@@ -257,7 +235,7 @@ test("delete returns the money; a mistaken 39 000 fixed to 3 900 gives 8 700", a
 test("daily expense: delete returns it to «Осталось на жизнь»", async ({
   page,
 }) => {
-  await login(page);
+  await page.goto("/");
   await addExpense(page, { amount: "1 250", category: "Продукты" });
   await expect(page.getByTestId("daily-left")).toHaveText(rub("117 975"));
   await expenseRow(page, "Продукты").click();
@@ -268,7 +246,7 @@ test("daily expense: delete returns it to «Осталось на жизнь»",
 test("new category «Такси» with limit 3 000 made from the expense form", async ({
   page,
 }) => {
-  await login(page);
+  await page.goto("/");
   await page.goto("/daily");
   await page.getByRole("link", { name: "Внести трату" }).click();
   await page.getByLabel("Сумма").fill("1 800");
@@ -291,7 +269,7 @@ test("new category «Такси» with limit 3 000 made from the expense form", 
 test("limit: 2 900 from «Тройка на год» in «Транспорт» after daily 2 300", async ({
   page,
 }) => {
-  await login(page);
+  await page.goto("/");
   await addExpense(page, { amount: "2 300", category: "Транспорт" });
   await expect(categoryRow(page, "Транспорт")).toContainText(
     `осталось ${rub("1 700")}`,
@@ -323,7 +301,7 @@ test("limit: 2 900 from «Тройка на год» in «Транспорт» a
 test("daily expense 6 230 in «Транспорт» over the 4 000 limit", async ({
   page,
 }) => {
-  await login(page);
+  await page.goto("/");
   await page.goto("/daily");
   await page.getByRole("link", { name: "Внести трату" }).click();
   await page.getByLabel("Сумма").fill("6 230");
@@ -344,7 +322,7 @@ test("daily expense 6 230 in «Транспорт» over the 4 000 limit", async
 test("deleting «Красота» keeps its expenses and the money", async ({
   page,
 }) => {
-  await login(page);
+  await page.goto("/");
   await addExpense(page, { amount: "1 500", category: "Красота" });
   await expect(page.getByTestId("daily-left")).toHaveText(rub("111 495"));
   const monthBefore = await page.getByTestId("month-spent").innerText();
@@ -398,11 +376,11 @@ test("old envelope expense without a category: nothing selected, can be deleted"
     insert into expenses (user_id, amount, date, envelope_id)
     select u.id, 10000, current_date, e.id
     from users u join envelopes e on e.user_id = u.id
-    where u.login = ${E2E_LOGIN} and e.name = 'Маникюр'
+    where u.email = ${DEMO_EMAIL} and e.name = 'Маникюр'
     returning id`;
   await sql.end();
 
-  await login(page);
+  await page.goto("/");
   await page.goto(`/expenses/${id}?from=/daily`);
   await expect(page.getByLabel("Сумма")).toHaveValue("100");
   await expect(
@@ -416,7 +394,7 @@ test("old envelope expense without a category: nothing selected, can be deleted"
 test("income 20 000 is short: wallets get checkboxes and unchecking changes the split", async ({
   page,
 }) => {
-  await login(page);
+  await page.goto("/");
   await page.getByRole("link", { name: "Пришли деньги", exact: true }).click();
   await page.getByLabel("Сколько пришло").fill("20 000");
   const wallet = (name: string) =>
@@ -463,7 +441,7 @@ test("income 20 000 is short: wallets get checkboxes and unchecking changes the 
 test("envelope settings: 3 000 once in 2 months → 1 500 a month", async ({
   page,
 }) => {
-  await login(page);
+  await page.goto("/");
   await page.getByRole("link", { name: /^Self-care/ }).click();
   await page.getByRole("link", { name: "Добавить конверт" }).click();
   await expect(page.getByLabel("На сколько раз копить")).toHaveValue("3");
@@ -484,7 +462,7 @@ test("envelope settings: 3 000 once in 2 months → 1 500 a month", async ({
 });
 
 test("drag «Маникюр» from 4th to 1st place", async ({ page }) => {
-  await login(page);
+  await page.goto("/");
   await page.getByRole("link", { name: /^Self-care/ }).click();
   const handle = page.getByRole("button", { name: "Перетащить «Маникюр»" });
   const target = page.getByRole("button", { name: "Перетащить «Здоровье»" });
@@ -512,16 +490,17 @@ test("drag «Маникюр» from 4th to 1st place", async ({ page }) => {
   ]);
 });
 
-test("settings: gear on the main screen, install guide and logout", async ({
+test("settings: gear on the main screen and the install guide", async ({
   page,
 }) => {
-  await login(page);
+  await page.goto("/");
   await page.screenshot({ path: test.info().outputPath("main.png") });
   await page.getByRole("link", { name: "Настройки" }).click();
   await expect(page).toHaveURL("/settings");
   await expect(
     page.getByRole("link", { name: "Как установить на iPhone" }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Выйти" }).click();
-  await expect(page).toHaveURL("/login");
+  // «Выйти» is checked in login.spec.ts: signing out here would end the
+  // saved sign-in that every following scenario uses.
+  await expect(page.getByRole("button", { name: "Выйти" })).toBeVisible();
 });

@@ -27,7 +27,7 @@
 | # | Фича | Спека | Готово, когда |
 |---|---|---|---|
 | 1 | Каркас: Next.js, Postgres в Docker, дизайн-токены, `/health`, CI | - | Пустая страница с логотипом открывается, CI зелёный |
-| 2 | Вход для одного пользователя | `auth` | Без пароля внутрь не попасть |
+| 2 | Вход по ссылке из письма для всех | `auth` | Без ссылки из письма внутрь не попасть, у каждого видны только свои данные |
 | 3 | Логика конвертов без экранов | `envelopes` | Все сценарии с числами проходят в тестах |
 | 4 | Логика раскладки и излишка без экранов | `income-allocation` | Сценарии проходят, излишек 3 725 уходит в «Косметологию» |
 | 5 | База и загрузка начальных данных | `envelopes` | Мои кошельки из `data/my.local.json` в базе |
@@ -44,30 +44,45 @@
 Нужны: Node.js, pnpm, Docker.
 
 ```
-cp .env.example .env               # заполнить строки базы (POSTGRES_*, DATABASE_URL)
-docker compose up -d db            # Postgres на 127.0.0.1, порт из POSTGRES_PORT
+cp .env.example .env               # заполнить строки базы (POSTGRES_*, DATABASE_URL) и строки входа, см. ниже
+docker compose up -d db mailpit    # Postgres на 127.0.0.1 (порт из POSTGRES_PORT) и почтовая заглушка Mailpit
 pnpm install
-pnpm db:migrate                    # таблицы в базе
-pnpm auth:setup                    # спросит логин и пароль, запишет в .env хеш и секрет
-pnpm db:seed data/sample-seed.json # тестовые данные: 5 кошельков, трат нет
-pnpm build && pnpm start           # http://localhost:3000
+pnpm db:migrate                    # таблицы в базе; без OWNER_EMAIL упадёт, если в базе уже есть данные
+pnpm db:seed data/sample-seed.json # тестовые данные: 5 кошельков, трат нет; уходят на OWNER_EMAIL
+pnpm build
+pnpm start                         # http://localhost:3000
 ```
 
-- `pnpm auth:setup` запускать в обычном окне терминала: пароль вводится скрыто и в `.env` попадает только его хеш
-- Свои данные: `pnpm db:seed data/my.local.json`. Повторная загрузка не создаёт дублей и не перезаписывает то, что изменено в приложении
+Строки входа в `.env` на компьютере:
+
+```
+AUTH_SECRET=                       # результат openssl rand -hex 32
+OWNER_EMAIL=                       # моя почта: ей достаются данные, которые уже есть в базе, и загрузка через db:seed
+BETTER_AUTH_URL=http://localhost:3000
+SMTP_HOST=localhost
+SMTP_PORT=1025
+```
+
+Как войти:
+
+1. Открыть http://localhost:3000 (именно `localhost`, не `127.0.0.1` и не адрес в сети), ввести почту, нажать «Получить ссылку»
+2. Письма никуда не уходят: они лежат в Mailpit, его страница http://localhost:8025. Открыть письмо «Вход в Dear Money» и нажать «Войти» (ссылка работает 15 минут и один раз)
+3. Войти можно под любым адресом, даже выдуманным: так проверяются два пользователя без настоящих ящиков. Данные из `db:seed` видны только под `OWNER_EMAIL`; под другим адресом главная пустая
+
+- Свои данные: `pnpm db:seed data/my.local.json` (идут на `OWNER_EMAIL`) или `pnpm db:seed <файл> --email <почта>` для другого пользователя. Повторная загрузка не создаёт дублей и не перезаписывает то, что изменено в приложении
 - `data/demo-seed.json` - демо-данные для тестов; `data/sample-seed.json` - тестовые данные для ручной проверки, на них сходятся числа из критериев успеха. Суммы в обоих файлах выдуманные
 
 ## Проверки
 
 ```
-pnpm test        # логика расчётов и вход (Vitest)
-pnpm test:e2e    # главный сценарий в браузере на отдельной базе dear_money_e2e (Playwright)
+pnpm test        # логика расчётов, правила входа и письмо (Vitest)
+pnpm test:e2e    # вход и главный сценарий в браузере на отдельной базе dear_money_e2e (Playwright)
 pnpm lint
 pnpm typecheck
 pnpm format:check
 ```
 
-Перед `pnpm test:e2e` нужна сборка `pnpm build` и запущенный Postgres. Первый раз: `pnpm exec playwright install chromium`.
+Перед `pnpm test:e2e` нужна сборка `pnpm build` и запущенные Postgres и Mailpit (`docker compose up -d db mailpit`): письма со ссылкой входа автотест берёт из Mailpit. База `dear_money_e2e` каждый раз создаётся заново, Mailpit очищается. Первый раз: `pnpm exec playwright install chromium`.
 
 ## Выкатка
 
@@ -105,10 +120,19 @@ sudo dear-money-deploy logs       # последние 200 строк лога �
 sudo dear-money-deploy rollback   # вернуть предыдущую версию, только вручную
 sudo dear-money-deploy backup     # резервная копия базы
 sudo dear-money-deploy restore    # список резервных копий; с именем файла - восстановить базу, см. ниже
-sudo dear-money-deploy seed       # тестовые данные из data/sample-seed.json, повтор не создаёт дублей
+sudo dear-money-deploy seed       # тестовые данные из data/sample-seed.json на почту OWNER_EMAIL, повтор не создаёт дублей
 ```
 
 Секреты GitHub для выкатки: `DEPLOY_HOST` (адрес сервера), `DEPLOY_SSH_KEY` (ключ деплоя), `DEPLOY_KNOWN_HOSTS` (отпечатки сервера). Публичная часть ключа лежит у `crmapp` в `~/.ssh/authorized_keys` с подписью `github-actions-deploy dear-money`, и этот ключ может запускать только `dear-money-deploy`.
+
+### Откат после выкатки входа по почте
+
+Выкатка входа по почте меняет базу: у пользователя появляется почта, колонки `login` больше нет. Прошлая версия с такой базой не работает, поэтому откатывать нужно вместе:
+
+1. `sudo dear-money-deploy rollback` - прошлая версия приложения
+2. `sudo dear-money-deploy restore <копия, снятая этой выкаткой>` - база как до выкатки. Копия, снятая перед выкаткой, подписана версией, которая стояла до неё, поэтому после `rollback` версии совпадут. Подробности ниже
+
+Прошлая версия стартует, потому что `deploy/compose.yaml` всё ещё передаёт ей `AUTH_USERNAME` и `AUTH_PASSWORD_HASH` из `.env`.
 
 ### Восстановление базы из бэкапа
 
@@ -136,14 +160,18 @@ Restore не удаляет резервные копии. Копия `before-re
 POSTGRES_USER=dear_money
 POSTGRES_DB=dear_money
 POSTGRES_PASSWORD=
+AUTH_SECRET=
+OWNER_EMAIL=
+SMTP_PASSWORD=
 AUTH_USERNAME=
 AUTH_PASSWORD_HASH=
-AUTH_SECRET=
 ```
 
 - `POSTGRES_PASSWORD` - результат `openssl rand -hex 24`. Только буквы и цифры: пароль идёт в строку подключения к базе
-- `AUTH_USERNAME` и `AUTH_PASSWORD_HASH` - как в `.env` на компьютере, тогда логин и пароль те же
-- `AUTH_SECRET` - результат `openssl rand -hex 32`, свой для сервера
+- `AUTH_SECRET` - результат `openssl rand -hex 32`, свой для сервера; он остаётся и для входа по почте
+- `OWNER_EMAIL` - моя почта. Миграция при выкатке входа по почте отдаёт ей все данные, которые уже есть в базе; `dear-money-deploy seed` грузит данные на неё. Без этой строки выкатка остановится на миграции, а прежняя версия продолжит работать
+- `SMTP_PASSWORD` - ключ API из Resend (начинается с `re_`). Письма со ссылкой входа идут через Resend с адреса `noreply@mail.dearmoney.space`; для этого в Resend должен быть подтверждён домен `mail.dearmoney.space` (записи DNS из кабинета Resend). Хост `smtp.resend.com`, порт 465 и пользователь `resend` заданы в `deploy/compose.yaml`
+- `AUTH_USERNAME` и `AUTH_PASSWORD_HASH` новой версии не нужны. Пока оставить: по ним стартует прошлая версия при откате. Убрать отдельной правкой, когда вход по почте проверен
 - `APP_TIME_ZONE` необязателен, по умолчанию `Europe/Moscow`
 
 ### Адреса и сертификат

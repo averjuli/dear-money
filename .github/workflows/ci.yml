@@ -63,6 +63,12 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
+      # Mail catcher: sign-in emails of the tests land here (SMTP 1025, API 8025)
+      mailpit:
+        image: axllent/mailpit:v1.33.1
+        ports:
+          - 1025:1025
+          - 8025:8025
     env:
       # Throwaway CI database, not a secret; the tests create dear_money_e2e next to it.
       # Sign-in settings of the app under test are in e2e/env.ts

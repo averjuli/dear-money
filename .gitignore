@@ -9,3 +9,6 @@ node_modules
 /playwright-report
 *.tsbuildinfo
 next-env.d.ts
+
+# Saved sign-in of the e2e demo user
+/e2e/.auth

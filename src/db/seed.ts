@@ -1,5 +1,6 @@
 import { and, eq, isNotNull } from "drizzle-orm";
 import { PERIOD_UNITS, type PeriodUnit } from "@/domain/envelope";
+import { isValidEmail, normalizeEmail } from "../server/auth/email";
 import type { Db } from "./client";
 import { envelopes, spendCategories, users, wallets } from "./schema";
 
@@ -109,21 +110,27 @@ export interface SeedResult {
 }
 
 /**
- * Loads wallets, envelopes and daily categories for one user.
+ * Loads wallets, envelopes and daily categories for the user with this email
+ * (written in any case, with spaces at the edges). The user is created if missing.
  * Rows are matched by the seed id, so loading the same file again
  * adds nothing and never overwrites changes made in the app.
  */
 export async function seedUserData(
   db: Db,
-  login: string,
+  rawEmail: string,
   data: SeedData,
 ): Promise<SeedResult> {
+  const email = normalizeEmail(rawEmail);
+  if (!isValidEmail(email)) throw new Error("Not a valid email address");
   return db.transaction(async (tx) => {
-    await tx.insert(users).values({ login }).onConflictDoNothing();
+    await tx
+      .insert(users)
+      .values({ email, emailVerified: true })
+      .onConflictDoNothing();
     const [user] = await tx
       .select({ id: users.id })
       .from(users)
-      .where(eq(users.login, login));
+      .where(eq(users.email, email));
 
     const insertedWallets = await tx
       .insert(wallets)
