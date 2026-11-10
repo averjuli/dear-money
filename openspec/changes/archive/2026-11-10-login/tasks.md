@@ -11,7 +11,7 @@
 
 - [x] 2.1 Проверить последние стабильные версии `better-auth`, `@better-auth/drizzle-adapter`, `nodemailer`, `@types/nodemailer` и образа `axllent/mailpit`; поставить точные версии через `pnpm add`. Сверить с установленной версией Better Auth то, на чём стоит design.md: `ctx.redirect` и замена `body` в `hooks.before`, `Set-Cookie` при продлении в `auth.api.getSession({ asResponse: true })`, `advanced.database.generateId: "uuid"`, `usePlural`, `nextCookies()`, коды ошибок проверки ссылки. Расхождение, которое меняет решение, - сказать пользователю. Проверка: `pnpm install --frozen-lockfile` и `pnpm typecheck` проходят
 - [x] 2.2 Сервис `mailpit` в `docker-compose.yml` по design.md, решение 12. Проверка: `docker compose up -d mailpit`, страница http://localhost:8025 открывается
-- [ ] 2.3 Сказать пользователю, какие строки добавить в свой `.env`: `OWNER_EMAIL`, `BETTER_AUTH_URL=http://localhost:3000`, `SMTP_HOST=localhost`, `SMTP_PORT=1025`; какие больше не нужны: `AUTH_USERNAME`, `AUTH_PASSWORD_HASH`; `AUTH_SECRET` остаётся. `.env.example` закрыт для чтения правилом доступа: сказать пользователю, какие строки в нём добавить и убрать, или попросить открыть доступ. Проверка: пользователь подтвердил
+- [x] 2.3 Сказать пользователю, какие строки добавить в свой `.env`: `OWNER_EMAIL`, `BETTER_AUTH_URL=http://localhost:3000`, `SMTP_HOST=localhost`, `SMTP_PORT=1025`; какие больше не нужны: `AUTH_USERNAME`, `AUTH_PASSWORD_HASH`; `AUTH_SECRET` остаётся. `.env.example` закрыт для чтения правилом доступа: сказать пользователю, какие строки в нём добавить и убрать, или попросить открыть доступ. Проверка: пользователь подтвердил
 
 ## 3. Правила входа и письмо (TDD)
 
@@ -29,7 +29,7 @@
   - на пустой базе без `OWNER_EMAIL` миграция проходит.
 
   Временные копии после проверки удалить: это базы, созданные для проверки, не данные пользователя
-- [ ] 4.3 Показать пользователю SQL миграции, которая меняет данные, и объяснить простыми словами, что она делает (CLAUDE.md: до merge). Проверка: пользователь посмотрел
+- [x] 4.3 Показать пользователю SQL миграции, которая меняет данные, и объяснить простыми словами, что она делает (CLAUDE.md: до merge). Проверка: пользователь посмотрел
 
 ## 5. Better Auth, письма и проверка входа на сервере
 
@@ -87,7 +87,7 @@
 
 - [x] 9.1 `deploy/compose.yaml` по design.md, решение 12: `OWNER_EMAIL` обязательна, `BETTER_AUTH_URL: https://app.dearmoney.space`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER` по умолчанию для Resend, `SMTP_PASSWORD` обязателен, `AUTH_USERNAME` и `AUTH_PASSWORD_HASH` необязательны с пометкой «только для отката». Проверка: `docker compose -f deploy/compose.yaml config --quiet` с выдуманными значениями во временном файле настроек проходит, без `OWNER_EMAIL` - ошибка
 - [x] 9.2 `README.md`, «Выкатка»: строки `.env` на сервере (`OWNER_EMAIL`, `SMTP_PASSWORD` - ключ Resend), что `AUTH_USERNAME` и `AUTH_PASSWORD_HASH` пока остаются для отката; откат после выкатки входа - `rollback`, потом `restore` копии, снятой этой выкаткой; таблица «План» - вход по почте вместо «Вход для одного пользователя». Проверка: команды в README совпадают с `deploy/dear-money-deploy.sh`
-- [ ] 9.3 Только человек, агент останавливается и говорит, что сделать: регистрация в Resend, домен `mail.dearmoney.space`, его записи DNS, ключ API; строки `OWNER_EMAIL` и `SMTP_PASSWORD` в `/opt/dear-money/.env`. Проверка: пользователь подтвердил, что домен в Resend подтверждён и строки на сервере есть
+- [x] 9.3 Только человек, агент останавливается и говорит, что сделать: регистрация в Resend, домен `mail.dearmoney.space`, его записи DNS, ключ API; строки `OWNER_EMAIL` и `SMTP_PASSWORD` в `/opt/dear-money/.env`. Проверка: пользователь подтвердил, что домен в Resend подтверждён и строки на сервере есть
 
 ## 10. Проверка целиком
 
