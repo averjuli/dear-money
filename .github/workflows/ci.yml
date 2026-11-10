@@ -1,0 +1,117 @@
+# Every pull request: lint, format, types, Vitest, Playwright and the image build.
+# deploy.yml runs the same checks (without the image job) before every deploy.
+name: CI
+
+on:
+  pull_request:
+  workflow_call:
+
+# A new push to the PR cancels the run for the previous one; runs called by deploy.yml never cancel
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Lint, format, types, Vitest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      # pnpm version comes from packageManager in package.json
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Format
+        run: pnpm format:check
+
+      - name: Types
+        run: pnpm typecheck
+
+      - name: Vitest
+        run: pnpm test
+
+  e2e:
+    name: Playwright
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      # A real database, the same image as docker-compose.yml and deploy/compose.yaml
+      db:
+        image: postgres:18.6-alpine
+        env:
+          POSTGRES_USER: dear_money
+          POSTGRES_PASSWORD: dear_money
+          POSTGRES_DB: dear_money
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U dear_money -d dear_money"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # Throwaway CI database, not a secret; the tests create dear_money_e2e next to it.
+      # Sign-in settings of the app under test are in e2e/env.ts
+      DATABASE_URL: postgresql://dear_money:dear_money@localhost:5432/dear_money
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Browser for Playwright
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Build
+        run: pnpm build
+
+      - name: Playwright
+        run: pnpm test:e2e
+
+      - name: Keep traces of failed tests
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-traces
+          path: test-results/
+          retention-days: 7
+
+  image:
+    name: Docker image
+    # deploy.yml builds and pushes the image itself
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: docker/setup-buildx-action@v4
+
+      # Build only: deploy.yml pushes the image after merge to main
+      - name: Build the image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
