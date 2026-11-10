@@ -5,7 +5,7 @@
 # `sudo -n /usr/local/sbin/dear-money-deploy $SSH_ORIGINAL_COMMAND`.
 #
 #   dear-money-deploy upload        read a tar.gz of the repo's deploy/ from stdin and install it
-#   dear-money-deploy deploy <sha>  pull the image of that commit, back up the database, apply
+#   dear-money-deploy deploy <sha>  back up the database, pull the image of that commit, apply
 #                                   migrations in a one-off container, start the new version,
 #                                   smoke-test /health. When the image is not on the server yet,
 #                                   registry user and token come on stdin, one per line
@@ -13,8 +13,14 @@
 #   dear-money-deploy status        containers, current and previous versions, health
 #   dear-money-deploy logs          last 200 lines of the app log
 #   dear-money-deploy backup        dump the database to /var/backups/dear-money
+#   dear-money-deploy restore       list the backups
+#   dear-money-deploy restore <file>  replace the database with that backup after typing "yes";
+#                                   manual only: it needs a terminal, the GitHub Actions key has none
 #   dear-money-deploy seed          load the fictional test data from data/sample-seed.json;
 #                                   rows that are already there are skipped
+#
+# Backups are named dear-money-<date>-<time>-<app version>.sql.gz: the commit that was running when
+# the dump was taken, so a deploy's backup carries the version from before that deploy
 set -euo pipefail
 
 APP_DIR=/opt/dear-money
@@ -94,19 +100,142 @@ pull() {
   [ "$status" -eq 0 ] || die "could not pull $image"
 }
 
-backup() {
+# backup_file <app version> [suffix]: a new backup path, named after the version that is running
+backup_file() {
+  echo "$BACKUP_DIR/$PROJECT-$(date +%Y%m%d-%H%M%S)-${1:-none}${2:-}.sql.gz"
+}
+
+# Start the database if it is not running and dump it, gzipped, into $1.
+# Never reads stdin: deploy() runs it before pull(), which still needs the registry credentials there
+dump_database() {
+  local file=$1
   install -d -m 700 "$BACKUP_DIR"
-  local file
-  file="$BACKUP_DIR/$PROJECT-$(date +%Y%m%d-%H%M%S).sql.gz"
+  compose up -d --wait db </dev/null || return 1
   # $POSTGRES_* expand inside the container, so the password never shows up here
-  if ! compose exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB"' | (umask 077 && gzip > "$file"); then
+  if ! compose exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB"' </dev/null \
+    | (umask 077 && gzip > "$file"); then
     rm -f "$file"
-    die "backup failed"
+    return 1
   fi
   echo "$file ($(du -h "$file" | cut -f1))"
-  # Keep only the newest backups
+}
+
+# Keep only the newest backups. restore() never calls it, so the file being restored stays
+prune_backups() {
   find "$BACKUP_DIR" -maxdepth 1 -name "$PROJECT-*.sql.gz" -printf '%T@ %p\n' \
     | sort -rn | tail -n +$((KEEP_BACKUPS + 1)) | cut -d' ' -f2- | xargs -r rm -f --
+}
+
+backup() {
+  dump_database "$(backup_file "$(current_version)")" || return 1
+  prune_backups
+}
+
+list_backups() {
+  local names name
+  names=$(find "$BACKUP_DIR" -maxdepth 1 -name "$PROJECT-*.sql.gz" -printf '%T@ %f\n' 2>/dev/null \
+    | sort -rn | cut -d' ' -f2-) || true
+  if [ -z "$names" ]; then
+    echo "No backups in $BACKUP_DIR yet"
+    return
+  fi
+  echo "Backups in $BACKUP_DIR, newest first:"
+  while IFS= read -r name; do
+    printf '  %s  %5s  %s\n' "$(date -r "$BACKUP_DIR/$name" '+%Y-%m-%d %H:%M')" \
+      "$(du -h "$BACKUP_DIR/$name" | cut -f1)" "$name"
+  done <<< "$names"
+}
+
+restore_failed() {
+  die "restore failed: the app is stopped, the database may be empty.
+The database from before the restore is saved in $1. To bring it back:
+  sudo dear-money-deploy restore $(basename "$1")"
+}
+
+# Replace the database with a backup: show what gets replaced and wait for "yes", save a copy of
+# the current database, stop the app, recreate the database empty, load the backup, start the same
+# app version again. The app version and current-version/previous-version stay as they are
+restore() {
+  if [ -z "${1:-}" ]; then
+    list_backups
+    echo
+    echo "To restore one: sudo dear-money-deploy restore <file name>"
+    return
+  fi
+  [ -t 0 ] || die "restore waits for a typed confirmation: run it in a terminal on the server"
+  local file=$1
+  [[ $file == */* ]] || file="$BACKUP_DIR/$file"
+  [ -f "$file" ] || die "no backup $file. The list: sudo dear-money-deploy restore"
+  [[ $file == *.sql.gz ]] || die "$file is not a .sql.gz backup"
+
+  step "Checking $file"
+  gzip -t "$file" 2>/dev/null || die "$file is damaged: gzip cannot read it. Nothing was changed"
+  local beginning
+  beginning=$(gzip -dc "$file" 2>/dev/null | head -c 4096) || true
+  [[ $beginning == *"PostgreSQL database dump"* ]] || die "$file is not a PostgreSQL dump. Nothing was changed"
+
+  local current
+  current=$(current_version)
+  [ -n "$current" ] || die "no app version is deployed yet: deploy first, then restore"
+  compose up -d --wait db </dev/null || die "the database did not start. Nothing was changed"
+  local db_name
+  db_name=$(compose exec -T db sh -c 'printf %s "$POSTGRES_DB"' </dev/null) \
+    || die "could not read the database name. Nothing was changed"
+  # The database is dropped and created from the maintenance database "postgres"
+  [ -n "$db_name" ] && [ "$db_name" != postgres ] \
+    || die "POSTGRES_DB in $APP_DIR/.env must name the app's own database, not '${db_name}'"
+
+  local backup_version=unknown
+  if [[ $(basename "$file") =~ -([0-9a-f]{40}|none)(-before-restore)?\.sql\.gz$ ]]; then
+    backup_version=${BASH_REMATCH[1]}
+  fi
+
+  echo
+  echo "The Dear Money database will be deleted and loaded again from the backup."
+  echo "  backup:    $file"
+  echo "             $(du -h "$file" | cut -f1), made $(date -r "$file" '+%Y-%m-%d %H:%M'), app version $backup_version"
+  echo "  database:  $db_name in the db container of the compose project $PROJECT"
+  echo "  app:       version $current: stopped for the restore, then started again on the same version"
+  if [ "$backup_version" != "$current" ]; then
+    echo
+    echo "WARNING: the backup is from app version $backup_version, the running app is $current."
+    echo "Restore keeps $current and applies no migrations. See the restore section of README.md"
+  fi
+  echo
+  local answer=""
+  read -r -p 'Type yes to replace the database: ' answer || true
+  [ "$answer" = yes ] || die "not confirmed. Nothing was changed"
+
+  local copy
+  copy=$(backup_file "$current" -before-restore)
+  step "Saving the current database"
+  dump_database "$copy" || die "could not save the current database. Nothing was changed"
+
+  step "Stopping the app"
+  compose stop app </dev/null || die "could not stop the app. The database was not changed"
+
+  step "Recreating the database $db_name empty"
+  # psql variables quote the names: :"db" becomes "dear_money"
+  printf '%s\n' 'DROP DATABASE IF EXISTS :"db" WITH (FORCE);' 'CREATE DATABASE :"db" OWNER :"owner";' \
+    | compose exec -T db sh -c \
+      'psql -X -q -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d postgres -v db="$POSTGRES_DB" -v owner="$POSTGRES_USER"' \
+    || restore_failed "$copy"
+
+  step "Loading the backup"
+  # One transaction: a broken backup leaves the database empty, not half loaded
+  gzip -dc "$file" \
+    | compose exec -T db sh -c \
+      'psql -X -q -v ON_ERROR_STOP=1 --single-transaction -U "$POSTGRES_USER" -d "$POSTGRES_DB"' >/dev/null \
+    || restore_failed "$copy"
+
+  step "Starting $current"
+  if ! compose up -d --no-deps --wait --wait-timeout 120 app </dev/null; then
+    compose logs --tail 50 app || true
+    die "the database is restored, but $current did not become healthy"
+  fi
+  step "Smoke test"
+  smoke || die "the database is restored, but the smoke test failed"
+  step "Restored $file; the database from before is in $copy"
 }
 
 # 200 with status ok from the public address, through nginx on this server
@@ -143,15 +272,12 @@ deploy() {
   local image="$IMAGE_REPO:$version" current started=0
   current=$(current_version)
 
+  step "Backing up the database (app version before the deploy: ${current:-none})"
+  backup || die "backup failed: nothing was changed, ${current:-nothing} keeps running"
+
   docker image inspect "$image" >/dev/null 2>&1 || pull "$image"
   [ "$(image_version "$image")" = "$version" ] || die "$image was built from another commit"
   export APP_TAG=$version
-
-  step "Starting the database"
-  compose up -d --wait db
-
-  step "Backing up the database before migrations"
-  backup
 
   step "Applying migrations in a one-off container of $version"
   compose run --rm --no-deps app node scripts/migrate.mjs \
@@ -198,9 +324,12 @@ status() {
 [ "$(id -u)" -eq 0 ] || die "run through sudo: sudo dear-money-deploy ${1:-}"
 [ $# -le 2 ] || die "too many arguments"
 cd "$APP_DIR"
-# One dear-money-deploy at a time
+# One dear-money-deploy at a time: a deploy never runs in the middle of a restore and the other way round
 exec 9>/run/dear-money-deploy.lock
-flock -w 600 9 || die "another dear-money-deploy is still running"
+if ! flock -n 9; then
+  echo "Waiting for another dear-money-deploy to finish..."
+  flock -w 600 9 || die "another dear-money-deploy is still running"
+fi
 
 case "${1:-}" in
   upload) upload ;;
@@ -208,7 +337,8 @@ case "${1:-}" in
   rollback) rollback ;;
   status) status ;;
   logs) compose logs --tail 200 app ;;
-  backup) backup ;;
+  backup) backup || die "backup failed" ;;
+  restore) restore "${2:-}" ;;
   seed) compose run --rm app node scripts/seed-cli.mjs data/sample-seed.json ;;
-  *) die "usage: dear-money-deploy upload | deploy <sha> | rollback | status | logs | backup | seed" ;;
+  *) die "usage: dear-money-deploy upload | deploy <sha> | rollback | status | logs | backup | restore [file] | seed" ;;
 esac
