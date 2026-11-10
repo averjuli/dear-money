@@ -2,21 +2,57 @@ import { describe, expect, it } from "vitest";
 import {
   categoryStatus,
   daysUntil,
+  dailyMove,
   dailySummary,
+  expenseDailyEffect,
   isInMonth,
   monthSpending,
   monthStart,
+  periodBudget,
+  periodSpent,
   remainingAfterExpense,
 } from "./daily";
 import { rub } from "./test-fixtures";
 
 describe("remainingAfterExpense", () => {
-  it("66 770 left, daily expense 1 250 → 65 520", () => {
-    expect(remainingAfterExpense(rub(66770), rub(1250))).toBe(rub(65520));
+  it("66 770 left, new daily expense 1 250 → 65 520", () => {
+    expect(
+      remainingAfterExpense({
+        remaining: rub(66770),
+        amount: rub(1250),
+        journaled: 0,
+      }),
+    ).toBe(rub(65520));
+  });
+
+  it("65 520 left after 1 250, the expense edited to 1 500 → 65 270", () => {
+    expect(
+      remainingAfterExpense({
+        remaining: rub(65520),
+        amount: rub(1500),
+        journaled: rub(-1250),
+      }),
+    ).toBe(rub(65270));
+  });
+
+  it("an expense made before the first allocation, edited to 1 500 → counted whole", () => {
+    expect(
+      remainingAfterExpense({
+        remaining: rub(66770),
+        amount: rub(1500),
+        journaled: 0,
+      }),
+    ).toBe(rub(65270));
   });
 
   it("can go below zero", () => {
-    expect(remainingAfterExpense(rub(500), rub(800))).toBe(rub(-300));
+    expect(
+      remainingAfterExpense({
+        remaining: rub(500),
+        amount: rub(800),
+        journaled: 0,
+      }),
+    ).toBe(rub(-300));
   });
 });
 
@@ -187,5 +223,194 @@ describe("monthSpending", () => {
         "2026-12-01",
       ),
     ).toBe(0);
+  });
+});
+
+describe("expenseDailyEffect", () => {
+  it("a daily expense takes its amount from «на жизнь»", () => {
+    expect(expenseDailyEffect({ amount: rub(1000), envelopeId: null })).toBe(
+      rub(-1000),
+    );
+  });
+
+  it("an envelope expense does not touch «на жизнь»", () => {
+    expect(expenseDailyEffect({ amount: rub(1000), envelopeId: "e1" })).toBe(0);
+  });
+
+  it("a deleted expense has no effect", () => {
+    expect(expenseDailyEffect(null)).toBe(0);
+  });
+});
+
+describe("dailyMove for expenses", () => {
+  const daily = (amount: number) => ({ amount, envelopeId: null });
+
+  it("new daily expense 1 000, any date → −1 000", () => {
+    expect(
+      dailyMove({
+        effect: expenseDailyEffect(daily(rub(1000))),
+        journaled: 0,
+      }),
+    ).toBe(rub(-1000));
+  });
+
+  it("new envelope expense → 0", () => {
+    expect(
+      dailyMove({
+        effect: expenseDailyEffect({ amount: rub(1000), envelopeId: "e1" }),
+        journaled: 0,
+      }),
+    ).toBe(0);
+  });
+
+  it("edit 2 000 → 2 500 → −500", () => {
+    expect(
+      dailyMove({
+        effect: expenseDailyEffect(daily(rub(2500))),
+        journaled: rub(-2000),
+      }),
+    ).toBe(rub(-500));
+  });
+
+  it("only the date changed → 0", () => {
+    expect(
+      dailyMove({
+        effect: expenseDailyEffect(daily(rub(2000))),
+        journaled: rub(-2000),
+      }),
+    ).toBe(0);
+  });
+
+  it("delete 2 000 → +2 000", () => {
+    expect(
+      dailyMove({ effect: expenseDailyEffect(null), journaled: rub(-2000) }),
+    ).toBe(rub(2000));
+  });
+
+  it("daily 1 250 turned into an envelope expense → +1 250, and back → −1 250", () => {
+    expect(
+      dailyMove({
+        effect: expenseDailyEffect({ amount: rub(1250), envelopeId: "e1" }),
+        journaled: rub(-1250),
+      }),
+    ).toBe(rub(1250));
+    expect(
+      dailyMove({
+        effect: expenseDailyEffect(daily(rub(1250))),
+        journaled: 0,
+      }),
+    ).toBe(rub(-1250));
+  });
+
+  it("an expense made before the first allocation (nothing journaled) is deleted → 0", () => {
+    expect(dailyMove({ effect: expenseDailyEffect(null), journaled: 0 })).toBe(
+      0,
+    );
+  });
+});
+
+describe("periodBudget", () => {
+  const budget = (toDaily: number, moves: number[]) =>
+    periodBudget({ toDaily: rub(toDaily), transferMoves: moves.map(rub) });
+
+  it("86 250 + 5 000 top-up − 2 000 moved to an envelope = 89 250", () => {
+    expect(budget(86250, [5000, -2000])).toBe(rub(89250));
+  });
+
+  it("a top-up with an old date: 86 250 + 5 000 = 91 250", () => {
+    expect(budget(86250, [5000])).toBe(rub(91250));
+  });
+
+  it("an old top-up of 5 000 edited to 6 000: 119 225 + 1 000 = 120 225", () => {
+    expect(budget(119225, [1000])).toBe(rub(120225));
+  });
+
+  it("an old top-up of 5 000 deleted: 119 225 − 5 000 = 114 225", () => {
+    expect(budget(119225, [-5000])).toBe(rub(114225));
+  });
+
+  it("only the date changed (no rows), or a new period: 119 225", () => {
+    expect(budget(119225, [])).toBe(rub(119225));
+  });
+});
+
+describe("periodSpent", () => {
+  it("rows of expenses: −19 225 → spent 19 225", () => {
+    expect(periodSpent([rub(-19225)])).toBe(rub(19225));
+  });
+
+  it("a back-dated expense 1 000 → 20 225, left 99 000", () => {
+    const spent = periodSpent([rub(-19225), rub(-1000)]);
+    expect(spent).toBe(rub(20225));
+    expect(
+      dailySummary({
+        budget: rub(119225),
+        spent,
+        today: "2026-11-20",
+        nextIncomeDate: null,
+      }).remaining,
+    ).toBe(rub(99000));
+  });
+
+  it("an old expense of 2 000 deleted → 17 225, left 102 000", () => {
+    const spent = periodSpent([rub(-19225), rub(2000)]);
+    expect(spent).toBe(rub(17225));
+    expect(
+      dailySummary({
+        budget: rub(119225),
+        spent,
+        today: "2026-11-20",
+        nextIncomeDate: null,
+      }).remaining,
+    ).toBe(rub(102000));
+  });
+
+  it("an old expense of 2 000 edited to 2 500 → 19 725, left 99 500", () => {
+    const spent = periodSpent([rub(-19225), rub(-500)]);
+    expect(spent).toBe(rub(19725));
+    expect(
+      dailySummary({
+        budget: rub(119225),
+        spent,
+        today: "2026-11-20",
+        nextIncomeDate: null,
+      }).remaining,
+    ).toBe(rub(99500));
+  });
+
+  it("no rows → 0", () => {
+    expect(periodSpent([])).toBe(0);
+  });
+});
+
+describe("dailySummary with transfers", () => {
+  const left = (budgetRub: number, spentRub: number) =>
+    dailySummary({
+      budget: rub(budgetRub),
+      spent: rub(spentRub),
+      today: "2026-11-20",
+      nextIncomeDate: null,
+    });
+
+  it("top-up 5 000: budget 91 250, spent 19 480 → left 71 770", () => {
+    const budget = periodBudget({
+      toDaily: rub(86250),
+      transferMoves: [rub(5000)],
+    });
+    expect(budget).toBe(rub(91250));
+    expect(left(91250, 19480).remaining).toBe(rub(71770));
+  });
+
+  it("6 770 moved from «на жизнь» to an envelope: budget 79 480 → left 60 000", () => {
+    const budget = periodBudget({
+      toDaily: rub(86250),
+      transferMoves: [rub(-6770)],
+    });
+    expect(budget).toBe(rub(79480));
+    expect(left(79480, 19480).remaining).toBe(rub(60000));
+  });
+
+  it("70 000 moved when 66 770 is left → −3 230", () => {
+    expect(left(86250 - 70000, 19480).remaining).toBe(rub(-3230));
   });
 });

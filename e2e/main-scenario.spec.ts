@@ -459,6 +459,8 @@ test("drag «Маникюр» from 4th to 1st place", async ({ page }) => {
   await page.getByRole("link", { name: /^Self-care/ }).click();
   const handle = page.getByRole("button", { name: "Перетащить «Маникюр»" });
   const target = page.getByRole("button", { name: "Перетащить «Здоровье»" });
+  // The list starts below the «Перевести» button: bring both handles on screen.
+  await handle.scrollIntoViewIfNeeded();
   const from = (await handle.boundingBox())!;
   const to = (await target.boundingBox())!;
   await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);

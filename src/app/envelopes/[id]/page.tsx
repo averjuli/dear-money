@@ -5,8 +5,14 @@ import { Card, SectionTitle } from "@/components/ui-kit";
 import { formatMoney } from "@/domain/money";
 import { formatRelativeDay } from "@/lib/text";
 import { requireUserId } from "@/server/auth/current-user";
-import { isUuid, loadExpenses, loadWallets } from "@/server/queries";
+import {
+  isUuid,
+  loadExpenses,
+  loadTransfers,
+  loadWallets,
+} from "@/server/queries";
 import { todayIso } from "@/server/today";
+import { TransferList } from "../../transfers/transfer-list";
 import { EnvelopeForm } from "../envelope-form";
 import { envelopeFormProps } from "../envelope-form-props";
 
@@ -27,7 +33,10 @@ export default async function EnvelopePage({
   if (!wallet || !envelope || !form) notFound();
 
   const today = todayIso();
-  const expenses = await loadExpenses(userId, { envelopeId: id, limit: 10 });
+  const [expenses, envelopeTransfers] = await Promise.all([
+    loadExpenses(userId, { envelopeId: id, limit: 10 }),
+    loadTransfers(userId, { envelopeId: id }),
+  ]);
 
   return (
     <Screen>
@@ -64,6 +73,12 @@ export default async function EnvelopePage({
           </Card>
         </>
       )}
+      <TransferList
+        transfers={envelopeTransfers}
+        viewpoint={{ kind: "envelope", envelopeId: id }}
+        backHref={`/envelopes/${id}`}
+        today={today}
+      />
     </Screen>
   );
 }

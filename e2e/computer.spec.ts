@@ -321,6 +321,32 @@ test("1440 px: the expense form is stretched like the other blocks", async ({
   await expectNoHorizontalScroll(page);
 });
 
+test("1440 px: the transfer screen and the «i» note", async ({ page }) => {
+  await login(page);
+  await page.goto("/transfers/new");
+  await expect(page.getByRole("heading", { name: "Перевод" })).toBeVisible();
+  await expect(menu(page)).toHaveCount(0);
+  const send = page.getByRole("button", { name: "Перевести" });
+  const wide = await box(send);
+  expect(wide.width).toBeCloseTo((await area(page)).content, 0);
+  expect(wide.x).toBeCloseTo((await area(page)).left, 0);
+  await expectNoHorizontalScroll(page);
+  await page.screenshot({ path: test.info().outputPath("transfer-1440.png") });
+
+  // The note opens under the «i» inside the screen and closes by a tap outside.
+  await page.goto("/daily");
+  await page.getByRole("button", { name: "Пояснение" }).click();
+  const note = page.getByText(/^Это всё, что осталось от зарплаты/);
+  await expect(note).toBeVisible();
+  const noteBox = await box(note);
+  const inner = await page.evaluate(() => window.innerWidth);
+  expect(noteBox.x).toBeGreaterThanOrEqual(0);
+  expect(noteBox.x + noteBox.width).toBeLessThanOrEqual(inner);
+  await page.screenshot({ path: test.info().outputPath("info-note-1440.png") });
+  await page.getByRole("heading", { name: "Повседневные траты" }).click();
+  await expect(note).toHaveCount(0);
+});
+
 // Scenarios that do not depend on the layout, on the phone screens.
 
 test("expense 1 000 in «Продукты»: daily hint, saved, daily balance drops", async ({
@@ -328,6 +354,8 @@ test("expense 1 000 in «Продукты»: daily hint, saved, daily balance dr
 }) => {
   await login(page);
   await menu(page).getByRole("link", { name: "Траты" }).click();
+  // «+» opens the form from the active section: wait until «Траты» is active.
+  await expect(page).toHaveURL("/daily");
   await plus(page).click();
   await expect(page).toHaveURL(/\/expenses\/new/);
 

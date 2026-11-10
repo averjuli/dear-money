@@ -6,7 +6,9 @@ import {
   formatFrequency,
   formatRelativeDay,
   monthNamePrepositional,
+  transferLabel,
 } from "./text";
+import type { TransferSide } from "@/domain/transfer";
 
 describe("text helpers", () => {
   it("pluralizes in Russian", () => {
@@ -39,5 +41,45 @@ describe("text helpers", () => {
     expect(monthNamePrepositional("2026-11-05")).toBe("в ноябре");
     expect(monthNamePrepositional("2026-12-01")).toBe("в декабре");
     expect(monthNamePrepositional("2027-05-31")).toBe("в мае");
+  });
+});
+
+describe("transferLabel", () => {
+  const side = (id: string): TransferSide => ({
+    kind: "envelope",
+    envelopeId: id,
+  });
+  const daily: TransferSide = { kind: "daily" };
+  const deleted: TransferSide = { kind: "deleted" };
+  const t = (
+    from: TransferSide,
+    to: TransferSide,
+    fromName: string | null,
+    toName: string | null,
+  ) => ({ from, to, fromName, toName });
+
+  it("between envelopes, seen from each side", () => {
+    const x = t(side("m"), side("c"), "Маникюр", "Одежда");
+    expect(transferLabel(x, side("m"))).toBe("В конверт «Одежда»");
+    expect(transferLabel(x, side("c"))).toBe("Из конверта «Маникюр»");
+  });
+
+  it("a top-up of «на жизнь»", () => {
+    const x = t(side("m"), daily, "Маникюр", null);
+    expect(transferLabel(x, daily)).toBe("Из конверта «Маникюр»");
+    expect(transferLabel(x, side("m"))).toBe("На жизнь");
+  });
+
+  it("from «на жизнь» into an envelope", () => {
+    const x = t(daily, side("p"), null, "Подушка");
+    expect(transferLabel(x, daily)).toBe("В конверт «Подушка»");
+    expect(transferLabel(x, side("p"))).toBe("Из денег на жизнь");
+  });
+
+  it("a deleted envelope on the other side", () => {
+    const from = t(deleted, side("m"), null, "Маникюр");
+    expect(transferLabel(from, side("m"))).toBe("Из удалённого конверта");
+    const to = t(side("m"), deleted, "Маникюр", null);
+    expect(transferLabel(to, side("m"))).toBe("В удалённый конверт");
   });
 });

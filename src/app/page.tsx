@@ -2,17 +2,15 @@ import Link from "next/link";
 import { ArrowUpIcon, ChevronIcon } from "@/components/icons";
 import { Screen } from "@/components/screen";
 import { Bar, Card, SectionTitle } from "@/components/ui-kit";
-import { categoryStatus, dailySummary, monthStart } from "@/domain/daily";
+import { categoryStatus, monthStart } from "@/domain/daily";
 import { formatMoney } from "@/domain/money";
 import { countEnvelopes, monthName, plural } from "@/lib/text";
 import { cn } from "@/lib/utils";
 import { requireUserId } from "@/server/auth/current-user";
 import {
   loadCategories,
-  loadDailySpent,
-  loadLatestIncome,
+  loadDailySummary,
   loadWallets,
-  periodStart,
 } from "@/server/queries";
 import { todayIso } from "@/server/today";
 
@@ -21,25 +19,16 @@ export const dynamic = "force-dynamic";
 export default async function HomePage() {
   const userId = await requireUserId();
   const today = todayIso();
-  const income = await loadLatestIncome(userId);
-  const since = periodStart(income);
-  const [wallets, categories, dailySpent] = await Promise.all([
+  const [wallets, categories, dailyView] = await Promise.all([
     loadWallets(userId),
     loadCategories(userId, monthStart(today)),
-    loadDailySpent(userId, since),
+    loadDailySummary(userId, today),
   ]);
 
   const total = wallets.reduce((s, w) => s + w.total, 0);
   const contributions = wallets.reduce((s, w) => s + w.contributions, 0);
   const minus = wallets.reduce((s, w) => s + w.minusCount, 0);
-  const daily = income
-    ? dailySummary({
-        budget: income.toDaily,
-        spent: dailySpent,
-        today,
-        nextIncomeDate: income.nextIncomeDate,
-      })
-    : null;
+  const daily = dailyView?.summary ?? null;
   const overLimit = categories.flatMap((c) => {
     const status = categoryStatus(c.monthlyLimit, c.spent);
     return status.kind === "over" ? [{ name: c.name, over: status.over }] : [];

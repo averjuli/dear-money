@@ -1,0 +1,2719 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Переводы и «на жизнь» — обзор</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Unbounded:wght@500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* Values copied from src/app/globals.css (@theme design tokens) */
+      :root {
+        --color-bg: #edf1ee;
+        --color-surface: #ffffff;
+        --color-surface-sunken: #f4f7f5;
+        --color-ink: #14211b;
+        --color-ink-muted: #55635c;
+        --color-accent: #1b6b4d;
+        --color-accent-strong: #14523b;
+        --color-accent-soft: #dcebe3;
+        --color-warn: #a34d14;
+        --color-warn-strong: #8a4315;
+        --color-warn-soft: #fbeadd;
+        --color-warn-bar: #c46a2b;
+        --color-line: #e3e9e5;
+        --color-dash: #9db5a9;
+
+        --font-sans: "Golos Text", system-ui, sans-serif;
+        --font-display: "Unbounded", "Golos Text", sans-serif;
+        --font-mono: ui-monospace, Menlo, Consolas, monospace;
+
+        --radius-card: 20px;
+        --radius-card-lg: 24px;
+        --radius-control: 14px;
+        --radius-button: 16px;
+        --radius-bar: 4px;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        background: var(--color-bg);
+      }
+      body {
+        margin: 0;
+        background: var(--color-bg);
+        color: var(--color-ink);
+        font-family: var(--font-sans);
+        font-size: 16px;
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+      }
+      .page {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 40px 16px 80px;
+      }
+      header.top {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 15px;
+        color: var(--color-ink-muted);
+        font-weight: 500;
+      }
+      .dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--color-accent);
+        flex-shrink: 0;
+      }
+      h1 {
+        font-family: var(--font-display);
+        font-weight: 600;
+        font-size: 38px;
+        line-height: 1.12;
+        letter-spacing: -0.02em;
+        margin: 16px 0 12px;
+        text-wrap: balance;
+      }
+      h2 {
+        font-family: var(--font-display);
+        font-weight: 500;
+        font-size: 26px;
+        letter-spacing: -0.01em;
+        margin: 56px 0 16px;
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+      }
+      h2 .num {
+        font-size: 15px;
+        color: var(--color-accent);
+      }
+      h3 {
+        font-weight: 600;
+        font-size: 19px;
+        margin: 28px 0 10px;
+      }
+      p {
+        margin: 8px 0;
+      }
+      .lead {
+        font-size: 18px;
+        color: var(--color-ink-muted);
+        max-width: 700px;
+      }
+      .muted {
+        color: var(--color-ink-muted);
+      }
+      .small {
+        font-size: 14px;
+      }
+      code,
+      .mono {
+        font-family: var(--font-mono);
+        font-size: 0.86em;
+      }
+      code {
+        background: var(--color-surface-sunken);
+        border: 1px solid var(--color-line);
+        padding: 1px 5px;
+        border-radius: 6px;
+      }
+      ul.points {
+        padding-left: 20px;
+        margin: 8px 0;
+      }
+      ul.points li {
+        margin: 4px 0;
+      }
+      .card {
+        background: var(--color-surface);
+        border: 1px solid var(--color-line);
+        border-radius: var(--radius-card);
+        padding: 20px 24px;
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 16px;
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        border-radius: 999px;
+        background: var(--color-surface);
+        border: 1px solid var(--color-line);
+        font-size: 14px;
+      }
+      .chip.ok {
+        color: var(--color-accent-strong);
+        background: var(--color-accent-soft);
+        border-color: var(--color-accent-soft);
+      }
+      .chip.warn {
+        color: var(--color-warn);
+        background: var(--color-warn-soft);
+        border-color: var(--color-warn-soft);
+      }
+
+      /* Screen sketches */
+      .screens {
+        display: grid;
+        gap: 36px;
+      }
+      .pair {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 24px;
+        align-items: start;
+      }
+      .screen-title {
+        font-size: 17px;
+        font-weight: 600;
+        margin: 0 0 8px;
+      }
+      .device {
+        background: var(--color-bg);
+        border: 1px solid var(--color-dash);
+        border-radius: 22px;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .device.phone {
+        max-width: 400px;
+      }
+      .cap {
+        font-size: 13px;
+        color: var(--color-ink-muted);
+      }
+      .stitle {
+        font-family: var(--font-display);
+        font-size: 22px;
+        font-weight: 600;
+        line-height: 1.2;
+      }
+      .sum-box {
+        background: var(--color-surface);
+        border-radius: var(--radius-card-lg);
+        padding: 14px;
+        text-align: center;
+      }
+      .sum-box .k {
+        font-size: 13px;
+        color: var(--color-ink-muted);
+      }
+      .sum-box .v {
+        font-family: var(--font-display);
+        font-size: 30px;
+        font-weight: 600;
+      }
+      .sum-box .v span {
+        color: var(--color-ink-muted);
+        font-weight: 500;
+        font-size: 22px;
+      }
+      .lbl {
+        font-size: 15px;
+        font-weight: 600;
+      }
+      .lbl-sm {
+        font-size: 13px;
+        color: var(--color-ink-muted);
+      }
+      .pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .pill {
+        padding: 7px 13px;
+        border-radius: 999px;
+        background: var(--color-surface);
+        font-size: 14px;
+        border: 2px solid transparent;
+      }
+      .pill.sunk {
+        background: var(--color-surface-sunken);
+      }
+      .pill.on {
+        border-color: var(--color-accent);
+        background: var(--color-accent-soft);
+        color: var(--color-accent-strong);
+        font-weight: 600;
+      }
+      .pill.dash {
+        border: 2px dashed var(--color-dash);
+        background: transparent;
+      }
+      .hint {
+        border-radius: 16px;
+        padding: 10px 14px;
+        font-size: 14px;
+        background: var(--color-accent-soft);
+        color: var(--color-accent-strong);
+      }
+      .hint.w {
+        background: var(--color-warn-soft);
+        color: var(--color-warn);
+      }
+      .btn {
+        background: var(--color-accent);
+        color: #fff;
+        border-radius: var(--radius-button);
+        padding: 12px;
+        text-align: center;
+        font-weight: 600;
+        font-size: 15px;
+      }
+      .btn.second {
+        background: var(--color-surface);
+        color: var(--color-accent);
+        border-radius: var(--radius-control);
+      }
+      .btn.danger {
+        background: transparent;
+        color: var(--color-warn);
+        padding: 6px;
+      }
+      .subcard {
+        background: var(--color-surface);
+        border-radius: var(--radius-card);
+        padding: 12px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .tiles {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .tile {
+        background: var(--color-surface);
+        border-radius: var(--radius-card);
+        padding: 10px 14px;
+      }
+      .tile .k {
+        font-size: 13px;
+        color: var(--color-ink-muted);
+      }
+      .tile .v {
+        font-family: var(--font-display);
+        font-size: 18px;
+        font-weight: 500;
+      }
+      .green {
+        background: var(--color-accent);
+        color: #fff;
+        border-radius: var(--radius-card);
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .green .k {
+        font-size: 14px;
+        color: var(--color-accent-soft);
+      }
+      .green .vrow {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+      }
+      .green .v {
+        font-family: var(--font-display);
+        font-size: 28px;
+        font-weight: 600;
+        line-height: 1.1;
+      }
+      .green .pop {
+        background: var(--color-accent-strong);
+        color: #fff;
+        border-radius: 999px;
+        padding: 6px 12px;
+        font-size: 13px;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .green .krow {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+      }
+      .info {
+        width: 22px;
+        height: 22px;
+        border: 2px solid #fff;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 700;
+        line-height: 1;
+        color: #fff;
+      }
+      .tip {
+        background: var(--color-surface);
+        color: var(--color-ink);
+        border-radius: 16px;
+        padding: 12px 14px;
+        font-size: 14px;
+        line-height: 1.4;
+        box-shadow: 0 16px 40px -20px rgba(20, 33, 27, 0.45);
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+      }
+      .tip .x {
+        color: var(--color-ink-muted);
+        font-weight: 600;
+      }
+      .green .bar {
+        height: 6px;
+        border-radius: var(--radius-bar);
+        background: var(--color-accent-strong);
+        overflow: hidden;
+      }
+      .green .bar i {
+        display: block;
+        height: 100%;
+        width: 20%;
+        background: #fff;
+      }
+      .green .row2 {
+        display: flex;
+        justify-content: space-between;
+        font-size: 13px;
+        color: var(--color-accent-soft);
+      }
+      .expl {
+        font-size: 13px;
+        color: var(--color-ink-muted);
+        line-height: 1.4;
+      }
+      .sec {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        font-size: 17px;
+        font-weight: 600;
+      }
+      .sec small {
+        font-size: 13px;
+        font-weight: 400;
+        color: var(--color-ink-muted);
+      }
+      .list {
+        background: var(--color-surface);
+        border-radius: var(--radius-card);
+        padding: 0 14px;
+      }
+      .li {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        padding: 11px 0;
+        border-bottom: 1px solid var(--color-line);
+      }
+      .li:last-child {
+        border-bottom: 0;
+      }
+      .li .n {
+        font-weight: 600;
+        font-size: 15px;
+      }
+      .li .sub {
+        font-size: 12.5px;
+        color: var(--color-ink-muted);
+      }
+      .li .s {
+        font-weight: 600;
+        white-space: nowrap;
+        font-size: 15px;
+      }
+      .side {
+        background: var(--color-surface);
+        border-radius: var(--radius-card);
+        padding: 10px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .side .head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+      }
+      .side .bal {
+        font-size: 13px;
+        color: var(--color-ink-muted);
+      }
+      .group-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--color-ink-muted);
+      }
+      .daterow {
+        background: var(--color-surface);
+        border-radius: var(--radius-card);
+        padding: 12px 14px;
+        display: flex;
+        justify-content: space-between;
+        font-size: 15px;
+      }
+      .daterow b {
+        font-weight: 600;
+      }
+      .daterow span {
+        color: var(--color-ink-muted);
+      }
+      .dialog {
+        background: var(--color-surface);
+        border-radius: var(--radius-card);
+        padding: 16px;
+        box-shadow: 0 16px 40px -20px rgba(20, 33, 27, 0.45);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .dialog .t {
+        font-weight: 600;
+        font-size: 16px;
+      }
+      .dialog .d {
+        font-size: 14px;
+        color: var(--color-ink-muted);
+      }
+      .dialog .acts {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        margin-top: 4px;
+      }
+      .dialog .acts span {
+        padding: 7px 14px;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .dialog .acts .no {
+        background: var(--color-surface-sunken);
+      }
+      .dialog .acts .yes {
+        background: var(--color-warn);
+        color: #fff;
+      }
+      /* New marks */
+      .is-new {
+        position: relative;
+        outline: 2px dashed var(--color-accent);
+        outline-offset: 4px;
+        border-radius: 14px;
+      }
+      .new-tag {
+        position: absolute;
+        top: -12px;
+        right: 10px;
+        background: var(--color-accent);
+        color: #fff;
+        font-size: 10.5px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        padding: 2px 8px;
+        border-radius: 999px;
+        z-index: 1;
+      }
+      .new-tag.chg {
+        background: var(--color-warn);
+      }
+      .is-chg {
+        position: relative;
+        outline: 2px dashed var(--color-warn-bar);
+        outline-offset: 4px;
+        border-radius: 14px;
+      }
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 20px;
+        font-size: 14px;
+        color: var(--color-ink-muted);
+        margin: 8px 0 16px;
+      }
+      .legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .sw {
+        width: 18px;
+        height: 14px;
+        border-radius: 4px;
+        border: 2px dashed var(--color-accent);
+        background: var(--color-accent-soft);
+      }
+      .sw.chg {
+        border-color: var(--color-warn-bar);
+        background: var(--color-warn-soft);
+      }
+      .sw.old {
+        border: 1.5px solid var(--color-dash);
+        background: var(--color-surface);
+      }
+      .callouts {
+        margin: 10px 0 0;
+        padding-left: 20px;
+        font-size: 14px;
+        color: var(--color-ink-muted);
+        max-width: 720px;
+      }
+      .callouts li {
+        margin: 3px 0;
+      }
+
+      /* Rules: full-width strips, one under another */
+      .rules {
+        display: grid;
+        gap: 12px;
+      }
+      .rule {
+        background: var(--color-surface);
+        border: 1px solid var(--color-line);
+        border-radius: 16px;
+        padding: 14px 18px;
+      }
+      .rule .h {
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      .rule .tag {
+        display: inline-block;
+        font-size: 11.5px;
+        font-weight: 600;
+        color: var(--color-warn);
+        background: var(--color-warn-soft);
+        padding: 1px 8px;
+        border-radius: 999px;
+        margin-left: 6px;
+        vertical-align: 2px;
+      }
+      .example {
+        font-size: 14px;
+        color: var(--color-accent-strong);
+        background: var(--color-surface-sunken);
+        border-left: 3px solid var(--color-accent);
+        padding: 6px 10px;
+        margin-top: 8px;
+        border-radius: 0 8px 8px 0;
+      }
+      table.kinds {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 14px;
+        margin-top: 8px;
+        font-variant-numeric: tabular-nums;
+      }
+      table.kinds th,
+      table.kinds td {
+        text-align: left;
+        padding: 7px 10px;
+        border-bottom: 1px solid var(--color-line);
+        vertical-align: top;
+      }
+      table.kinds th {
+        color: var(--color-ink-muted);
+        font-weight: 500;
+      }
+      table.kinds td.new {
+        color: var(--color-accent-strong);
+        font-weight: 600;
+      }
+      table.kinds td.r,
+      table.kinds th.r {
+        text-align: right;
+        white-space: nowrap;
+      }
+      .tablewrap {
+        overflow-x: auto;
+      }
+
+      /* Data model */
+      .schema {
+        background: var(--color-surface);
+        border: 1px solid var(--color-line);
+        border-radius: var(--radius-card);
+        overflow-x: auto;
+      }
+      .schema svg {
+        display: block;
+        width: 100%;
+        min-width: 760px;
+        height: auto;
+      }
+      .scroll-hint {
+        display: none;
+        font-size: 13px;
+        color: var(--color-ink-muted);
+      }
+      .box {
+        fill: var(--color-surface-sunken);
+        stroke: var(--color-dash);
+        stroke-width: 1.5;
+      }
+      .box.new {
+        fill: var(--color-accent-soft);
+        stroke: var(--color-accent);
+        stroke-dasharray: 6 4;
+      }
+      .head {
+        fill: var(--color-line);
+      }
+      .head.new {
+        fill: var(--color-accent);
+      }
+      .tname {
+        font: 600 14px var(--font-mono);
+        fill: var(--color-ink);
+      }
+      .tname.on,
+      .tru.on {
+        fill: #fff;
+      }
+      .tru {
+        font: 400 13px var(--font-sans);
+        fill: var(--color-ink-muted);
+      }
+      .row {
+        font: 400 13px var(--font-mono);
+        fill: var(--color-ink);
+      }
+      .row .ru {
+        font-family: var(--font-sans);
+        fill: var(--color-ink-muted);
+      }
+      .link {
+        fill: none;
+        stroke: var(--color-dash);
+        stroke-width: 1.5;
+      }
+      .link.new {
+        stroke: var(--color-accent);
+        stroke-width: 2;
+      }
+      .arrow {
+        fill: var(--color-dash);
+      }
+      .arrow.new {
+        fill: var(--color-accent);
+      }
+      .note {
+        font: 400 13px var(--font-sans);
+        fill: var(--color-ink-muted);
+      }
+      .note.new {
+        fill: var(--color-accent-strong);
+        font-weight: 600;
+      }
+      .lookup {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+        margin-top: 12px;
+      }
+      .who {
+        background: var(--color-surface);
+        border: 1px solid var(--color-line);
+        border-radius: 16px;
+        padding: 18px;
+        display: grid;
+        gap: 10px;
+        min-width: 0;
+      }
+      .who h3 {
+        margin: 0;
+        font-size: 16px;
+      }
+      .who .ask {
+        font-family: var(--font-mono);
+        font-size: 13.5px;
+        background: var(--color-surface-sunken);
+        border: 1px solid var(--color-line);
+        border-radius: 10px;
+        padding: 10px 12px;
+        overflow-wrap: anywhere;
+      }
+      .who .ask b {
+        color: var(--color-accent-strong);
+      }
+      .result {
+        display: inline-flex;
+        justify-self: start;
+        font-size: 14px;
+        font-weight: 500;
+        border-radius: 999px;
+        padding: 4px 12px;
+      }
+      .result.ok {
+        background: var(--color-accent-soft);
+        color: var(--color-accent-strong);
+      }
+      .result.no {
+        background: var(--color-warn-soft);
+        color: var(--color-warn);
+      }
+      .steps {
+        list-style: none;
+        margin: 12px 0 0;
+        padding: 0;
+        display: grid;
+        gap: 12px;
+        counter-reset: step;
+      }
+      .steps li {
+        counter-increment: step;
+        display: grid;
+        grid-template-columns: 40px 1fr;
+        gap: 14px;
+        background: var(--color-surface);
+        border: 1px solid var(--color-line);
+        border-radius: 16px;
+        padding: 16px 18px;
+      }
+      .steps li::before {
+        content: counter(step);
+        font: 600 24px/1 var(--font-display);
+        color: var(--color-dash);
+      }
+      .steps li.changes {
+        border-color: var(--color-warn-bar);
+      }
+      .steps li.changes::before {
+        color: var(--color-warn);
+      }
+      .steps h3 {
+        margin: 0 0 4px;
+        font-size: 16px;
+      }
+      .steps p {
+        margin: 0;
+        color: var(--color-ink-muted);
+        font-size: 15px;
+      }
+      .mchip {
+        display: inline-block;
+        font-size: 11.5px;
+        font-weight: 600;
+        color: var(--color-accent-strong);
+        background: var(--color-accent-soft);
+        border-radius: 999px;
+        padding: 1px 9px;
+        margin-left: 6px;
+        vertical-align: 2px;
+      }
+      .mchip.chg {
+        color: var(--color-warn);
+        background: var(--color-warn-soft);
+      }
+      .callout {
+        background: var(--color-warn-soft);
+        color: var(--color-warn-strong);
+        border-radius: 16px;
+        padding: 14px 18px;
+        margin-top: 16px;
+        font-size: 15px;
+      }
+      .callout h3 {
+        margin: 0 0 6px;
+        font-size: 16px;
+      }
+
+      /* Checklist */
+      .check-group {
+        margin-bottom: 18px;
+      }
+      .check {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        padding: 10px 14px;
+        background: var(--color-surface);
+        border: 1px solid var(--color-line);
+        border-radius: 14px;
+        margin: 6px 0;
+        cursor: pointer;
+      }
+      .check input {
+        margin-top: 5px;
+        accent-color: var(--color-accent);
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+      }
+      .check .sc {
+        font-weight: 600;
+      }
+      .check .st {
+        font-size: 14px;
+        color: var(--color-ink-muted);
+      }
+      .check .st .arrow {
+        color: var(--color-accent);
+        font-weight: 700;
+      }
+      .check .auto {
+        font-size: 12px;
+        color: var(--color-accent);
+        margin-left: 6px;
+        font-weight: 500;
+      }
+      .prep {
+        background: var(--color-accent-soft);
+        border-radius: 14px;
+        padding: 12px 16px;
+        font-size: 14px;
+        color: var(--color-accent-strong);
+      }
+      .prep ol {
+        margin: 6px 0 0;
+        padding-left: 20px;
+      }
+
+      .two {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+      .box2 h3 {
+        margin-top: 0;
+      }
+      .q {
+        border-top: 1px solid var(--color-line);
+        padding-top: 12px;
+        margin-top: 12px;
+      }
+      .q:first-child {
+        border-top: 0;
+        padding-top: 0;
+        margin-top: 0;
+      }
+      footer {
+        margin-top: 64px;
+        font-size: 13px;
+        color: var(--color-ink-muted);
+      }
+
+      @media (max-width: 800px) {
+        .scroll-hint {
+          display: block;
+        }
+      }
+      @media (max-width: 720px) {
+        h1 {
+          font-size: 30px;
+        }
+        h2 {
+          font-size: 22px;
+        }
+        .two {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="top">
+        <span class="dot"></span>Dear Money · обзор фичи
+      </header>
+      <h1>Переводы между конвертами и «на жизнь»</h1>
+      <p class="lead">
+        Деньги можно переложить из конверта в конверт, в том числе в другой
+        кошелёк, пополнить из конверта «на жизнь» и отложить из «на жизнь»
+        обратно в конверт. Переводы и повседневные траты, внесённые задним
+        числом, сразу меняют текущее «Осталось на жизнь».
+      </p>
+      <div class="chips">
+        <span class="chip warn">Спроектирована, кода ещё нет</span>
+        <span class="chip">Задачи: 0 из 32</span>
+        <span class="chip">Автотесты запланированы, пока не написаны</span>
+        <span class="chip ok"
+          >Изменение <code>wallet-transfers</code>, ветка
+          <code>wallet-transfers</code></span
+        >
+      </div>
+
+      <!-- 1 -->
+      <h2><span class="num">1</span>Коротко</h2>
+      <ul class="points">
+        <li>
+          Новый экран «Перевод»: сумма, «Откуда», «Куда», «Дата», подсказка, что
+          станет с обеими сторонами, и кнопка «Перевести».
+        </li>
+        <li>
+          Откуда и куда — любой конверт любого кошелька или «На жизнь». Из «на
+          жизнь» в «на жизнь» и из конверта в тот же конверт нельзя.
+        </li>
+        <li>
+          Перевод открывается кнопкой «Перевести» на экране кошелька и кнопкой
+          «Пополнить» на карточке «Осталось на жизнь».
+        </li>
+        <li>
+          Переводы видны в блоке «Переводы» на экране конверта и на экране
+          «Траты». Перевод можно исправить или удалить, как трату.
+        </li>
+        <li>
+          Новое правило для «на жизнь»: перевод или повседневная трата, новые,
+          исправленные или удалённые, меняют текущее «Осталось на жизнь» сразу,
+          какой бы ни была их дата.
+        </li>
+        <li>
+          Статус: <b>спроектирована</b>. Требования, план и 32 задачи готовы, ни
+          одна не отмечена. Автотесты (программы, которые сами проходят сценарий
+          и сверяют результат) запланированы для расчётов и для браузера, но ещё
+          не написаны.
+        </li>
+      </ul>
+
+      <!-- 2 -->
+      <h2><span class="num">2</span>Что появится на экранах</h2>
+      <p class="muted small">
+        Наброски, не точные макеты. Новое обведено зелёным пунктиром, изменённое
+        — оранжевым. Числа — из демо-данных и сценариев, выдуманные.
+      </p>
+
+      <div class="screens">
+        <div class="pair">
+          <div>
+            <p class="screen-title">Экран кошелька</p>
+            <div class="device phone">
+              <div class="cap">← Кошелёк</div>
+              <div class="stitle">Self-care</div>
+              <div class="tiles">
+                <div class="tile">
+                  <div class="k">Откладывать в месяц</div>
+                  <div class="v">11 850 ₽</div>
+                </div>
+                <div class="tile">
+                  <div class="k">Сейчас в кошельке</div>
+                  <div class="v">55 200 ₽</div>
+                </div>
+              </div>
+              <div class="is-new">
+                <span class="new-tag">новое</span>
+                <div class="btn second">Перевести</div>
+              </div>
+              <div class="sec">
+                Конверты по приоритету <small>перетащите</small>
+              </div>
+              <div class="list">
+                <div class="li">
+                  <div>
+                    <div class="n">1 · Здоровье</div>
+                    <div class="sub">накоплено на 3 раза</div>
+                  </div>
+                  <div class="s">3 000 ₽/мес</div>
+                </div>
+                <div class="li">
+                  <div>
+                    <div class="n">4 · Маникюр</div>
+                    <div class="sub">накоплено на 3 раза</div>
+                  </div>
+                  <div class="s">2 600 ₽/мес</div>
+                </div>
+              </div>
+            </div>
+            <ul class="callouts">
+              <li>
+                Кнопка под плитками, во всю ширину. Ведёт на экран «Перевод»;
+                после перевода — обратно сюда, с новыми суммами.
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <p class="screen-title">Новый экран «Перевод»</p>
+            <div class="device phone is-new">
+              <span class="new-tag">новое</span>
+              <div class="cap">✕ Перевод</div>
+              <div class="sum-box">
+                <div class="k">Сумма</div>
+                <div class="v">4 200 <span>₽</span></div>
+              </div>
+              <div class="side">
+                <div class="head">
+                  <span class="lbl">Откуда</span
+                  ><span class="pill on">Маникюр</span>
+                </div>
+                <div class="bal">Self-care · сейчас 12 600 ₽</div>
+              </div>
+              <div class="side">
+                <div class="head">
+                  <span class="lbl">Куда</span><span class="pill">Выбрать</span>
+                </div>
+                <div class="pills">
+                  <span class="pill sunk">На жизнь</span>
+                </div>
+                <div class="group-name">Clothes</div>
+                <div class="pills">
+                  <span class="pill on">Одежда</span
+                  ><span class="pill sunk">Украшения</span>
+                </div>
+                <div class="group-name">Self-care</div>
+                <div class="pills">
+                  <span class="pill sunk">Здоровье</span
+                  ><span class="pill sunk">Косметология</span
+                  ><span class="pill sunk">…</span>
+                </div>
+              </div>
+              <div class="daterow"><b>Дата</b><span>Сегодня</span></div>
+              <div class="hint">
+                В конверте «Маникюр» станет 8 400 ₽, хватит ещё на 2 раза
+              </div>
+              <div class="hint">В конверте «Одежда» станет 10 600 ₽</div>
+              <div class="btn">Перевести</div>
+            </div>
+            <ul class="callouts">
+              <li>
+                «Откуда» и «Куда» раскрываются списком: сначала «На жизнь»,
+                потом кошельки по порядку с конвертами по приоритету. Выбрал —
+                список закрылся.
+              </li>
+              <li>
+                Сторона, которая уходит в минус, подсвечена цветом
+                предупреждения: «В конверте «Косметология» станет −23 200 ₽».
+              </li>
+              <li>
+                Дата по умолчанию сегодня, можно выбрать прошедший день, будущий
+                нельзя.
+              </li>
+              <li>Пока ни один доход не разложен, «На жизнь» в списках нет.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="pair">
+          <div>
+            <p class="screen-title">Экран «Траты»</p>
+            <div class="device phone">
+              <div class="stitle">Повседневные траты</div>
+              <div class="green">
+                <div class="krow">
+                  <div class="k">Осталось на жизнь</div>
+                  <span class="is-new" style="border-radius: 999px"
+                    ><span class="new-tag">новое</span
+                    ><span class="info">i</span></span
+                  >
+                </div>
+                <div class="is-new">
+                  <span class="new-tag">по нажатию на «i»</span>
+                  <div class="tip">
+                    <span
+                      >Это всё, что осталось от зарплаты после конвертов, с
+                      пополнениями из конвертов. Траты из конвертов эту сумму не
+                      уменьшают, но видны в категориях</span
+                    ><span class="x">✕</span>
+                  </div>
+                </div>
+                <div class="vrow">
+                  <div class="v">71 770 ₽</div>
+                  <span class="is-new" style="border-radius: 999px"
+                    ><span class="new-tag">новое</span
+                    ><span class="pop">Пополнить</span></span
+                  >
+                </div>
+                <div class="bar"><i></i></div>
+                <div class="row2">
+                  <span>потрачено 19 480 из 91 250 ₽</span
+                  ><span>≈ 4 785 ₽ в день</span>
+                </div>
+              </div>
+              <div class="sec">Последние</div>
+              <div class="list">
+                <div class="li">
+                  <div>
+                    <div class="n">Продукты</div>
+                    <div class="sub">сегодня</div>
+                  </div>
+                  <div class="s">1 250 ₽</div>
+                </div>
+              </div>
+              <div class="is-new">
+                <span class="new-tag">новое</span>
+                <div class="sec">Переводы</div>
+                <div class="list">
+                  <div class="li">
+                    <div>
+                      <div class="n">Из конверта «Маникюр»</div>
+                      <div class="sub">сегодня</div>
+                    </div>
+                    <div class="s">+5 000 ₽</div>
+                  </div>
+                  <div class="li">
+                    <div>
+                      <div class="n">В конверт «Подушка»</div>
+                      <div class="sub">вчера</div>
+                    </div>
+                    <div class="s">−6 770 ₽</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <ul class="callouts">
+              <li>
+                «Пополнить» открывает «Перевод», где в «Куда» уже стоит «На
+                жизнь». Без раскладки дохода карточки нет, значит и кнопки нет.
+              </li>
+              <li>
+                Пример на карточке: было 66 770 из 86 250, пополнили на 5 000 из
+                «Маникюра» — стало 71 770, бюджет 91 250, «потрачено» не
+                изменилось.
+              </li>
+              <li>
+                Абзаца пояснения под карточкой больше нет. Его текст — в плашке
+                по значку «i» в правом верхнем углу карточки.
+              </li>
+              <li>
+                Плашка закрывается крестиком, нажатием в любое место экрана (в
+                том числе на неё саму) или сама через 8 секунд.
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <p class="screen-title">Экран конверта</p>
+            <div class="device phone">
+              <div class="cap">← Self-care · конверт</div>
+              <div class="stitle">Маникюр</div>
+              <div class="subcard">
+                <div class="lbl-sm">Настройки конверта — как раньше</div>
+              </div>
+              <div class="sec">Последние траты</div>
+              <div class="list">
+                <div class="li">
+                  <div>
+                    <div class="n">Маникюр</div>
+                    <div class="sub">5 ноября</div>
+                  </div>
+                  <div class="s">3 900 ₽</div>
+                </div>
+              </div>
+              <div class="is-new">
+                <span class="new-tag">новое</span>
+                <div class="sec">Переводы</div>
+                <div class="list">
+                  <div class="li">
+                    <div>
+                      <div class="n">В конверт «Одежда»</div>
+                      <div class="sub">сегодня</div>
+                    </div>
+                    <div class="s">−4 200 ₽</div>
+                  </div>
+                  <div class="li">
+                    <div>
+                      <div class="n">На жизнь</div>
+                      <div class="sub">вчера</div>
+                    </div>
+                    <div class="s">−5 000 ₽</div>
+                  </div>
+                  <div class="li">
+                    <div>
+                      <div class="n">Из удалённого конверта</div>
+                      <div class="sub">3 ноября</div>
+                    </div>
+                    <div class="s">+1 100 ₽</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <ul class="callouts">
+              <li>
+                До 10 последних переводов, по дате, новые сверху. Нет переводов
+                — нет блока.
+              </li>
+              <li>
+                Подписи строк: «В конверт «X»», «Из конверта «X»», «На жизнь»,
+                «Из денег на жизнь», «В удалённый конверт», «Из удалённого
+                конверта». Ушли деньги — «−», пришли — «+».
+              </li>
+              <li>Нажатие на строку открывает перевод для правки.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="pair">
+          <div>
+            <p class="screen-title">Правка перевода</p>
+            <div class="device phone is-new">
+              <span class="new-tag">новое</span>
+              <div class="cap">← Перевод</div>
+              <div class="sum-box">
+                <div class="k">Сумма</div>
+                <div class="v">2 000 <span>₽</span></div>
+              </div>
+              <div class="side">
+                <div class="head">
+                  <span class="lbl">Откуда</span
+                  ><span class="pill on">Маникюр</span>
+                </div>
+              </div>
+              <div class="side">
+                <div class="head">
+                  <span class="lbl">Куда</span
+                  ><span class="pill on">Одежда</span>
+                </div>
+              </div>
+              <div class="daterow"><b>Дата</b><span>Сегодня</span></div>
+              <div class="hint">
+                В конверте «Маникюр» станет 10 600 ₽, хватит ещё на 2 раза
+              </div>
+              <div class="hint">В конверте «Одежда» станет 8 400 ₽</div>
+              <div class="btn">Сохранить</div>
+              <div class="btn danger">Удалить перевод</div>
+              <div class="dialog">
+                <div class="t">Удалить перевод?</div>
+                <div class="d">4 200 ₽ вернутся в конверт «Маникюр».</div>
+                <div class="acts">
+                  <span class="no">Отмена</span><span class="yes">Удалить</span>
+                </div>
+              </div>
+            </div>
+            <ul class="callouts">
+              <li>
+                Та же форма, что у нового перевода: можно поменять сумму,
+                «Откуда», «Куда» и дату.
+              </li>
+              <li>
+                Подсказка считает так, будто старого перевода не было: перевод
+                был 4 200, в «Маникюре» сейчас 8 400; исправляем на 2 000 —
+                «станет 10 600».
+              </li>
+              <li>
+                У перевода из удалённого конверта на месте конверта стоит
+                «Удалённый конверт»: с ним можно сохранить или выбрать другой.
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <p class="screen-title">Правка повседневной траты</p>
+            <div class="device phone">
+              <div class="cap">✕ Трата</div>
+              <div class="sum-box">
+                <div class="k">Сумма</div>
+                <div class="v">1 500 <span>₽</span></div>
+              </div>
+              <div class="pills">
+                <span class="pill on">Повседневное</span
+                ><span class="pill">Из конверта</span>
+              </div>
+              <div class="pills">
+                <span class="pill on">Продукты</span
+                ><span class="pill">Кафе и кофе</span
+                ><span class="pill">Транспорт</span>
+              </div>
+              <div class="is-new">
+                <span class="new-tag">новое при правке</span>
+                <div class="hint">На жизнь останется 65 270 ₽</div>
+              </div>
+              <div class="daterow"><b>Дата</b><span>Сегодня</span></div>
+              <div class="btn">Сохранить</div>
+            </div>
+            <ul class="callouts">
+              <li>
+                Раньше подсказка «На жизнь останется» была только у новой траты.
+                Теперь она есть и при правке и считает разницу со старой суммой.
+              </li>
+              <li>
+                Пример: осталось 65 520 после траты 1 250; исправляем на 1 500 —
+                «останется 65 270».
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3 -->
+      <h2><span class="num">3</span>Как это работает</h2>
+      <div class="rules">
+        <div class="rule">
+          <div class="h">Перевод между конвертами</div>
+          <p>
+            Из любого конверта в любой другой: в другой кошелёк или внутри
+            одного. Один конверт уменьшается, другой растёт на ту же сумму.
+            «Всего в конвертах» не меняется.
+          </p>
+          <div class="example">
+            4 200 из «Маникюра» (12 600) в «Одежду» (6 400) → «Маникюр» 8 400,
+            «Одежда» 10 600. Self-care 55 200 → 51 000, Clothes 33 700 → 37 900,
+            всего по-прежнему 230 350.
+          </div>
+        </div>
+        <div class="rule">
+          <div class="h">Пополнение «на жизнь» и обратно</div>
+          <p>
+            Из конверта на жизнь: конверт уменьшается, бюджет периода и
+            «Осталось на жизнь» растут. Из «на жизнь» в конверт — наоборот.
+            «Потрачено» при этом не меняется.
+          </p>
+          <div class="example">
+            Бюджет 86 250, потрачено 19 480, осталось 66 770.<br />Пополнили на
+            5 000 из «Маникюра» → осталось 71 770, «потрачено 19 480 из 91
+            250».<br />Или отложили 6 770 в «Подушку» → осталось 60 000,
+            «потрачено 19 480 из 79 480», «Подушка» 17 000 → 23 770.
+          </div>
+        </div>
+        <div class="rule">
+          <div class="h">Можно уйти в минус</div>
+          <p>
+            Перевести можно больше, чем лежит в конверте или осталось на жизнь.
+            Перевод сохранится, подсказка заранее покажет минус цветом
+            предупреждения.
+          </p>
+          <div class="example">
+            В «Бровях» 1 100, переводим 1 450 → «Брови» −350, статус «минус».<br />Осталось
+            на жизнь 66 770, переводим 70 000 в конверт → «Осталось на жизнь» −3
+            230.
+          </div>
+        </div>
+        <div class="rule">
+          <div class="h">Конверт стал полным — его взнос уйдёт излишком</div>
+          <p>
+            Статус конверта и раскладка дохода считаются по остатку вместе с
+            переводами. Сама раскладка не меняется.
+          </p>
+          <div class="example">
+            2 500 из «Подушки» в «Подарки» (24 500, потолок 27 000) → «Подарки»
+            полные. При следующей раскладке их 2 250 уйдут в «Технику»: она
+            получит 900 + 2 250 = 3 150, Miscellaneous всё так же 6 550.
+          </div>
+        </div>
+        <div class="rule">
+          <div class="h">Дата перевода</div>
+          <p>
+            По умолчанию сегодня, можно прошедший день, будущий нельзя. Дата
+            видна в истории и задаёт порядок строк. На остатки конвертов и на
+            «Осталось на жизнь» дата не влияет.
+          </p>
+        </div>
+        <div class="rule">
+          <div class="h">
+            Как меняется «Осталось на жизнь»<span class="tag"
+              >новое правило</span
+            >
+          </div>
+          <p>
+            Любое изменение сразу видно в текущем периоде, какой бы ни была
+            дата: новое меняет на свою сумму, правка — на разницу, удаление — на
+            сумму удалённого в обратную сторону, смена одной даты — ничего.
+            Переводы меняют бюджет (Y в «потрачено X из Y»), траты — «потрачено»
+            (X).
+          </p>
+          <div class="tablewrap">
+            <table class="kinds">
+              <tr>
+                <th>Что сделали</th>
+                <th>Строка «потрачено X из Y»</th>
+                <th class="r">Осталось</th>
+              </tr>
+              <tr>
+                <td>Было: 15 ноября на жизнь ушло 119 225, потрачено 19 225</td>
+                <td>19 225 из 119 225</td>
+                <td class="r">100 000</td>
+              </tr>
+              <tr>
+                <td>Внесли трату 1 000 с датой 12 ноября</td>
+                <td class="new">20 225 из 119 225</td>
+                <td class="r new">99 000</td>
+              </tr>
+              <tr>
+                <td>Или удалили трату 2 000 от 10 ноября</td>
+                <td class="new">17 225 из 119 225</td>
+                <td class="r new">102 000</td>
+              </tr>
+              <tr>
+                <td>Или исправили трату 2 000 от 10 ноября на 2 500</td>
+                <td class="new">19 725 из 119 225</td>
+                <td class="r new">99 500</td>
+              </tr>
+              <tr>
+                <td>
+                  Или исправили пополнение 5 000 от 3 ноября (прошлый период) на
+                  6 000
+                </td>
+                <td class="new">19 225 из 120 225</td>
+                <td class="r new">101 000</td>
+              </tr>
+              <tr>
+                <td>Или удалили это пополнение 5 000</td>
+                <td class="new">19 225 из 114 225</td>
+                <td class="r new">95 000</td>
+              </tr>
+              <tr>
+                <td>Или поменяли у траты или перевода только дату</td>
+                <td>19 225 из 119 225</td>
+                <td class="r">100 000</td>
+              </tr>
+            </table>
+          </div>
+          <div class="example">
+            Раньше трата с датой 12 ноября ушла бы в прошлый период и «Осталось
+            на жизнь» не уменьшила бы, а удаление старой траты денег бы не
+            вернуло. Теперь траты и переводы работают одинаково.
+          </div>
+        </div>
+        <div class="rule">
+          <div class="h">С новым доходом — новый период, как раньше</div>
+          <p>
+            Пополнения прошлого периода в новый не переходят, пока их не
+            исправить или не удалить. Конверт деньги при этом не возвращает.
+          </p>
+          <div class="example">
+            3 ноября пополнили на 5 000 из «Маникюра», 15 ноября разложили доход
+            со 119 225 на жизнь → бюджет нового периода 119 225, в «Маникюре»
+            по-прежнему на 5 000 меньше.
+          </div>
+        </div>
+        <div class="rule">
+          <div class="h">Переводы — не траты</div>
+          <p>
+            Не попадают в категории, лимиты, «Потрачено в ноябре», «потрачено»
+            периода и в список последних трат.
+          </p>
+        </div>
+        <div class="rule">
+          <div class="h">Правка и удаление перевода</div>
+          <p>
+            Перевод открывается из блока «Переводы». Можно поменять сумму,
+            стороны и дату или удалить — с подтверждением. Деньги возвращаются
+            туда, откуда были взяты, и уходят по-новому.
+          </p>
+          <div class="example">
+            Ошибочно перевели 42 000 вместо 4 200, исправили → «Маникюр» 8 400,
+            «Одежда» 10 600.<br />Пополнение 5 000 переделали в перевод в
+            «Одежду» → «Осталось на жизнь» снова 66 770, «Одежда» 11 400.
+          </div>
+        </div>
+        <div class="rule">
+          <div class="h">Удалили конверт — его переводы остаются</div>
+          <p>
+            Деньги, переведённые из него в другой конверт или на жизнь, там и
+            остаются. В истории вместо названия — «удалённый конверт». Такой
+            перевод тоже можно исправить или удалить.
+          </p>
+          <div class="example">
+            Перевели 1 100 из «Бровей» в «Маникюр» (12 600 → 13 700), удалили
+            «Брови» → в «Маникюре» по-прежнему 13 700, строка «Из удалённого
+            конверта +1 100 ₽». Исправили сумму на 800 → «Маникюр» 13 400.
+          </div>
+        </div>
+        <div class="rule">
+          <div class="h">До первой раскладки</div>
+          <p>
+            Пока ни один доход не разложен, «на жизнь» в переводах не участвует:
+            кнопки «Пополнить» нет, «На жизнь» нельзя выбрать. Перевод между
+            конвертами сделать можно. Повседневная трата, внесённая до первой
+            раскладки, в «потрачено» не входит, и её удаление «на жизнь» не
+            меняет.
+          </p>
+        </div>
+        <div class="rule">
+          <div class="h">Пояснение — по значку «i»</div>
+          <p>
+            Под карточкой «Осталось на жизнь» больше нет абзаца. В её правом
+            верхнем углу — «i» в кружке. Нажатие открывает плашку с текстом и
+            крестиком. Плашка уходит, если нажать крестик, нажать в любое место
+            экрана (в том числе на неё саму) или подождать 8 секунд.
+          </p>
+        </div>
+      </div>
+
+      <!-- 4 -->
+      <h2><span class="num">4</span>Модель данных до и после</h2>
+      <p>
+        Модель данных — какие таблицы лежат в базе и какие в них поля.
+        Появляются две новые таблицы: переводы и журнал изменений «на жизнь».
+        Старые таблицы не меняются.
+      </p>
+
+      <h3>Сейчас</h3>
+      <p class="scroll-hint">Схему можно листать вбок.</p>
+      <div class="schema">
+        <svg
+          viewBox="0 0 880 290"
+          role="img"
+          aria-label="Схема сейчас: envelopes, incomes, expenses; траты ссылаются на конверты"
+        >
+          <defs>
+            <marker
+              id="a1"
+              viewBox="0 0 10 10"
+              refX="9"
+              refY="5"
+              markerWidth="8"
+              markerHeight="8"
+              orient="auto-start-reverse"
+            >
+              <path d="M0 0 L10 5 L0 10 z" class="arrow" />
+            </marker>
+          </defs>
+          <path
+            class="link"
+            d="M715 202 V234 H165 V182"
+            marker-end="url(#a1)"
+          />
+          <text class="note" x="440" y="252" text-anchor="middle">
+            трата из конверта знает свой конверт
+          </text>
+          <text class="note" x="440" y="276" text-anchor="middle">
+            «Осталось на жизнь» = to_daily последнего дохода − повседневные
+            траты с его даты
+          </text>
+
+          <rect class="box" x="40" y="30" width="250" height="148" rx="12" />
+          <path
+            class="head"
+            d="M52 30 H278 A12 12 0 0 1 290 42 V66 H40 V42 A12 12 0 0 1 52 30 Z"
+          />
+          <text class="tname" x="56" y="53">envelopes</text>
+          <text class="tru" x="274" y="53" text-anchor="end">конверты</text>
+          <text class="row" x="56" y="90">id</text>
+          <text class="row" x="56" y="114">
+            user_id
+            <tspan class="ru">— чей</tspan>
+          </text>
+          <text class="row" x="56" y="138">
+            name
+            <tspan class="ru">— «Маникюр»</tspan>
+          </text>
+          <text class="row" x="56" y="162">start_balance, …</text>
+
+          <rect class="box" x="315" y="30" width="250" height="148" rx="12" />
+          <path
+            class="head"
+            d="M327 30 H553 A12 12 0 0 1 565 42 V66 H315 V42 A12 12 0 0 1 327 30 Z"
+          />
+          <text class="tname" x="331" y="53">incomes</text>
+          <text class="tru" x="549" y="53" text-anchor="end">доходы</text>
+          <text class="row" x="331" y="90">id</text>
+          <text class="row" x="331" y="114">
+            user_id
+            <tspan class="ru">— чей</tspan>
+          </text>
+          <text class="row" x="331" y="138">
+            date
+            <tspan class="ru">— дата дохода</tspan>
+          </text>
+          <text class="row" x="331" y="162">
+            to_daily
+            <tspan class="ru">— на жизнь</tspan>
+          </text>
+
+          <rect class="box" x="590" y="30" width="250" height="172" rx="12" />
+          <path
+            class="head"
+            d="M602 30 H828 A12 12 0 0 1 840 42 V66 H590 V42 A12 12 0 0 1 602 30 Z"
+          />
+          <text class="tname" x="606" y="53">expenses</text>
+          <text class="tru" x="824" y="53" text-anchor="end">траты</text>
+          <text class="row" x="606" y="90">id</text>
+          <text class="row" x="606" y="114">
+            user_id
+            <tspan class="ru">— чья</tspan>
+          </text>
+          <text class="row" x="606" y="138">amount, date</text>
+          <text class="row" x="606" y="162">
+            envelope_id
+            <tspan class="ru">— пусто у повседн.</tspan>
+          </text>
+          <text class="row" x="606" y="186">category_id</text>
+        </svg>
+      </div>
+
+      <h3>После</h3>
+      <div class="legend">
+        <span><i class="sw"></i>новое</span>
+        <span><i class="sw old"></i>как было</span>
+      </div>
+      <p class="scroll-hint">Схему можно листать вбок.</p>
+      <div class="schema">
+        <svg
+          viewBox="0 0 880 520"
+          role="img"
+          aria-label="Схема после: новые таблицы transfers (ссылается на envelopes) и daily_moves (ссылается на incomes, transfers и expenses)"
+        >
+          <defs>
+            <marker
+              id="a2"
+              viewBox="0 0 10 10"
+              refX="9"
+              refY="5"
+              markerWidth="8"
+              markerHeight="8"
+              orient="auto-start-reverse"
+            >
+              <path d="M0 0 L10 5 L0 10 z" class="arrow new" />
+            </marker>
+          </defs>
+          <path class="link new" d="M165 260 V182" marker-end="url(#a2)" />
+          <text class="note new" x="178" y="226">откуда и куда</text>
+          <path
+            class="link new"
+            d="M560 260 V232 H440 V182"
+            marker-end="url(#a2)"
+          />
+          <text class="note new" x="448" y="224">в каком периоде</text>
+          <path class="link new" d="M760 260 V206" marker-end="url(#a2)" />
+          <text class="note new" x="770" y="238">какая трата</text>
+          <path class="link new" d="M480 380 H324" marker-end="url(#a2)" />
+          <text class="note new" x="402" y="372" text-anchor="middle">
+            какой перевод
+          </text>
+          <text class="note" x="440" y="500" text-anchor="middle">
+            траты по-прежнему ссылаются на конверты и категории, связи не
+            показаны
+          </text>
+
+          <rect class="box" x="40" y="30" width="250" height="148" rx="12" />
+          <path
+            class="head"
+            d="M52 30 H278 A12 12 0 0 1 290 42 V66 H40 V42 A12 12 0 0 1 52 30 Z"
+          />
+          <text class="tname" x="56" y="53">envelopes</text>
+          <text class="tru" x="274" y="53" text-anchor="end">как было</text>
+          <text class="row" x="56" y="90">id</text>
+          <text class="row" x="56" y="114">
+            user_id
+            <tspan class="ru">— чей</tspan>
+          </text>
+          <text class="row" x="56" y="138">
+            name
+            <tspan class="ru">— «Маникюр»</tspan>
+          </text>
+          <text class="row" x="56" y="162">start_balance, …</text>
+
+          <rect class="box" x="315" y="30" width="250" height="148" rx="12" />
+          <path
+            class="head"
+            d="M327 30 H553 A12 12 0 0 1 565 42 V66 H315 V42 A12 12 0 0 1 327 30 Z"
+          />
+          <text class="tname" x="331" y="53">incomes</text>
+          <text class="tru" x="549" y="53" text-anchor="end">как было</text>
+          <text class="row" x="331" y="90">id</text>
+          <text class="row" x="331" y="114">
+            user_id
+            <tspan class="ru">— чей</tspan>
+          </text>
+          <text class="row" x="331" y="138">
+            date
+            <tspan class="ru">— дата дохода</tspan>
+          </text>
+          <text class="row" x="331" y="162">
+            to_daily
+            <tspan class="ru">— на жизнь</tspan>
+          </text>
+
+          <rect class="box" x="590" y="30" width="250" height="172" rx="12" />
+          <path
+            class="head"
+            d="M602 30 H828 A12 12 0 0 1 840 42 V66 H590 V42 A12 12 0 0 1 602 30 Z"
+          />
+          <text class="tname" x="606" y="53">expenses</text>
+          <text class="tru" x="824" y="53" text-anchor="end">как было</text>
+          <text class="row" x="606" y="90">id</text>
+          <text class="row" x="606" y="114">
+            user_id
+            <tspan class="ru">— чья</tspan>
+          </text>
+          <text class="row" x="606" y="138">amount, date</text>
+          <text class="row" x="606" y="162">
+            envelope_id
+            <tspan class="ru">— пусто у повседн.</tspan>
+          </text>
+          <text class="row" x="606" y="186">category_id</text>
+
+          <rect
+            class="box new"
+            x="40"
+            y="260"
+            width="284"
+            height="196"
+            rx="12"
+          />
+          <path
+            class="head new"
+            d="M52 260 H312 A12 12 0 0 1 324 272 V296 H40 V272 A12 12 0 0 1 52 260 Z"
+          />
+          <text class="tname on" x="56" y="283">transfers</text>
+          <text class="tru on" x="308" y="283" text-anchor="end">переводы</text>
+          <text class="row" x="56" y="320">id</text>
+          <text class="row" x="56" y="344">
+            user_id
+            <tspan class="ru">— чей</tspan>
+          </text>
+          <text class="row" x="56" y="368">
+            amount
+            <tspan class="ru">— копейки</tspan>
+          </text>
+          <text class="row" x="56" y="392">
+            date
+            <tspan class="ru">— дата из формы</tspan>
+          </text>
+          <text class="row" x="56" y="416">from_daily, from_envelope_id</text>
+          <text class="row" x="56" y="440">to_daily, to_envelope_id</text>
+
+          <rect
+            class="box new"
+            x="480"
+            y="260"
+            width="360"
+            height="220"
+            rx="12"
+          />
+          <path
+            class="head new"
+            d="M492 260 H828 A12 12 0 0 1 840 272 V296 H480 V272 A12 12 0 0 1 492 260 Z"
+          />
+          <text class="tname on" x="496" y="283">daily_moves</text>
+          <text class="tru on" x="824" y="283" text-anchor="end">
+            журнал «на жизнь»
+          </text>
+          <text class="row" x="496" y="320">id</text>
+          <text class="row" x="496" y="344">
+            user_id
+            <tspan class="ru">— чей</tspan>
+          </text>
+          <text class="row" x="496" y="368">
+            income_id
+            <tspan class="ru">— период</tspan>
+          </text>
+          <text class="row" x="496" y="392">
+            source
+            <tspan class="ru">— перевод или трата</tspan>
+          </text>
+          <text class="row" x="496" y="416">transfer_id, expense_id</text>
+          <text class="row" x="496" y="440">
+            amount
+            <tspan class="ru">— на сколько, со знаком</tspan>
+          </text>
+          <text class="row" x="496" y="464">created_at</text>
+        </svg>
+      </div>
+
+      <ul class="points">
+        <li>
+          <b>transfers</b> — переводы. У каждой стороны: «на жизнь» (флаг
+          <code>from_daily</code> / <code>to_daily</code>) или конверт (<code
+            >from_envelope_id</code
+          >
+          / <code>to_envelope_id</code>). Флаг стоит, конверта нет — это «на
+          жизнь». Нет ни флага, ни конверта — конверт удалён.
+        </li>
+        <li>
+          Остаток конверта по-прежнему нигде не хранится, а считается: начальный
+          остаток + раскладки + пришло переводами − траты − ушло переводами.
+        </li>
+        <li>
+          <b>daily_moves</b> — журнал «на жизнь». Каждое сохранение или удаление
+          перевода или повседневной траты пишет строку: на сколько изменилось
+          «на жизнь» и в каком периоде (это последний разложенный доход в момент
+          изменения). Сумма 0 не пишется: перевод между конвертами, трата из
+          конверта, смена одной даты.
+        </li>
+        <li>
+          На карточке: бюджет = на жизнь из последней раскладки + строки
+          переводов этого периода; потрачено = строки трат этого периода с
+          обратным знаком; осталось = бюджет − потрачено.
+        </li>
+        <li>
+          В базе действуют правила, которые не пропустят неверную запись: сумма
+          перевода больше нуля, не «на жизнь → на жизнь», не из конверта в тот
+          же конверт.
+        </li>
+      </ul>
+
+      <h3>Пример журнала</h3>
+      <div class="tablewrap card" style="padding: 8px 14px">
+        <table class="kinds">
+          <tr>
+            <th>Что сделали</th>
+            <th class="r">Строка журнала</th>
+            <th>Куда идёт</th>
+            <th>Период</th>
+          </tr>
+          <tr>
+            <td>3 ноября пополнили «на жизнь» на 5 000 из «Маникюра»</td>
+            <td class="r">+5 000</td>
+            <td>бюджет</td>
+            <td>доход 1 ноября</td>
+          </tr>
+          <tr>
+            <td>15 ноября разложили доход, 119 225 на жизнь</td>
+            <td class="r">—</td>
+            <td colspan="2">начался новый период</td>
+          </tr>
+          <tr>
+            <td>Повседневные траты в ноябре после 15-го на 19 225</td>
+            <td class="r">−19 225</td>
+            <td>потрачено</td>
+            <td>доход 15 ноября</td>
+          </tr>
+          <tr>
+            <td>20 ноября внесли трату 1 000 с датой 12 ноября</td>
+            <td class="r new">−1 000</td>
+            <td>потрачено</td>
+            <td>доход 15 ноября</td>
+          </tr>
+          <tr>
+            <td>Исправили пополнение 3 ноября: 5 000 → 6 000</td>
+            <td class="r new">+1 000</td>
+            <td>бюджет</td>
+            <td>доход 15 ноября</td>
+          </tr>
+          <tr>
+            <td>Удалили трату 2 000 от 10 ноября</td>
+            <td class="r new">+2 000</td>
+            <td>потрачено</td>
+            <td>доход 15 ноября</td>
+          </tr>
+        </table>
+      </div>
+      <p class="small muted">
+        Итог на карточке: бюджет 119 225 + 1 000 = 120 225; потрачено 19 225 + 1
+        000 − 2 000 = 18 225; осталось 102 000.
+      </p>
+
+      <h3>Как запрос находит свои данные и не находит чужие</h3>
+      <p>
+        В обеих новых таблицах есть <code>user_id</code>, и каждый запрос
+        добавляет условие «и пользователь — тот, кто вошёл». Пример: перевод №7
+        принадлежит пользователю A.
+      </p>
+      <div class="lookup">
+        <div class="who">
+          <h3>Вошёл A</h3>
+          <div class="ask">найди перевод №7 <b>у пользователя A</b></div>
+          <span class="result ok">Нашёлся: экран правки перевода</span>
+        </div>
+        <div class="who">
+          <h3>Вошёл B</h3>
+          <div class="ask">найди перевод №7 <b>у пользователя B</b></div>
+          <span class="result no">Не нашёлся: «не найдено»</span>
+        </div>
+      </div>
+      <p class="small muted">
+        Так же со списками «Переводы», журналом и выбором конвертов на экране
+        перевода: чужого конверта в списках нет, перевести в него нельзя.
+      </p>
+
+      <h3>Миграции</h3>
+      <p>
+        Миграция — скрипт, который меняет устройство базы. Здесь одна миграция
+        из двух шагов. Она запускается перед стартом новой версии; если упала,
+        новая версия не стартует.
+      </p>
+      <ol class="steps">
+        <li>
+          <div>
+            <h3>
+              Новые таблицы <code>transfers</code> и <code>daily_moves</code
+              ><span class="mchip">не меняет данные</span>
+            </h3>
+            <p>
+              Пустые таблицы с правилами и связями. Конверты, доходы, траты и
+              категории не трогает.
+            </p>
+          </div>
+        </li>
+        <li class="changes">
+          <div>
+            <h3>
+              Заполнить журнал по уже внесённым тратам<span class="mchip chg"
+                >добавляет строки</span
+              >
+            </h3>
+            <p>
+              Каждой повседневной трате — строка журнала с её суммой в периоде
+              дохода, к которому она относится по дате. Траты до первого дохода
+              строк не получают. Сами траты не меняются. Так «Осталось на жизнь»
+              и «потрачено» после миграции те же, что до неё, а удаление старой
+              траты потом вернёт деньги в текущее «на жизнь».
+            </p>
+          </div>
+        </li>
+      </ol>
+      <div class="tablewrap card" style="padding: 8px 14px; margin-top: 16px">
+        <table class="kinds">
+          <tr>
+            <th>Что в базе</th>
+            <th>После миграции</th>
+          </tr>
+          <tr>
+            <td>Конверты, доходы, траты, категории</td>
+            <td>как были, остатки те же</td>
+          </tr>
+          <tr>
+            <td>Переводы</td>
+            <td class="new">пусто</td>
+          </tr>
+          <tr>
+            <td>Журнал «на жизнь»</td>
+            <td class="new">
+              по строке на каждую повседневную трату после первого дохода
+            </td>
+          </tr>
+          <tr>
+            <td>«Осталось на жизнь» и «потрачено»</td>
+            <td>те же цифры, что до миграции</td>
+          </tr>
+        </table>
+      </div>
+      <div class="callout">
+        <h3>Как откатиться</h3>
+        <p>
+          Прошлая версия приложения не знает про новые таблицы: она просто не
+          учтёт переводы и снова будет считать «потрачено» по дате трат. Остатки
+          конвертов и «на жизнь» станут такими, будто переводов не было, а траты
+          задним числом посчитаются по старому правилу. Таблицы можно не
+          удалять. Сам откат запускаешь только ты.
+        </p>
+      </div>
+
+      <!-- 5 -->
+      <h2><span class="num">5</span>Как проверить руками</h2>
+      <div class="prep">
+        <b>Подготовка.</b> Это можно будет проверить после реализации.
+        <ol>
+          <li>
+            Запустить приложение локально, данные —
+            <code>data/sample-seed.json</code>
+            (см. README).
+          </li>
+          <li>
+            Разложить доход на экране «Пришли деньги»: без этого «на жизнь» в
+            переводах не участвует.
+          </li>
+          <li>
+            Числа ниже — из сценариев на демо-данных
+            (<code>data/demo-seed.json</code>). На тестовых данных суммы другие:
+            смотри, на сколько они меняются.
+          </li>
+          <li>
+            Сценарии «прошлого периода» требуют разложить второй доход. Галочки
+            на странице только для удобства и не сохраняются.
+          </li>
+        </ol>
+      </div>
+
+      <div class="check-group">
+        <h3>Перевод между конвертами</h3>
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Между кошельками<span class="auto">автотест в плане</span>
+            </div>
+            <div class="st">
+              Экран Self-care → «Перевести» → 4 200 из «Маникюра» в «Одежду»
+              <span class="arrow">→</span> снова экран Self-care: «Маникюр» 8
+              400, «Одежда» 10 600, Self-care 51 000, Clothes 37 900, «Всего в
+              конвертах» не изменилось.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Внутри одного кошелька<span class="auto">автотест в плане</span>
+            </div>
+            <div class="st">
+              4 200 из «Маникюра» в «Косметологию» (−27 400)
+              <span class="arrow">→</span> «Маникюр» 8 400, «Косметология» −23
+              200, Self-care по-прежнему 55 200.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Перевод делает конверт полным<span class="auto"
+                >автотест в плане</span
+              >
+            </div>
+            <div class="st">
+              2 500 из «Подушки» в «Подарки» <span class="arrow">→</span>
+              «Подарки» 27 000, «полный», хватит на 3 раза. На «Пришли деньги»
+              излишек «Подарков» 2 250 идёт в «Технику».
+            </div>
+          </div></label
+        >
+      </div>
+
+      <div class="check-group">
+        <h3>Пополнение «на жизнь» и обратно</h3>
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              «Пополнить» с экрана «Траты»<span class="auto"
+                >автотест в плане</span
+              >
+            </div>
+            <div class="st">
+              Нажать «Пополнить» <span class="arrow">→</span> открылся
+              «Перевод», в «Куда» уже «На жизнь», «Откуда» не выбрано.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Пополнение из «Маникюра»<span class="auto">автотест в плане</span>
+            </div>
+            <div class="st">
+              5 000 из «Маникюра» в «На жизнь» <span class="arrow">→</span>
+              «Осталось на жизнь» +5 000, Y в «потрачено X из Y» +5 000, X не
+              изменился; на главной тоже +5 000; «Маникюр» −5 000.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Из «на жизнь» в «Подушку»<span class="auto"
+                >автотест в плане</span
+              >
+            </div>
+            <div class="st">
+              6 770 из «На жизнь» в «Подушку» <span class="arrow">→</span>
+              «Осталось на жизнь» −6 770, Y −6 770, «Подушка» +6 770.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Пополнение — не трата<span class="auto">автотест в плане</span>
+            </div>
+            <div class="st">
+              После пополнения <span class="arrow">→</span> «Потрачено в
+              ноябре», категории и «Последние» не изменились.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              До первой раскладки<span class="auto">автотест в плане</span>
+            </div>
+            <div class="st">
+              На чистых данных без раскладки <span class="arrow">→</span> на
+              «Тратах» нет «Пополнить», на экране перевода нет «На жизнь»;
+              перевод между конвертами работает.
+            </div>
+          </div></label
+        >
+      </div>
+
+      <div class="check-group">
+        <h3>Что можно выбрать и минус</h3>
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Пустая сумма и одинаковые стороны<span class="auto"
+                >автотест в плане</span
+              >
+            </div>
+            <div class="st">
+              Сумма пустая или 0 <span class="arrow">→</span> «Перевести»
+              недоступна. «Маникюр» и в «Откуда», и в «Куда»
+              <span class="arrow">→</span> тоже недоступна.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Конверт уходит в минус<span class="auto">автотест в плане</span>
+            </div>
+            <div class="st">
+              Перевести из конверта больше его остатка
+              <span class="arrow">→</span> подсказка «станет −… ₽» цветом
+              предупреждения, «Перевести» доступна, после — статус «минус».
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              «На жизнь» уходит в минус<span class="auto"
+                >автотест в плане</span
+              >
+            </div>
+            <div class="st">
+              Перевести из «На жизнь» больше, чем осталось
+              <span class="arrow">→</span> «Осталось на жизнь» с минусом, цветом
+              предупреждения.
+            </div>
+          </div></label
+        >
+      </div>
+
+      <div class="check-group">
+        <h3>Подсказка и дата</h3>
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Подсказка по обеим сторонам<span class="auto"
+                >автотест в плане</span
+              >
+            </div>
+            <div class="st">
+              4 200 из «Маникюра» в «Косметологию»
+              <span class="arrow">→</span> «В конверте «Маникюр» станет 8 400 ₽,
+              хватит ещё на 2 раза» и «В конверте «Косметология» станет −23 200
+              ₽» цветом предупреждения. Поменять сумму — подсказка
+              пересчиталась.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Получатель становится полным<span class="auto"
+                >автотест в плане</span
+              >
+            </div>
+            <div class="st">
+              2 500 из «Подушки» в «Подарки» <span class="arrow">→</span> «В
+              конверте «Подарки» станет 27 000 ₽, хватит на 3 раза».
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Подсказка для «на жизнь»<span class="auto">автотест в плане</span>
+            </div>
+            <div class="st">
+              Осталось 66 770, 5 000 из «Маникюра» в «На жизнь»
+              <span class="arrow">→</span> «На жизнь останется 71 770 ₽».
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Дата<span class="auto">автотест в плане</span></div>
+            <div class="st">
+              Новый перевод <span class="arrow">→</span> в «Дате» сегодня.
+              Выбрать прошедший день <span class="arrow">→</span> строка в
+              «Переводах» с этой датой, остатки как при переводе сегодня.
+              Завтрашний день выбрать нельзя.
+            </div>
+          </div></label
+        >
+      </div>
+
+      <div class="check-group">
+        <h3>История переводов</h3>
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Перевод между конвертами<span class="auto">автотест в плане</span>
+            </div>
+            <div class="st">
+              После 4 200 из «Маникюра» в «Одежду»
+              <span class="arrow">→</span> у «Маникюра» «В конверт «Одежда»» −4
+              200 ₽, у «Одежды» «Из конверта «Маникюр»» +4 200 ₽.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Пополнение и обратный перевод<span class="auto"
+                >автотест в плане</span
+              >
+            </div>
+            <div class="st">
+              На «Тратах» <span class="arrow">→</span> «Из конверта «Маникюр»»
+              +5 000 ₽ и «В конверт «Подушка»» −6 770 ₽. У «Маникюра» «На жизнь»
+              −5 000 ₽, у «Подушки» «Из денег на жизнь» +6 770 ₽.
+            </div>
+          </div></label
+        >
+      </div>
+
+      <div class="check-group">
+        <h3>Правка и удаление перевода</h3>
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Исправить сумму<span class="auto">автотест в плане</span>
+            </div>
+            <div class="st">
+              Перевести 42 000 из «Маникюра» в «Одежду», открыть, исправить на 4
+              200 <span class="arrow">→</span> «Маникюр» 8 400, «Одежда» 10 600.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Сменить получателя<span class="auto">автотест в плане</span>
+            </div>
+            <div class="st">
+              У перевода 4 200 «Куда» → «Косметология»
+              <span class="arrow">→</span> «Одежда» снова 6 400, «Косметология»
+              −23 200; строка ушла с экрана «Одежды» на экран «Косметологии».
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Пополнение → перевод между конвертами<span class="auto"
+                >автотест в плане</span
+              >
+            </div>
+            <div class="st">
+              У пополнения 5 000 «Куда» → «Одежда»
+              <span class="arrow">→</span> «Осталось на жизнь» как до
+              пополнения, «Одежда» +5 000.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Подсказка при правке<span class="auto">автотест в плане</span>
+            </div>
+            <div class="st">
+              Открыть перевод 4 200 <span class="arrow">→</span> «Маникюр станет
+              8 400». Исправить на 2 000 <span class="arrow">→</span>
+              «станет 10 600», «Одежда станет 8 400».
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Удалить перевод<span class="auto">автотест в плане</span>
+            </div>
+            <div class="st">
+              «Удалить перевод» <span class="arrow">→</span> окно «4 200 ₽
+              вернутся в конверт «Маникюр»» → «Удалить»
+              <span class="arrow">→</span> суммы как до перевода, строк в
+              «Переводах» нет. Для пополнения — «Осталось на жизнь» как до него.
+            </div>
+          </div></label
+        >
+      </div>
+
+      <div class="check-group">
+        <h3>Удалённый конверт</h3>
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Деньги остаются у получателя<span class="auto"
+                >автотест в плане</span
+              >
+            </div>
+            <div class="st">
+              Создать конверт с остатком 1 100, перевести всё в «Маникюр»,
+              удалить конверт <span class="arrow">→</span> «Маникюр» сохранил +1
+              100, строка «Из удалённого конверта» +1 100 ₽.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Исправить сумму<span class="auto">автотест в плане</span>
+            </div>
+            <div class="st">
+              Открыть этот перевод <span class="arrow">→</span> в «Откуда»
+              «Удалённый конверт». Сумма → 800 <span class="arrow">→</span>
+              «Маникюр» +800 к исходному.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Заменить удалённый конверт<span class="auto">только расчёты</span>
+            </div>
+            <div class="st">
+              В «Откуда» выбрать «Подушку» <span class="arrow">→</span>
+              «Подушка» −1 100, у «Маникюра» строка «Из конверта «Подушка»».
+            </div>
+          </div></label
+        >
+      </div>
+
+      <div class="check-group">
+        <h3>«На жизнь» и периоды</h3>
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Пополнение задним числом<span class="auto">автотест в плане</span>
+            </div>
+            <div class="st">
+              После раскладки пополнить «на жизнь» с датой вчера
+              <span class="arrow">→</span> «Осталось на жизнь» +5 000, как у
+              пополнения сегодня.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Новый доход — новый период<span class="auto">только расчёты</span>
+            </div>
+            <div class="st">
+              Пополнить, потом разложить второй доход
+              <span class="arrow">→</span> бюджет нового периода = на жизнь из
+              новой раскладки, пополнение в нём не учтено; конверт деньги не
+              вернул.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Правка старого пополнения<span class="auto">только расчёты</span>
+            </div>
+            <div class="st">
+              После второго дохода исправить старое пополнение на 1 000 больше
+              <span class="arrow">→</span> Y и «Осталось на жизнь» +1 000.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Удаление старого пополнения<span class="auto"
+                >только расчёты</span
+              >
+            </div>
+            <div class="st">
+              Удалить старое пополнение <span class="arrow">→</span> Y и
+              «Осталось на жизнь» меньше на его сумму, конверт получил её
+              обратно.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Смена только даты<span class="auto">автотест в плане</span>
+            </div>
+            <div class="st">
+              У пополнения поменять только дату <span class="arrow">→</span>
+              «Осталось на жизнь» не изменилось.
+            </div>
+          </div></label
+        >
+      </div>
+
+      <div class="check-group">
+        <h3>Траты задним числом</h3>
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Трата задним числом<span class="auto">автотест в плане</span>
+            </div>
+            <div class="st">
+              Повседневная трата 1 000 с датой раньше последней раскладки
+              <span class="arrow">→</span> «Осталось на жизнь» −1 000,
+              «потрачено» +1 000, Y не изменился. Пример: 20 225 из 119 225,
+              осталось 99 000.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Правка старой траты<span class="auto">автотест в плане</span>
+            </div>
+            <div class="st">
+              Исправить её сумму на 500 больше <span class="arrow">→</span>
+              «Осталось на жизнь» −500, «потрачено» +500.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Подсказка при правке траты<span class="auto"
+                >автотест в плане</span
+              >
+            </div>
+            <div class="st">
+              Открыть повседневную трату 1 250 при оставшихся 65 520, ввести 1
+              500 <span class="arrow">→</span> «На жизнь останется 65 270 ₽».
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Смена только даты траты<span class="auto">автотест в плане</span>
+            </div>
+            <div class="st">
+              Поменять у траты только дату <span class="arrow">→</span>
+              «потрачено» и «Осталось на жизнь» не изменились.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Удаление старой траты<span class="auto">автотест в плане</span>
+            </div>
+            <div class="st">
+              Удалить повседневную трату с датой раньше раскладки
+              <span class="arrow">→</span> «Осталось на жизнь» + её сумма,
+              «потрачено» − её сумма. Для старой траты прошлого периода — после
+              второго дохода, вручную.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Трата до первой раскладки<span class="auto">только расчёты</span>
+            </div>
+            <div class="st">
+              На чистых данных внести повседневную трату, потом разложить первый
+              доход <span class="arrow">→</span> в «потрачено» её нет; удалить
+              её <span class="arrow">→</span> «Осталось на жизнь» не изменилось.
+            </div>
+          </div></label
+        >
+      </div>
+
+      <div class="check-group">
+        <h3>Пояснение к «Осталось на жизнь»</h3>
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Открыть пояснение<span class="auto">автотест в плане</span>
+            </div>
+            <div class="st">
+              На «Тратах» нажать «i» в правом верхнем углу зелёной карточки
+              <span class="arrow">→</span> плашка «Это всё, что осталось от
+              зарплаты после конвертов…» с крестиком; под карточкой отдельного
+              абзаца нет.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Закрыть крестиком<span class="auto">автотест в плане</span>
+            </div>
+            <div class="st">
+              Нажать ✕ <span class="arrow">→</span> плашка закрылась.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Закрыть нажатием на экран<span class="auto"
+                >автотест в плане</span
+              >
+            </div>
+            <div class="st">
+              Открыть, нажать в любое другое место или на саму плашку
+              <span class="arrow">→</span> закрылась.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Закрывается сама<span class="auto">автотест в плане</span>
+            </div>
+            <div class="st">
+              Открыть и ничего не нажимать <span class="arrow">→</span> через 8
+              секунд плашка закрылась.
+            </div>
+          </div></label
+        >
+      </div>
+
+      <div class="check-group">
+        <h3>После выкатки</h3>
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Цифры не изменились</div>
+            <div class="st">
+              До обновления записать «Осталось на жизнь» и «потрачено» на экране
+              «Траты» <span class="arrow">→</span> после обновления они те же.
+            </div>
+          </div></label
+        >
+      </div>
+
+      <!-- 6 -->
+      <h2><span class="num">6</span>Что агент решил сам</h2>
+      <div class="two">
+        <div class="card box2">
+          <h3>Продуктовые — стоит просмотреть</h3>
+          <ul class="points small">
+            <li>Будущую дату перевода выбрать нельзя, как у трат.</li>
+            <li>До первой раскладки «На жизнь» в переводах не участвует.</li>
+            <li>
+              Трата, внесённая до первой раскладки, в «потрачено» не входит, её
+              удаление ничего не меняет. Если исправить её после раскладки, она
+              начнёт учитываться целиком, с новой суммой.
+            </li>
+            <li>
+              Если удалить много старых трат, «потрачено» может стать
+              отрицательным: показывается со знаком «−», полоска пустая.
+            </li>
+            <li>
+              Переводы удалённого конверта остаются у второй стороны, подпись
+              «удалённый конверт». При удалении такого перевода окно говорит,
+              что деньги уйдут из живого конверта.
+            </li>
+            <li>
+              Истории переводов нет на главной и на экране кошелька — только у
+              конверта и на «Тратах».
+            </li>
+            <li>
+              Подписи строк истории («Из денег на жизнь» и др.) и тексты
+              подсказок.
+            </li>
+            <li>
+              Кнопка «Перевести» — под плитками на экране кошелька; «Пополнить»
+              — справа от суммы на зелёной карточке.
+            </li>
+            <li>
+              Плашка с пояснением уходит сама через 8 секунд: столько нужно,
+              чтобы спокойно прочитать два предложения. Esc тоже закрывает её.
+              Нажатие мимо плашки только закрывает её, но и то, на что нажали,
+              срабатывает как обычно.
+            </li>
+          </ul>
+        </div>
+        <div class="card box2">
+          <h3>Технические — на экраны не влияют</h3>
+          <ul class="points small">
+            <li>
+              Перевод — одна запись с двумя сторонами, а не две траты: так он не
+              попадает в категории и «Потрачено».
+            </li>
+            <li>
+              Журнал «на жизнь» вместо подсчёта по датам: только он может учесть
+              «правку на разницу» и удаление старого.
+            </li>
+            <li>
+              Перевод или трата и их строка журнала сохраняются вместе, одним
+              действием: разойтись не могут.
+            </li>
+            <li>
+              При удалении конверта ссылка у перевода очищается, сам перевод
+              остаётся.
+            </li>
+            <li>
+              Миграция сама заполняет журнал по старым тратам, чтобы цифры не
+              изменились.
+            </li>
+            <li>
+              Один общий подсчёт «на жизнь» для главной, «Трат», формы траты и
+              формы перевода.
+            </li>
+            <li>
+              Кнопки-чипы выносятся из формы траты в общий компонент для обеих
+              форм. Новых библиотек нет.
+            </li>
+            <li>
+              Плашка — готовый компонент Popover из shadcn/ui на уже
+              установленном пакете radix-ui, перекрашенный токенами. Значок «i»
+              — линейная иконка в том же наборе, что остальные.
+            </li>
+            <li>
+              Браузерные автотесты удаляют свои переводы и траты в конце, чтобы
+              не сбить числа следующих тестов. Сценарии со вторым доходом
+              проверяют только автотесты расчётов и ручная проверка.
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 7 -->
+      <h2><span class="num">7</span>Что осталось неясным</h2>
+      <div class="card">
+        <div class="q">
+          <p>Открытых вопросов в изменении нет.</p>
+        </div>
+      </div>
+
+      <footer>
+        Собрано по <code>openspec/changes/wallet-transfers/</code>: proposal.md,
+        specs, design.md, tasks.md. Кода ещё нет. Страница только показывает,
+        ничего не меняет.
+      </footer>
+    </div>
+  </body>
+</html>

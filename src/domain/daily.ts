@@ -37,6 +37,41 @@ export function monthSpending(
     .reduce((sum, e) => sum + e.amount, 0);
 }
 
+/**
+ * How a saved expense changes «на жизнь»: a daily expense (no envelope)
+ * takes its amount, an envelope expense or a deleted one changes nothing.
+ */
+export function expenseDailyEffect(
+  expense: { amount: number; envelopeId: string | null } | null,
+): number {
+  if (expense === null || expense.envelopeId !== null) return 0;
+  return -expense.amount;
+}
+
+/**
+ * The amount of a new journal row: what the item does to «на жизнь» now
+ * minus what its earlier rows already added. Zero means no row.
+ */
+export function dailyMove(input: {
+  effect: number;
+  journaled: number;
+}): number {
+  return input.effect - input.journaled;
+}
+
+/** Budget of the current period: the income's share plus transfer rows. */
+export function periodBudget(input: {
+  toDaily: number;
+  transferMoves: number[];
+}): number {
+  return input.transferMoves.reduce((sum, m) => sum + m, input.toDaily);
+}
+
+/** Spent in the current period: expense rows are negative, spent is positive. */
+export function periodSpent(expenseMoves: number[]): number {
+  return expenseMoves.reduce((sum, m) => sum - m, 0);
+}
+
 export interface DailySummary {
   budget: number;
   spent: number;
@@ -70,12 +105,22 @@ export function dailySummary(input: {
   };
 }
 
-/** What is left for daily life if a daily expense is saved. */
-export function remainingAfterExpense(
-  remaining: number,
-  amount: number,
-): number {
-  return remaining - amount;
+/**
+ * What is left for daily life if a daily expense is saved. `journaled` is
+ * what the expense has already added to «на жизнь» (0 for a new one).
+ */
+export function remainingAfterExpense(input: {
+  remaining: number;
+  amount: number;
+  journaled: number;
+}): number {
+  return (
+    input.remaining +
+    dailyMove({
+      effect: expenseDailyEffect({ amount: input.amount, envelopeId: null }),
+      journaled: input.journaled,
+    })
+  );
 }
 
 export type CategoryStatus =

@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { ChevronIcon } from "@/components/icons";
+import { InfoTip } from "@/components/info-tip";
 import { Screen, ScreenTitle } from "@/components/screen";
 import { AddLink, Bar, Card, SectionTitle } from "@/components/ui-kit";
-import { categoryStatus, dailySummary, monthStart } from "@/domain/daily";
+import { categoryStatus, monthStart } from "@/domain/daily";
 import { formatMoney } from "@/domain/money";
 import {
   formatDay,
@@ -14,38 +15,32 @@ import { cn } from "@/lib/utils";
 import { requireUserId } from "@/server/auth/current-user";
 import {
   loadCategories,
-  loadDailySpent,
+  loadDailySummary,
   loadExpenses,
-  loadLatestIncome,
   loadMonthSpent,
-  periodStart,
+  loadTransfers,
 } from "@/server/queries";
 import { todayIso } from "@/server/today";
+import { TransferList } from "../transfers/transfer-list";
 
 export const dynamic = "force-dynamic";
 
 export default async function DailyPage() {
   const userId = await requireUserId();
   const today = todayIso();
-  const income = await loadLatestIncome(userId);
-  // The «Осталось на жизнь» card still counts from the last income;
+  // The «Осталось на жизнь» card counts the current period (journal);
   // categories and the month total count from the 1st of the month.
-  const since = periodStart(income);
   const monthSince = monthStart(today);
-  const [categories, spent, monthSpent, recent] = await Promise.all([
-    loadCategories(userId, monthSince),
-    loadDailySpent(userId, since),
-    loadMonthSpent(userId, monthSince),
-    loadExpenses(userId, { kind: "spending", limit: 10 }),
-  ]);
-  const summary = income
-    ? dailySummary({
-        budget: income.toDaily,
-        spent,
-        today,
-        nextIncomeDate: income.nextIncomeDate,
-      })
-    : null;
+  const [categories, dailyView, monthSpent, recent, dailyTransfers] =
+    await Promise.all([
+      loadCategories(userId, monthSince),
+      loadDailySummary(userId, today),
+      loadMonthSpent(userId, monthSince),
+      loadExpenses(userId, { kind: "spending", limit: 10 }),
+      loadTransfers(userId, { daily: true }),
+    ]);
+  const summary = dailyView?.summary ?? null;
+  const income = dailyView?.income ?? null;
 
   return (
     <Screen>
@@ -54,16 +49,31 @@ export default async function DailyPage() {
       {summary && income ? (
         <section className="flex flex-col gap-3 rounded-[20px] bg-accent p-[18px] text-white">
           <div className="flex flex-col gap-1">
-            <div className="text-[15px] text-accent-soft">
-              Осталось на жизнь
-              {income.nextIncomeDate &&
-                ` до ${formatDay(income.nextIncomeDate, today)}`}
+            <div className="flex items-start justify-between gap-2">
+              <div className="text-[15px] text-accent-soft">
+                Осталось на жизнь
+                {income.nextIncomeDate &&
+                  ` до ${formatDay(income.nextIncomeDate, today)}`}
+              </div>
+              <InfoTip>
+                Это всё, что осталось от зарплаты после конвертов, с
+                пополнениями из конвертов. Траты из конвертов эту сумму не
+                уменьшают, но видны в категориях
+              </InfoTip>
             </div>
-            <div
-              data-testid="daily-left"
-              className="font-display text-[32px] font-semibold leading-tight"
-            >
-              {formatMoney(summary.remaining)}
+            <div className="flex items-center justify-between gap-2">
+              <div
+                data-testid="daily-left"
+                className="font-display text-[32px] font-semibold leading-tight"
+              >
+                {formatMoney(summary.remaining)}
+              </div>
+              <Link
+                href={`/transfers/new?to=daily&from=${encodeURIComponent("/daily")}`}
+                className="shrink-0 rounded-full bg-accent-strong px-3.5 py-2 text-[13px] font-semibold text-white no-underline"
+              >
+                Пополнить
+              </Link>
             </div>
           </div>
           <Bar
@@ -98,11 +108,6 @@ export default async function DailyPage() {
           <ChevronIcon />
         </Link>
       )}
-
-      <p className="m-0 text-sm leading-snug text-ink-muted">
-        Это всё, что осталось от зарплаты после конвертов. Траты из конвертов
-        эту сумму не уменьшают, но видны в категориях
-      </p>
 
       <div data-testid="month-spent" className="text-[15px] text-ink-muted">
         Потрачено {monthNamePrepositional(today)}{" "}
@@ -198,6 +203,13 @@ export default async function DailyPage() {
           </Card>
         </>
       )}
+
+      <TransferList
+        transfers={dailyTransfers}
+        viewpoint={{ kind: "daily" }}
+        backHref="/daily"
+        today={today}
+      />
     </Screen>
   );
 }

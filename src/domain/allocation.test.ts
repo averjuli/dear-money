@@ -325,3 +325,31 @@ describe("edge cases", () => {
     expect(plan.toEnvelopes + plan.toDaily).toBe(rub(20000));
   });
 });
+
+describe("balances include transfers", () => {
+  // 2 500 moved from «Подушка» (17 000) to «Подарки» (24 500): the transfer
+  // is part of the balance, so allocation sees «Подарки» as full.
+  const envelopes = demoEnvelopes().map((e) => {
+    if (e.name === "Подарки") return { ...e, balance: rub(27000) };
+    if (e.name === "Подушка") return { ...e, balance: rub(14500) };
+    return e;
+  });
+  const plan = planAllocation(demoWallets(), envelopes, rub(150000));
+  const id = (name: string) => envelopes.find((e) => e.name === name)!.id;
+
+  it("«Подарки» become full and give their 2 250 to «Технику»", () => {
+    expect(sumFor(plan.lines, id("Подарки"))).toBe(0);
+    expect(sumFor(plan.lines, id("Техника"))).toBe(rub(900 + 2250));
+  });
+
+  it("Miscellaneous still gets 6 550, 30 775 go to envelopes in total", () => {
+    const misc = envelopes
+      .filter((e) =>
+        ["Техника", "Быт", "Подарки", "Развлечения"].includes(e.name),
+      )
+      .reduce((s, e) => s + sumFor(plan.lines, e.id), 0);
+    expect(misc).toBe(rub(6550));
+    expect(plan.toEnvelopes).toBe(rub(30775));
+    expect(plan.toDaily).toBe(rub(119225));
+  });
+});

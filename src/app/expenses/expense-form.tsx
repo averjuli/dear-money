@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { Chip } from "@/components/chip";
 import { ConfirmButton } from "@/components/confirm-button";
 import { MoneyField, MoneyInput } from "@/components/money-input";
 import { Spacer } from "@/components/screen";
@@ -38,40 +39,11 @@ export interface ExpenseInitial {
   note: string | null;
   envelopeId: string | null;
   categoryId: string | null;
+  /** What this expense has already added to «на жизнь» (journal rows). */
+  journaled: number;
 }
 
 type Mode = "daily" | "envelope";
-
-function Chip({
-  selected,
-  onClick,
-  children,
-  dashed,
-}: {
-  selected?: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-  dashed?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      aria-pressed={dashed ? undefined : selected}
-      onClick={onClick}
-      className={cn(
-        "min-h-11 rounded-full px-3.5 text-[15px]",
-        dashed && "border-2 border-dashed border-dash bg-transparent text-ink",
-        !dashed &&
-          selected &&
-          "border-2 border-accent bg-accent-soft font-semibold text-accent-strong",
-        !dashed && !selected && "bg-surface",
-        !dashed && !selected && "text-ink",
-      )}
-    >
-      {children}
-    </button>
-  );
-}
 
 /** «+ Новая категория»: name and optional monthly limit, created right away. */
 function NewCategory({
@@ -251,7 +223,11 @@ export function ExpenseForm({
       : null;
   const dailyAfter =
     mode === "daily" && dailyRemaining !== null && amount > 0
-      ? remainingAfterExpense(dailyRemaining, amount)
+      ? remainingAfterExpense({
+          remaining: dailyRemaining,
+          amount,
+          journaled: initial?.journaled ?? 0,
+        })
       : null;
 
   const recentEnvelopes = recentEnvelopeIds
