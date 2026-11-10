@@ -38,6 +38,15 @@ export const CloseIcon = (p: IconProps) => (
   </Svg>
 );
 
+/** «i» in a circle. */
+export const InfoIcon = (p: IconProps) => (
+  <Svg strokeWidth={2.2} {...p}>
+    <circle cx="12" cy="12" r="9.5" />
+    <path d="M12 11v5.5" />
+    <path d="M12 7.6v.01" strokeWidth={2.8} />
+  </Svg>
+);
+
 export const ChevronIcon = (p: IconProps) => (
   <Svg size={16} {...p}>
     <path d="M9 6l6 6-6 6" />

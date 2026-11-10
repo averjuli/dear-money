@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  boolean,
   check,
   date,
   index,
@@ -19,6 +20,11 @@ export const incomeKind = pgEnum("income_kind", ["salary", "advance", "other"]);
 export const allocationKind = pgEnum("allocation_kind", [
   "contribution",
   "surplus",
+]);
+
+export const dailyMoveSource = pgEnum("daily_move_source", [
+  "transfer",
+  "expense",
 ]);
 
 const createdAt = () =>
@@ -167,6 +173,89 @@ export const expenses = pgTable(
     check(
       "expenses_target_check",
       sql`${t.envelopeId} is not null or ${t.categoryId} is not null`,
+    ),
+  ],
+);
+
+/**
+ * A transfer of money between two sides. A side is «на жизнь» (the flag) or
+ * an envelope. A flag off and an empty envelope mean the envelope was deleted:
+ * the transfer stays, the money stays where it went.
+ */
+export const transfers = pgTable(
+  "transfers",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: userId(),
+    amount: integer("amount").notNull(),
+    date: date("date").notNull(),
+    fromDaily: boolean("from_daily").notNull().default(false),
+    fromEnvelopeId: uuid("from_envelope_id").references(() => envelopes.id, {
+      onDelete: "set null",
+    }),
+    toDaily: boolean("to_daily").notNull().default(false),
+    toEnvelopeId: uuid("to_envelope_id").references(() => envelopes.id, {
+      onDelete: "set null",
+    }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("transfers_user_idx").on(t.userId),
+    index("transfers_from_envelope_idx").on(t.fromEnvelopeId),
+    index("transfers_to_envelope_idx").on(t.toEnvelopeId),
+    check("transfers_amount_check", sql`${t.amount} > 0`),
+    check(
+      "transfers_not_both_daily_check",
+      sql`not (${t.fromDaily} and ${t.toDaily})`,
+    ),
+    check(
+      "transfers_daily_side_check",
+      sql`(not ${t.fromDaily} or ${t.fromEnvelopeId} is null) and (not ${t.toDaily} or ${t.toEnvelopeId} is null)`,
+    ),
+    check(
+      "transfers_distinct_envelopes_check",
+      sql`${t.fromEnvelopeId} is null or ${t.fromEnvelopeId} is distinct from ${t.toEnvelopeId}`,
+    ),
+  ],
+);
+
+/**
+ * Journal of changes to «на жизнь»: every save or delete of a transfer or of
+ * a daily expense writes the difference «now − before» into the period of the
+ * latest income, whatever the date of the item.
+ */
+export const dailyMoves = pgTable(
+  "daily_moves",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: userId(),
+    incomeId: uuid("income_id")
+      .notNull()
+      .references(() => incomes.id, { onDelete: "cascade" }),
+    source: dailyMoveSource("source").notNull(),
+    transferId: uuid("transfer_id").references(() => transfers.id, {
+      onDelete: "set null",
+    }),
+    expenseId: uuid("expense_id").references(() => expenses.id, {
+      onDelete: "set null",
+    }),
+    /** Kopecks with a sign: + into «на жизнь», − out of it. */
+    amount: integer("amount").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("daily_moves_user_idx").on(t.userId),
+    index("daily_moves_income_idx").on(t.incomeId),
+    index("daily_moves_transfer_idx").on(t.transferId),
+    index("daily_moves_expense_idx").on(t.expenseId),
+    check("daily_moves_amount_check", sql`${t.amount} <> 0`),
+    check(
+      "daily_moves_transfer_ref_check",
+      sql`${t.source} = 'transfer' or ${t.transferId} is null`,
+    ),
+    check(
+      "daily_moves_expense_ref_check",
+      sql`${t.source} = 'expense' or ${t.expenseId} is null`,
     ),
   ],
 );

@@ -98,8 +98,22 @@ describe("envelopeBalance", () => {
         startBalance: rub(1000),
         allocated: rub(500),
         spent: rub(200),
+        transferredIn: 0,
+        transferredOut: 0,
       }),
     ).toBe(rub(1300));
+  });
+
+  it("transfers: 10 000 + 3 000 − 2 000 + 1 500 in − 4 000 out = 8 500", () => {
+    expect(
+      envelopeBalance({
+        startBalance: rub(10000),
+        allocated: rub(3000),
+        spent: rub(2000),
+        transferredIn: rub(1500),
+        transferredOut: rub(4000),
+      }),
+    ).toBe(rub(8500));
   });
 
   it("an expense can take the envelope below zero: 1 100 − 1 450 = −350", () => {
@@ -108,6 +122,8 @@ describe("envelopeBalance", () => {
         startBalance: rub(1100),
         allocated: 0,
         spent: rub(1450),
+        transferredIn: 0,
+        transferredOut: 0,
       }),
     ).toBe(rub(-350));
   });

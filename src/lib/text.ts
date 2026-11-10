@@ -1,3 +1,5 @@
+import type { TransferSide } from "@/domain/transfer";
+
 /** Russian plural: plural(3, ["конверт", "конверта", "конвертов"]) → "конверта". */
 export function plural(n: number, forms: [string, string, string]): string {
   const abs = Math.abs(n) % 100;
@@ -113,4 +115,35 @@ export function countMonths(n: number): string {
 
 export function quoted(name: string): string {
   return `«${name}»`;
+}
+
+/**
+ * Label of a transfer in the history of one side: the other side of the
+ * transfer, with the direction («В конверт «X»», «Из конверта «X»», «На жизнь»,
+ * «Из денег на жизнь», «В удалённый конверт», «Из удалённого конверта»).
+ */
+export function transferLabel(
+  transfer: {
+    from: TransferSide;
+    to: TransferSide;
+    fromName: string | null;
+    toName: string | null;
+  },
+  viewpoint: TransferSide,
+): string {
+  // The money left the viewpoint when the viewpoint is the source.
+  const left =
+    viewpoint.kind === "daily"
+      ? transfer.from.kind === "daily"
+      : viewpoint.kind === "envelope" &&
+        transfer.from.kind === "envelope" &&
+        transfer.from.envelopeId === viewpoint.envelopeId;
+  if (left) {
+    if (transfer.to.kind === "daily") return "На жизнь";
+    if (transfer.to.kind === "deleted") return "В удалённый конверт";
+    return `В конверт ${quoted(transfer.toName ?? "")}`;
+  }
+  if (transfer.from.kind === "daily") return "Из денег на жизнь";
+  if (transfer.from.kind === "deleted") return "Из удалённого конверта";
+  return `Из конверта ${quoted(transfer.fromName ?? "")}`;
 }

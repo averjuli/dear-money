@@ -55,6 +55,13 @@ export default async function WalletPage({
         </Card>
       </div>
 
+      <Link
+        href={`/transfers/new?from=${encodeURIComponent(`/wallets/${wallet.id}`)}`}
+        className="flex min-h-11 items-center justify-center rounded-[14px] bg-surface px-4 text-base font-semibold text-accent no-underline"
+      >
+        Перевести
+      </Link>
+
       {wallet.envelopes.length > 0 ? (
         <EnvelopePriorities
           walletId={wallet.id}

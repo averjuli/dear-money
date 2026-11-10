@@ -1,21 +1,30 @@
 "use server";
 
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { getDb } from "@/db/client";
+import { getDb, type Db } from "@/db/client";
 import {
   allocations,
+  dailyMoves,
   envelopes,
   expenses,
   incomes,
   spendCategories,
+  transfers,
   users,
   wallets,
 } from "@/db/schema";
 import { planAllocation } from "@/domain/allocation";
+import { dailyMove, expenseDailyEffect } from "@/domain/daily";
 import { PERIOD_UNITS, type PeriodUnit } from "@/domain/envelope";
+import {
+  canTransfer,
+  transferDailyEffect,
+  type SavedTransfer,
+  type TransferSide,
+} from "@/domain/transfer";
 import {
   authSecret,
   isAuthConfigured,
@@ -27,8 +36,14 @@ import {
   sessionMaxAgeSeconds,
   signSession,
 } from "./auth/session";
-import { isUuid, loadWallets, toAllocationInput } from "./queries";
-import { isIsoDate } from "./today";
+import {
+  isUuid,
+  loadLatestIncome,
+  loadTransfer,
+  loadWallets,
+  toAllocationInput,
+} from "./queries";
+import { isIsoDate, todayIso } from "./today";
 
 export type ActionResult =
   { ok: true; id?: string } | { ok: false; error: string };
@@ -56,6 +71,53 @@ function cleanName(value: unknown): string | null {
 
 function refresh() {
   revalidatePath("/", "layout");
+}
+
+type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
+
+/**
+ * Writes what a saved or deleted item (a transfer or a daily expense) changes
+ * in «на жизнь» into the journal: the effect it has now minus what its earlier
+ * rows already added, in the period of the latest income, whatever the item's
+ * date. No row when nothing changes or before the first allocation.
+ * Call it in the same transaction as the change itself.
+ */
+async function recordDailyMove(
+  tx: Tx,
+  userId: string,
+  item: { source: "transfer" | "expense"; id: string },
+  effect: number,
+): Promise<void> {
+  const [income] = await tx
+    .select({ id: incomes.id })
+    .from(incomes)
+    .where(eq(incomes.userId, userId))
+    .orderBy(desc(incomes.date), desc(incomes.createdAt))
+    .limit(1);
+  if (!income) return;
+  const [row] = await tx
+    .select({
+      total: sql<number>`coalesce(sum(${dailyMoves.amount}), 0)::int`,
+    })
+    .from(dailyMoves)
+    .where(
+      and(
+        eq(dailyMoves.userId, userId),
+        item.source === "expense"
+          ? eq(dailyMoves.expenseId, item.id)
+          : eq(dailyMoves.transferId, item.id),
+      ),
+    );
+  const amount = dailyMove({ effect, journaled: row?.total ?? 0 });
+  if (amount === 0) return;
+  await tx.insert(dailyMoves).values({
+    userId,
+    incomeId: income.id,
+    source: item.source,
+    expenseId: item.source === "expense" ? item.id : null,
+    transferId: item.source === "transfer" ? item.id : null,
+    amount,
+  });
 }
 
 // ---------- Auth ----------
@@ -241,32 +303,192 @@ export async function saveExpense(input: {
     categoryId: input.categoryId,
   };
 
+  const effect = expenseDailyEffect({
+    amount: input.amount,
+    envelopeId: input.envelopeId,
+  });
+
   if (input.id) {
-    if (!isUuid(input.id)) return fail("Трата не найдена");
-    const updated = await db
-      .update(expenses)
-      .set(values)
-      .where(and(eq(expenses.id, input.id), eq(expenses.userId, userId)))
-      .returning({ id: expenses.id });
-    if (updated.length === 0) return fail("Трата не найдена");
+    const id = input.id;
+    if (!isUuid(id)) return fail("Трата не найдена");
+    const found = await db.transaction(async (tx) => {
+      const updated = await tx
+        .update(expenses)
+        .set(values)
+        .where(and(eq(expenses.id, id), eq(expenses.userId, userId)))
+        .returning({ id: expenses.id });
+      if (updated.length === 0) return false;
+      await recordDailyMove(tx, userId, { source: "expense", id }, effect);
+      return true;
+    });
+    if (!found) return fail("Трата не найдена");
     refresh();
-    return { ok: true, id: input.id };
+    return { ok: true, id };
   }
 
-  const [created] = await db
-    .insert(expenses)
-    .values({ userId, ...values })
-    .returning({ id: expenses.id });
+  const createdId = await db.transaction(async (tx) => {
+    const [created] = await tx
+      .insert(expenses)
+      .values({ userId, ...values })
+      .returning({ id: expenses.id });
+    await recordDailyMove(
+      tx,
+      userId,
+      { source: "expense", id: created.id },
+      effect,
+    );
+    return created.id;
+  });
   refresh();
-  return { ok: true, id: created.id };
+  return { ok: true, id: createdId };
 }
 
 export async function deleteExpense(id: string): Promise<ActionResult> {
   const userId = await requireUserId();
   if (!isUuid(id)) return fail("Трата не найдена");
-  await getDb()
-    .delete(expenses)
-    .where(and(eq(expenses.id, id), eq(expenses.userId, userId)));
+  await getDb().transaction(async (tx) => {
+    const [found] = await tx
+      .select({ id: expenses.id })
+      .from(expenses)
+      .where(and(eq(expenses.id, id), eq(expenses.userId, userId)));
+    if (!found) return;
+    // The row goes first: it still points to the expense, which is then deleted.
+    await recordDailyMove(tx, userId, { source: "expense", id }, 0);
+    await tx
+      .delete(expenses)
+      .where(and(eq(expenses.id, id), eq(expenses.userId, userId)));
+  });
+  refresh();
+  return { ok: true };
+}
+
+// ---------- Transfers ----------
+
+/** Accepts only the three known shapes of a transfer side. */
+function parseSide(value: unknown): TransferSide | null {
+  if (typeof value !== "object" || value === null) return null;
+  const side = value as { kind?: unknown; envelopeId?: unknown };
+  if (side.kind === "daily") return { kind: "daily" };
+  if (side.kind === "deleted") return { kind: "deleted" };
+  if (side.kind === "envelope" && isUuid(side.envelopeId)) {
+    return { kind: "envelope", envelopeId: side.envelopeId };
+  }
+  return null;
+}
+
+export async function saveTransfer(input: {
+  id?: string;
+  amount: number;
+  from: TransferSide | null;
+  to: TransferSide | null;
+  date: string;
+}): Promise<ActionResult> {
+  const userId = await requireUserId();
+  if (!isMoney(input.amount) || input.amount <= 0) {
+    return fail("Введите сумму больше нуля");
+  }
+  if (!isIsoDate(input.date)) return fail("Неверная дата");
+  const today = todayIso();
+  if (input.date > today) return fail("Дата не может быть позже сегодняшней");
+  const from = parseSide(input.from);
+  const to = parseSide(input.to);
+  if (from === null || to === null) return fail("Выберите, откуда и куда");
+
+  let initial: SavedTransfer | null = null;
+  if (input.id !== undefined) {
+    if (!isUuid(input.id)) return fail("Перевод не найден");
+    const saved = await loadTransfer(userId, input.id);
+    if (!saved) return fail("Перевод не найден");
+    initial = { amount: saved.amount, from: saved.from, to: saved.to };
+  }
+
+  const dailyAvailable = (await loadLatestIncome(userId)) !== null;
+  if (!dailyAvailable && (from.kind === "daily" || to.kind === "daily")) {
+    return fail("Сначала разложите деньги");
+  }
+  if (
+    !canTransfer({
+      amount: input.amount,
+      from,
+      to,
+      date: input.date,
+      today,
+      dailyAvailable,
+      initial,
+    })
+  ) {
+    return fail("Откуда и куда должны различаться");
+  }
+
+  const db = getDb();
+  const envelopeIds = [from, to].flatMap((side) =>
+    side.kind === "envelope" ? [side.envelopeId] : [],
+  );
+  if (envelopeIds.length > 0) {
+    const owned = await db
+      .select({ id: envelopes.id })
+      .from(envelopes)
+      .where(
+        and(eq(envelopes.userId, userId), inArray(envelopes.id, envelopeIds)),
+      );
+    if (owned.length !== new Set(envelopeIds).size) {
+      return fail("Конверт не найден");
+    }
+  }
+
+  const values = {
+    amount: input.amount,
+    date: input.date,
+    fromDaily: from.kind === "daily",
+    fromEnvelopeId: from.kind === "envelope" ? from.envelopeId : null,
+    toDaily: to.kind === "daily",
+    toEnvelopeId: to.kind === "envelope" ? to.envelopeId : null,
+  };
+  const effect = transferDailyEffect({ amount: input.amount, from, to });
+
+  const id = await db.transaction(async (tx) => {
+    if (input.id !== undefined) {
+      const id = input.id;
+      await tx
+        .update(transfers)
+        .set(values)
+        .where(and(eq(transfers.id, id), eq(transfers.userId, userId)));
+      await recordDailyMove(tx, userId, { source: "transfer", id }, effect);
+      return id;
+    }
+    const [created] = await tx
+      .insert(transfers)
+      .values({ userId, ...values })
+      .returning({ id: transfers.id });
+    await recordDailyMove(
+      tx,
+      userId,
+      { source: "transfer", id: created.id },
+      effect,
+    );
+    return created.id;
+  });
+  refresh();
+  return { ok: true, id };
+}
+
+export async function deleteTransfer(id: string): Promise<ActionResult> {
+  const userId = await requireUserId();
+  if (!isUuid(id)) return fail("Перевод не найден");
+  const found = await getDb().transaction(async (tx) => {
+    const [row] = await tx
+      .select({ id: transfers.id })
+      .from(transfers)
+      .where(and(eq(transfers.id, id), eq(transfers.userId, userId)));
+    if (!row) return false;
+    // The row goes first: it still points to the transfer, which is then deleted.
+    await recordDailyMove(tx, userId, { source: "transfer", id }, 0);
+    await tx
+      .delete(transfers)
+      .where(and(eq(transfers.id, id), eq(transfers.userId, userId)));
+    return true;
+  });
+  if (!found) return fail("Перевод не найден");
   refresh();
   return { ok: true };
 }

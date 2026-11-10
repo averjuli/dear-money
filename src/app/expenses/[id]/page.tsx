@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { CloseHeader, Screen } from "@/components/screen";
 import { requireUserId } from "@/server/auth/current-user";
 import { monthStart } from "@/domain/daily";
-import { isUuid, loadExpense } from "@/server/queries";
+import { isUuid, loadDailySummary, loadExpense } from "@/server/queries";
 import { todayIso } from "@/server/today";
 import { ExpenseForm } from "../expense-form";
 import { loadPickers, safeBackHref } from "../load-pickers";
@@ -29,6 +29,8 @@ export default async function EditExpensePage({
   );
   const today = todayIso();
   const pickers = await loadPickers(userId, monthStart(today));
+  // What is left for daily life: the hint under a daily expense.
+  const daily = await loadDailySummary(userId, today);
   // The category of this expense may have been deleted: keep it selectable.
   const keptCategory =
     expense.categoryId &&
@@ -50,10 +52,12 @@ export default async function EditExpensePage({
           note: expense.note,
           envelopeId: expense.envelopeId,
           categoryId: expense.categoryId,
+          journaled: expense.journaled,
         }}
         initialMode={expense.envelopeId ? "envelope" : "daily"}
         backHref={backHref}
         today={today}
+        dailyRemaining={daily?.summary.remaining ?? null}
       />
     </Screen>
   );

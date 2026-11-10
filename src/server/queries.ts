@@ -1,11 +1,24 @@
-import { and, asc, desc, eq, gte, isNotNull, isNull, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gte,
+  isNotNull,
+  isNull,
+  or,
+  sql,
+} from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { getDb } from "@/db/client";
 import {
   allocations,
   envelopes,
   expenses,
+  dailyMoves,
   incomes,
   spendCategories,
+  transfers,
   wallets,
 } from "@/db/schema";
 import type { AllocationEnvelope, AllocationWallet } from "@/domain/allocation";
@@ -18,7 +31,13 @@ import {
   type EnvelopeStatus,
   type PeriodUnit,
 } from "@/domain/envelope";
-import { monthStartIso } from "./today";
+import type { TransferSide } from "@/domain/transfer";
+import {
+  dailySummary,
+  periodBudget,
+  periodSpent,
+  type DailySummary,
+} from "@/domain/daily";
 
 export interface EnvelopeView {
   id: string;
@@ -82,44 +101,72 @@ export interface ExpenseView {
 /** Wallets with envelopes and their current balances. */
 export async function loadWallets(userId: string): Promise<WalletView[]> {
   const db = getDb();
-  const [walletRows, envelopeRows, allocated, spent] = await Promise.all([
-    db
-      .select()
-      .from(wallets)
-      .where(eq(wallets.userId, userId))
-      .orderBy(asc(wallets.position), asc(wallets.createdAt)),
-    db
-      .select()
-      .from(envelopes)
-      .where(eq(envelopes.userId, userId))
-      .orderBy(asc(envelopes.priority), asc(envelopes.createdAt)),
-    db
-      .select({
-        envelopeId: allocations.envelopeId,
-        total: sql<number>`coalesce(sum(${allocations.amount}), 0)::int`,
-      })
-      .from(allocations)
-      .where(eq(allocations.userId, userId))
-      .groupBy(allocations.envelopeId),
-    db
-      .select({
-        envelopeId: expenses.envelopeId,
-        total: sql<number>`coalesce(sum(${expenses.amount}), 0)::int`,
-        count: sql<number>`count(*)::int`,
-      })
-      .from(expenses)
-      .where(and(eq(expenses.userId, userId), isNotNull(expenses.envelopeId)))
-      .groupBy(expenses.envelopeId),
-  ]);
+  const [walletRows, envelopeRows, allocated, spent, movedIn, movedOut] =
+    await Promise.all([
+      db
+        .select()
+        .from(wallets)
+        .where(eq(wallets.userId, userId))
+        .orderBy(asc(wallets.position), asc(wallets.createdAt)),
+      db
+        .select()
+        .from(envelopes)
+        .where(eq(envelopes.userId, userId))
+        .orderBy(asc(envelopes.priority), asc(envelopes.createdAt)),
+      db
+        .select({
+          envelopeId: allocations.envelopeId,
+          total: sql<number>`coalesce(sum(${allocations.amount}), 0)::int`,
+        })
+        .from(allocations)
+        .where(eq(allocations.userId, userId))
+        .groupBy(allocations.envelopeId),
+      db
+        .select({
+          envelopeId: expenses.envelopeId,
+          total: sql<number>`coalesce(sum(${expenses.amount}), 0)::int`,
+          count: sql<number>`count(*)::int`,
+        })
+        .from(expenses)
+        .where(and(eq(expenses.userId, userId), isNotNull(expenses.envelopeId)))
+        .groupBy(expenses.envelopeId),
+      db
+        .select({
+          envelopeId: transfers.toEnvelopeId,
+          total: sql<number>`coalesce(sum(${transfers.amount}), 0)::int`,
+        })
+        .from(transfers)
+        .where(
+          and(eq(transfers.userId, userId), isNotNull(transfers.toEnvelopeId)),
+        )
+        .groupBy(transfers.toEnvelopeId),
+      db
+        .select({
+          envelopeId: transfers.fromEnvelopeId,
+          total: sql<number>`coalesce(sum(${transfers.amount}), 0)::int`,
+        })
+        .from(transfers)
+        .where(
+          and(
+            eq(transfers.userId, userId),
+            isNotNull(transfers.fromEnvelopeId),
+          ),
+        )
+        .groupBy(transfers.fromEnvelopeId),
+    ]);
 
   const allocatedBy = new Map(allocated.map((a) => [a.envelopeId, a.total]));
   const spentBy = new Map(spent.map((s) => [s.envelopeId, s]));
+  const movedInBy = new Map(movedIn.map((t) => [t.envelopeId, t.total]));
+  const movedOutBy = new Map(movedOut.map((t) => [t.envelopeId, t.total]));
 
   const views: EnvelopeView[] = envelopeRows.map((e) => {
     const balance = envelopeBalance({
       startBalance: e.startBalance,
       allocated: allocatedBy.get(e.id) ?? 0,
       spent: spentBy.get(e.id)?.total ?? 0,
+      transferredIn: movedInBy.get(e.id) ?? 0,
+      transferredOut: movedOutBy.get(e.id) ?? 0,
     });
     return {
       id: e.id,
@@ -203,9 +250,39 @@ export async function loadLatestIncome(
   };
 }
 
-/** Start of the current daily period: last allocated income or month start. */
-export function periodStart(income: IncomeView | null): string {
-  return income?.date ?? monthStartIso();
+/**
+ * «Осталось на жизнь» for the current period (the latest income): the income's
+ * share for daily spending plus transfer rows of the journal for the budget,
+ * and expense rows for «потрачено». Null until the first income is allocated.
+ */
+export async function loadDailySummary(
+  userId: string,
+  today: string,
+): Promise<{ income: IncomeView; summary: DailySummary } | null> {
+  const income = await loadLatestIncome(userId);
+  if (!income) return null;
+  const rows = await getDb()
+    .select({
+      source: dailyMoves.source,
+      total: sql<number>`coalesce(sum(${dailyMoves.amount}), 0)::int`,
+    })
+    .from(dailyMoves)
+    .where(
+      and(eq(dailyMoves.userId, userId), eq(dailyMoves.incomeId, income.id)),
+    )
+    .groupBy(dailyMoves.source);
+  const total = (source: "transfer" | "expense") =>
+    rows.find((r) => r.source === source)?.total ?? 0;
+  const summary = dailySummary({
+    budget: periodBudget({
+      toDaily: income.toDaily,
+      transferMoves: [total("transfer")],
+    }),
+    spent: periodSpent([total("expense")]),
+    today,
+    nextIncomeDate: income.nextIncomeDate,
+  });
+  return { income, summary };
 }
 
 /**
@@ -298,12 +375,16 @@ export async function loadExpenses(
     .limit(filter.limit ?? 20);
 }
 
+/** One expense with what it has already added to «на жизнь» (journal rows). */
 export async function loadExpense(
   userId: string,
   id: string,
-): Promise<ExpenseView | null> {
+): Promise<(ExpenseView & { journaled: number }) | null> {
   const [row] = await getDb()
-    .select(expenseSelect)
+    .select({
+      ...expenseSelect,
+      journaled: sql<number>`coalesce((select sum(${dailyMoves.amount}) from ${dailyMoves} where ${dailyMoves.expenseId} = ${expenses.id}), 0)::int`,
+    })
     .from(expenses)
     .leftJoin(envelopes, eq(expenses.envelopeId, envelopes.id))
     .leftJoin(spendCategories, eq(expenses.categoryId, spendCategories.id))
@@ -337,26 +418,6 @@ export async function loadRecentTargetIds(
   };
 }
 
-/** Spent from the daily budget: expenses that are not from an envelope. */
-export async function loadDailySpent(
-  userId: string,
-  since: string,
-): Promise<number> {
-  const [row] = await getDb()
-    .select({
-      total: sql<number>`coalesce(sum(${expenses.amount}), 0)::int`,
-    })
-    .from(expenses)
-    .where(
-      and(
-        eq(expenses.userId, userId),
-        isNull(expenses.envelopeId),
-        gte(expenses.date, since),
-      ),
-    );
-  return row?.total ?? 0;
-}
-
 /**
  * Everything spent under a category since the given day, daily and from
  * envelopes, deleted categories included.
@@ -387,4 +448,103 @@ export function isUuid(value: unknown): value is string {
       value,
     )
   );
+}
+
+export interface TransferView {
+  id: string;
+  amount: number;
+  date: string;
+  from: TransferSide;
+  to: TransferSide;
+  /** Envelope names, null for «на жизнь» and for a deleted envelope. */
+  fromName: string | null;
+  toName: string | null;
+  /** Everything this transfer has already added to «на жизнь». */
+  journaled: number;
+}
+
+const fromEnvelope = alias(envelopes, "from_envelope");
+const toEnvelope = alias(envelopes, "to_envelope");
+
+const transferSelect = {
+  id: transfers.id,
+  amount: transfers.amount,
+  date: transfers.date,
+  fromDaily: transfers.fromDaily,
+  fromEnvelopeId: transfers.fromEnvelopeId,
+  toDaily: transfers.toDaily,
+  toEnvelopeId: transfers.toEnvelopeId,
+  fromName: fromEnvelope.name,
+  toName: toEnvelope.name,
+  journaled: sql<number>`coalesce((select sum(${dailyMoves.amount}) from ${dailyMoves} where ${dailyMoves.transferId} = ${transfers.id}), 0)::int`,
+};
+
+function toSide(daily: boolean, envelopeId: string | null): TransferSide {
+  if (daily) return { kind: "daily" };
+  if (envelopeId) return { kind: "envelope", envelopeId };
+  return { kind: "deleted" };
+}
+
+function toTransferView(row: {
+  id: string;
+  amount: number;
+  date: string;
+  fromDaily: boolean;
+  fromEnvelopeId: string | null;
+  toDaily: boolean;
+  toEnvelopeId: string | null;
+  fromName: string | null;
+  toName: string | null;
+  journaled: number;
+}): TransferView {
+  return {
+    id: row.id,
+    amount: row.amount,
+    date: row.date,
+    from: toSide(row.fromDaily, row.fromEnvelopeId),
+    to: toSide(row.toDaily, row.toEnvelopeId),
+    fromName: row.fromName,
+    toName: row.toName,
+    journaled: row.journaled,
+  };
+}
+
+/**
+ * Transfers of one side, newest first by their date: of an envelope (from it
+ * and to it) or of «на жизнь».
+ */
+export async function loadTransfers(
+  userId: string,
+  side: { envelopeId: string } | { daily: true },
+  limit = 10,
+): Promise<TransferView[]> {
+  const sideCondition =
+    "envelopeId" in side
+      ? or(
+          eq(transfers.fromEnvelopeId, side.envelopeId),
+          eq(transfers.toEnvelopeId, side.envelopeId),
+        )
+      : or(eq(transfers.fromDaily, true), eq(transfers.toDaily, true));
+  const rows = await getDb()
+    .select(transferSelect)
+    .from(transfers)
+    .leftJoin(fromEnvelope, eq(transfers.fromEnvelopeId, fromEnvelope.id))
+    .leftJoin(toEnvelope, eq(transfers.toEnvelopeId, toEnvelope.id))
+    .where(and(eq(transfers.userId, userId), sideCondition))
+    .orderBy(desc(transfers.date), desc(transfers.createdAt))
+    .limit(limit);
+  return rows.map(toTransferView);
+}
+
+export async function loadTransfer(
+  userId: string,
+  id: string,
+): Promise<TransferView | null> {
+  const [row] = await getDb()
+    .select(transferSelect)
+    .from(transfers)
+    .leftJoin(fromEnvelope, eq(transfers.fromEnvelopeId, fromEnvelope.id))
+    .leftJoin(toEnvelope, eq(transfers.toEnvelopeId, toEnvelope.id))
+    .where(and(eq(transfers.userId, userId), eq(transfers.id, id)));
+  return row ? toTransferView(row) : null;
 }

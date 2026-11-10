@@ -49,12 +49,24 @@ export function monthlyContribution(env: ContributionSettings): number {
   }
 }
 
+/**
+ * Start balance + allocations + transfers in − expenses − transfers out.
+ * Transfers are required parts so that no caller can forget them.
+ */
 export function envelopeBalance(parts: {
   startBalance: number;
   allocated: number;
   spent: number;
+  transferredIn: number;
+  transferredOut: number;
 }): number {
-  return parts.startBalance + parts.allocated - parts.spent;
+  return (
+    parts.startBalance +
+    parts.allocated +
+    parts.transferredIn -
+    parts.spent -
+    parts.transferredOut
+  );
 }
 
 /** Cost per time × "save for N times". */
