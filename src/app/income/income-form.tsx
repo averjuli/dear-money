@@ -115,19 +115,68 @@ function WalletChoice({
   );
 }
 
+/** "" → no day; a whole number from 1 to 31 → the day; anything else → undefined. */
+function parseDay(text: string): number | null | undefined {
+  if (text === "") return null;
+  const day = Number(text);
+  return Number.isInteger(day) && day >= 1 && day <= 31 ? day : undefined;
+}
+
+function DayField({
+  id,
+  label,
+  value,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (text: string) => void;
+}) {
+  return (
+    <div className="flex min-w-0 flex-col gap-2">
+      <label htmlFor={id} className="text-[15px] font-semibold">
+        {label}
+      </label>
+      <div className="flex items-center gap-2">
+        <input
+          id={id}
+          inputMode="numeric"
+          autoComplete="off"
+          maxLength={2}
+          value={value}
+          onChange={(e) => onChange(e.target.value.replace(/\D/g, ""))}
+          className="h-[52px] w-full min-w-0 rounded-[14px] bg-surface-sunken px-3.5 text-[17px] text-ink outline-none"
+        />
+        <span className="shrink-0 text-[15px] text-ink-muted">числа</span>
+      </div>
+    </div>
+  );
+}
+
 export function IncomeForm({
   wallets,
   envelopes,
+  advanceDay,
+  salaryDay,
   today,
 }: {
   wallets: AllocationWallet[];
   envelopes: AllocationEnvelope[];
+  /** Days saved with the previous allocation, shown filled in. */
+  advanceDay: number | null;
+  salaryDay: number | null;
   today: string;
 }) {
   const router = useRouter();
   const [amountText, setAmountText] = useState("");
   const [kind, setKind] = useState<(typeof KINDS)[number]["value"]>("salary");
-  const [nextDate, setNextDate] = useState("");
+  const [advanceText, setAdvanceText] = useState(
+    advanceDay === null ? "" : String(advanceDay),
+  );
+  const [salaryText, setSalaryText] = useState(
+    salaryDay === null ? "" : String(salaryDay),
+  );
   const [skipped, setSkipped] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -160,13 +209,20 @@ export function IncomeForm({
 
   async function submit() {
     if (!valid) return;
-    setSaving(true);
     setError(null);
+    const advance = parseDay(advanceText);
+    const salary = parseDay(salaryText);
+    if (advance === undefined || salary === undefined) {
+      setError("Число от 1 до 31");
+      return;
+    }
+    setSaving(true);
     const result = await allocateIncome({
       amount,
       kind,
       date: today,
-      nextIncomeDate: nextDate === "" ? null : nextDate,
+      advanceDay: advance,
+      salaryDay: salary,
       skippedWalletIds: plan.needsChoice ? skipped : [],
     });
     if (result.ok) {
@@ -218,19 +274,22 @@ export function IncomeForm({
           ))}
         </div>
         <div className="flex flex-col gap-2">
-          <label htmlFor="next-income" className="text-[15px] font-semibold">
-            Следующие деньги придут
-          </label>
-          <input
-            id="next-income"
-            type="date"
-            min={today}
-            value={nextDate}
-            onChange={(e) => setNextDate(e.target.value)}
-            className="h-[52px] rounded-[14px] bg-surface-sunken px-3.5 text-[17px] text-ink outline-none"
-          />
+          <div className="grid grid-cols-2 gap-3">
+            <DayField
+              id="advance-day"
+              label="Аванс приходит"
+              value={advanceText}
+              onChange={setAdvanceText}
+            />
+            <DayField
+              id="salary-day"
+              label="Зарплата приходит"
+              value={salaryText}
+              onChange={setSalaryText}
+            />
+          </div>
           <div className="text-[13px] text-ink-muted">
-            По этой дате посчитаю, сколько можно тратить в день
+            По этим числам посчитаю, сколько можно тратить в день
           </div>
         </div>
       </Card>

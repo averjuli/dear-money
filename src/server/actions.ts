@@ -11,6 +11,7 @@ import {
   envelopes,
   expenses,
   incomes,
+  payDays,
   spendCategories,
   transfers,
   users,
@@ -169,11 +170,24 @@ export async function logout(): Promise<void> {
 
 const INCOME_KINDS = ["salary", "advance", "other"] as const;
 
+/** A day of the month, 1 to 31, or null when it is not set. */
+function isDayOfMonth(value: unknown): value is number | null {
+  return (
+    value === null ||
+    (typeof value === "number" &&
+      Number.isInteger(value) &&
+      value >= 1 &&
+      value <= 31)
+  );
+}
+
 export async function allocateIncome(input: {
   amount: number;
   kind: (typeof INCOME_KINDS)[number];
   date: string;
-  nextIncomeDate: string | null;
+  /** Days of the month when the advance and the salary arrive; null = not set. */
+  advanceDay: number | null;
+  salaryDay: number | null;
   /** Wallets unchecked on the allocation screen; used only if money is short. */
   skippedWalletIds?: string[];
 }): Promise<ActionResult> {
@@ -183,12 +197,8 @@ export async function allocateIncome(input: {
   }
   if (!INCOME_KINDS.includes(input.kind)) return fail("Неизвестный вид дохода");
   if (!isIsoDate(input.date)) return fail("Неверная дата");
-  if (input.nextIncomeDate !== null) {
-    if (!isIsoDate(input.nextIncomeDate))
-      return fail("Неверная дата следующего дохода");
-    if (input.nextIncomeDate <= input.date) {
-      return fail("Следующие деньги должны прийти позже сегодняшних");
-    }
+  if (!isDayOfMonth(input.advanceDay) || !isDayOfMonth(input.salaryDay)) {
+    return fail("Число от 1 до 31");
   }
 
   // Plan again on the server from current balances; the client preview is not trusted.
@@ -209,7 +219,6 @@ export async function allocateIncome(input: {
         date: input.date,
         amount: input.amount,
         kind: input.kind,
-        nextIncomeDate: input.nextIncomeDate,
         toEnvelopes: plan.toEnvelopes,
         toDaily: plan.toDaily,
       })
@@ -226,6 +235,18 @@ export async function allocateIncome(input: {
         })),
       );
     }
+    // The days are remembered together with the income: all or nothing.
+    await tx
+      .insert(payDays)
+      .values({
+        userId,
+        advanceDay: input.advanceDay,
+        salaryDay: input.salaryDay,
+      })
+      .onConflictDoUpdate({
+        target: payDays.userId,
+        set: { advanceDay: input.advanceDay, salaryDay: input.salaryDay },
+      });
   });
   refresh();
   return { ok: true };

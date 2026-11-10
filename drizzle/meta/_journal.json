@@ -22,6 +22,13 @@
       "when": 1794313989898,
       "tag": "0002_wallet_transfers",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794322251208,
+      "tag": "0003_pay_days",
+      "breakpoints": true
     }
   ]
 }

@@ -17,6 +17,7 @@ import {
   expenses,
   dailyMoves,
   incomes,
+  payDays,
   spendCategories,
   transfers,
   wallets,
@@ -33,9 +34,8 @@ import {
 } from "@/domain/envelope";
 import type { TransferSide } from "@/domain/transfer";
 import {
+  dailyRemaining,
   dailySummary,
-  periodBudget,
-  periodSpent,
   type DailySummary,
 } from "@/domain/daily";
 
@@ -81,7 +81,6 @@ export interface IncomeView {
   date: string;
   amount: number;
   kind: "salary" | "advance" | "other";
-  nextIncomeDate: string | null;
   toDaily: number;
 }
 
@@ -245,44 +244,59 @@ export async function loadLatestIncome(
     date: row.date,
     amount: row.amount,
     kind: row.kind,
-    nextIncomeDate: row.nextIncomeDate,
     toDaily: row.toDaily,
   };
 }
 
+/** The advance and salary days of the month saved with the last allocation. */
+export async function loadPayDays(
+  userId: string,
+): Promise<{ advanceDay: number | null; salaryDay: number | null }> {
+  const [row] = await getDb()
+    .select({ advanceDay: payDays.advanceDay, salaryDay: payDays.salaryDay })
+    .from(payDays)
+    .where(eq(payDays.userId, userId))
+    .limit(1);
+  return row ?? { advanceDay: null, salaryDay: null };
+}
+
 /**
- * «Осталось на жизнь» for the current period (the latest income): the income's
- * share for daily spending plus transfer rows of the journal for the budget,
- * and expense rows for «потрачено». Null until the first income is allocated.
+ * «Осталось на жизнь» is a running balance: the shares of all incomes for
+ * daily spending plus every journal row (transfers and daily expenses).
+ * Null until the first income is allocated.
  */
 export async function loadDailySummary(
   userId: string,
   today: string,
-): Promise<{ income: IncomeView; summary: DailySummary } | null> {
-  const income = await loadLatestIncome(userId);
-  if (!income) return null;
-  const rows = await getDb()
-    .select({
-      source: dailyMoves.source,
-      total: sql<number>`coalesce(sum(${dailyMoves.amount}), 0)::int`,
-    })
-    .from(dailyMoves)
-    .where(
-      and(eq(dailyMoves.userId, userId), eq(dailyMoves.incomeId, income.id)),
-    )
-    .groupBy(dailyMoves.source);
-  const total = (source: "transfer" | "expense") =>
-    rows.find((r) => r.source === source)?.total ?? 0;
+): Promise<{ summary: DailySummary } | null> {
+  const db = getDb();
+  // Sums are cast to text: over the years they can outgrow a 32-bit integer.
+  const [[incomeTotals], [moveTotals], days] = await Promise.all([
+    db
+      .select({
+        count: sql<number>`count(*)::int`,
+        toDaily: sql<string>`coalesce(sum(${incomes.toDaily}), 0)::text`,
+      })
+      .from(incomes)
+      .where(eq(incomes.userId, userId)),
+    db
+      .select({
+        total: sql<string>`coalesce(sum(${dailyMoves.amount}), 0)::text`,
+      })
+      .from(dailyMoves)
+      .where(eq(dailyMoves.userId, userId)),
+    loadPayDays(userId),
+  ]);
+  if (incomeTotals.count === 0) return null;
   const summary = dailySummary({
-    budget: periodBudget({
-      toDaily: income.toDaily,
-      transferMoves: [total("transfer")],
+    remaining: dailyRemaining({
+      toDaily: [Number(incomeTotals.toDaily)],
+      moves: [Number(moveTotals.total)],
     }),
-    spent: periodSpent([total("expense")]),
     today,
-    nextIncomeDate: income.nextIncomeDate,
+    payDays: [days.advanceDay, days.salaryDay],
   });
-  return { income, summary };
+  return { summary };
 }
 
 /**
