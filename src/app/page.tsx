@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowUpIcon, ChevronIcon } from "@/components/icons";
 import { Screen } from "@/components/screen";
-import { Bar, Card, SectionTitle } from "@/components/ui-kit";
+import { Card, SectionTitle } from "@/components/ui-kit";
 import { categoryStatus, monthStart } from "@/domain/daily";
 import { formatMoney } from "@/domain/money";
 import { countEnvelopes, monthName, plural } from "@/lib/text";
@@ -95,12 +95,7 @@ export default async function HomePage() {
             {daily ? formatMoney(daily.remaining) : "—"}
           </div>
         </div>
-        {daily ? (
-          <Bar
-            share={daily.budget > 0 ? daily.spent / daily.budget : 0}
-            tone={daily.remaining < 0 ? "warn" : "accent"}
-          />
-        ) : (
+        {!daily && (
           <div className="text-sm text-ink-muted">
             Появится после первой раскладки зарплаты
           </div>

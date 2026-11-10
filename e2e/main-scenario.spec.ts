@@ -1,5 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import postgres from "postgres";
+import { daysUntil, nextPayDate } from "../src/domain/daily";
+import { formatDay } from "../src/lib/text";
 import { E2E_LOGIN, E2E_PASSWORD, e2eEnv } from "./env";
 
 // Success criteria from specs/01-продуктовая-идея.md on the demo data.
@@ -130,6 +132,16 @@ test("salary 150 000: preview, surplus to «Косметология», allocate
     page.getByText(/их взносы уйдут в «Косметология»/),
   ).toBeVisible();
 
+  // The first allocation: the days are empty; a wrong day stops the saving.
+  await expect(page.getByLabel("Аванс приходит")).toHaveValue("");
+  await expect(page.getByLabel("Зарплата приходит")).toHaveValue("");
+  await page.getByLabel("Зарплата приходит").fill("32");
+  await page.getByRole("button", { name: "Разложить" }).click();
+  await expect(page.getByText("Число от 1 до 31")).toBeVisible();
+  await expect(page).toHaveURL("/income");
+  await page.getByLabel("Аванс приходит").fill("25");
+  await page.getByLabel("Зарплата приходит").fill("10");
+
   await page.getByRole("button", { name: "Разложить" }).click();
   await expect(page).toHaveURL("/");
   await expect(page.getByTestId("total-in-envelopes")).toHaveText(
@@ -182,6 +194,23 @@ test("«Траты» shows the envelope expense: category, month total, envelope
   await login(page);
   await page.goto("/daily");
   await expect(page.getByTestId("daily-left")).toHaveText(rub("119 225"));
+  // The card counts down to the nearest of the 25th and the 10th.
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Moscow",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+  const next = nextPayDate(today, [25, 10])!;
+  await expect(page.getByText(/^Осталось на жизнь до /)).toHaveText(
+    `Осталось на жизнь до ${formatDay(next, today)}`,
+  );
+  const perDay = page.getByText(/^≈ .* в день$/);
+  const shown = Number((await perDay.innerText()).replace(/\D/g, ""));
+  expect(Math.abs(shown - 119225 / daysUntil(today, next))).toBeLessThanOrEqual(
+    1,
+  );
+  await expect(page.getByText(/потрачено .* из /)).toHaveCount(0);
   await expect(page.getByTestId("month-spent")).toContainText("Потрачено в");
   await expect(page.getByTestId("month-spent")).toContainText(rub("3 900"));
   await expect(categoryRow(page, "Красота")).toContainText(rub("3 900"));

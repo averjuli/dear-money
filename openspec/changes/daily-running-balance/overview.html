@@ -1,0 +1,1830 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Остаток на жизнь — обзор</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Unbounded:wght@500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* Values copied from src/app/globals.css (@theme design tokens) */
+      :root {
+        --color-bg: #edf1ee;
+        --color-surface: #ffffff;
+        --color-surface-sunken: #f4f7f5;
+        --color-ink: #14211b;
+        --color-ink-muted: #55635c;
+        --color-accent: #1b6b4d;
+        --color-accent-strong: #14523b;
+        --color-accent-soft: #dcebe3;
+        --color-warn: #a34d14;
+        --color-warn-strong: #8a4315;
+        --color-warn-soft: #fbeadd;
+        --color-warn-bar: #c46a2b;
+        --color-line: #e3e9e5;
+        --color-dash: #9db5a9;
+
+        --font-sans: "Golos Text", system-ui, sans-serif;
+        --font-display: "Unbounded", "Golos Text", sans-serif;
+        --font-mono: ui-monospace, Menlo, Consolas, monospace;
+
+        --radius-card: 20px;
+        --radius-card-lg: 24px;
+        --radius-control: 14px;
+        --radius-button: 16px;
+        --radius-bar: 4px;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        background: var(--color-bg);
+      }
+      body {
+        margin: 0;
+        background: var(--color-bg);
+        color: var(--color-ink);
+        font-family: var(--font-sans);
+        font-size: 16px;
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+      }
+      .page {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 40px 16px 80px;
+      }
+      header.top {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 15px;
+        color: var(--color-ink-muted);
+        font-weight: 500;
+      }
+      .dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--color-accent);
+        flex-shrink: 0;
+      }
+      h1 {
+        font-family: var(--font-display);
+        font-weight: 600;
+        font-size: 38px;
+        line-height: 1.12;
+        letter-spacing: -0.02em;
+        margin: 16px 0 12px;
+        text-wrap: balance;
+      }
+      h2 {
+        font-family: var(--font-display);
+        font-weight: 500;
+        font-size: 26px;
+        letter-spacing: -0.01em;
+        margin: 56px 0 16px;
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+      }
+      h2 .num {
+        font-size: 15px;
+        color: var(--color-accent);
+      }
+      h3 {
+        font-weight: 600;
+        font-size: 19px;
+        margin: 28px 0 10px;
+      }
+      p {
+        margin: 8px 0;
+      }
+      .lead {
+        font-size: 18px;
+        color: var(--color-ink-muted);
+        max-width: 700px;
+      }
+      .muted {
+        color: var(--color-ink-muted);
+      }
+      .small {
+        font-size: 14px;
+      }
+      code {
+        font-family: var(--font-mono);
+        font-size: 0.86em;
+        background: var(--color-surface-sunken);
+        border: 1px solid var(--color-line);
+        padding: 1px 5px;
+        border-radius: 6px;
+      }
+      ul.points {
+        padding-left: 20px;
+        margin: 8px 0;
+      }
+      ul.points li {
+        margin: 4px 0;
+      }
+      .card {
+        background: var(--color-surface);
+        border: 1px solid var(--color-line);
+        border-radius: var(--radius-card);
+        padding: 20px 24px;
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 16px;
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        border-radius: 999px;
+        background: var(--color-surface);
+        border: 1px solid var(--color-line);
+        font-size: 14px;
+      }
+      .chip.ok {
+        color: var(--color-accent-strong);
+        background: var(--color-accent-soft);
+        border-color: var(--color-accent-soft);
+      }
+      .chip.warn {
+        color: var(--color-warn);
+        background: var(--color-warn-soft);
+        border-color: var(--color-warn-soft);
+      }
+
+      /* Screen sketches */
+      .screens {
+        display: grid;
+        gap: 36px;
+      }
+      .pair {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 24px;
+        align-items: start;
+      }
+      .screen-title {
+        font-size: 17px;
+        font-weight: 600;
+        margin: 0 0 8px;
+      }
+      .device {
+        background: var(--color-bg);
+        border: 1px solid var(--color-dash);
+        border-radius: 22px;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        max-width: 400px;
+      }
+      .cap {
+        font-size: 13px;
+        color: var(--color-ink-muted);
+      }
+      .stitle {
+        font-family: var(--font-display);
+        font-size: 22px;
+        font-weight: 600;
+        line-height: 1.2;
+      }
+      .subcard {
+        background: var(--color-surface);
+        border-radius: var(--radius-card);
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .lbl {
+        font-size: 15px;
+        font-weight: 600;
+      }
+      .input {
+        background: var(--color-surface-sunken);
+        border-radius: var(--radius-control);
+        padding: 12px 14px;
+        font-size: 17px;
+      }
+      .input.empty {
+        color: var(--color-ink-muted);
+      }
+      .daysrow {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .expl {
+        font-size: 13px;
+        color: var(--color-ink-muted);
+        line-height: 1.4;
+      }
+      .pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .pill {
+        padding: 7px 13px;
+        border-radius: 999px;
+        background: var(--color-surface-sunken);
+        font-size: 14px;
+      }
+      .pill.on {
+        background: var(--color-accent);
+        color: #fff;
+        font-weight: 600;
+      }
+      .bigsum {
+        font-family: var(--font-display);
+        font-size: 30px;
+        font-weight: 600;
+      }
+      .btn {
+        background: var(--color-accent);
+        color: #fff;
+        border-radius: var(--radius-button);
+        padding: 12px;
+        text-align: center;
+        font-weight: 600;
+        font-size: 15px;
+      }
+      .gone {
+        border: 2px dashed var(--color-warn-bar);
+        background: var(--color-warn-soft);
+        color: var(--color-warn);
+        border-radius: var(--radius-control);
+        padding: 8px 12px;
+        font-size: 13.5px;
+        text-decoration: line-through;
+      }
+      .green {
+        background: var(--color-accent);
+        color: #fff;
+        border-radius: var(--radius-card);
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .green .k {
+        font-size: 14px;
+        color: var(--color-accent-soft);
+      }
+      .green .krow,
+      .green .vrow {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+      }
+      .green .v {
+        font-family: var(--font-display);
+        font-size: 28px;
+        font-weight: 600;
+        line-height: 1.1;
+      }
+      .green .pop {
+        background: var(--color-accent-strong);
+        color: #fff;
+        border-radius: 999px;
+        padding: 6px 12px;
+        font-size: 13px;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .green .perday {
+        font-size: 14px;
+        color: var(--color-accent-soft);
+      }
+      .green .gone {
+        background: transparent;
+        color: var(--color-accent-soft);
+        border-color: var(--color-warn-bar);
+      }
+      .info {
+        width: 22px;
+        height: 22px;
+        border: 2px solid #fff;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 700;
+        line-height: 1;
+        flex-shrink: 0;
+      }
+      .home-card {
+        background: var(--color-surface);
+        border-radius: var(--radius-card);
+        padding: 14px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .home-card .r {
+        display: flex;
+        justify-content: space-between;
+        font-weight: 600;
+      }
+      .home-card .w {
+        font-size: 13px;
+        color: var(--color-warn);
+        font-weight: 500;
+      }
+      .is-new,
+      .is-chg {
+        position: relative;
+        outline: 2px dashed var(--color-accent);
+        outline-offset: 4px;
+        border-radius: 14px;
+      }
+      .is-chg {
+        outline-color: var(--color-warn-bar);
+      }
+      .new-tag {
+        position: absolute;
+        top: -12px;
+        right: 10px;
+        background: var(--color-accent);
+        color: #fff;
+        font-size: 10.5px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        padding: 2px 8px;
+        border-radius: 999px;
+        z-index: 1;
+      }
+      .new-tag.chg {
+        background: var(--color-warn);
+      }
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 20px;
+        font-size: 14px;
+        color: var(--color-ink-muted);
+        margin: 8px 0 16px;
+      }
+      .legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .sw {
+        width: 18px;
+        height: 14px;
+        border-radius: 4px;
+        border: 2px dashed var(--color-accent);
+        background: var(--color-accent-soft);
+      }
+      .sw.chg {
+        border-color: var(--color-warn-bar);
+        background: var(--color-warn-soft);
+      }
+      .sw.old {
+        border: 1.5px solid var(--color-dash);
+        background: var(--color-surface);
+      }
+      .callouts {
+        margin: 10px 0 0;
+        padding-left: 20px;
+        font-size: 14px;
+        color: var(--color-ink-muted);
+        max-width: 720px;
+      }
+      .callouts li {
+        margin: 3px 0;
+      }
+
+      /* Rules: full-width strips, one under another */
+      .rules {
+        display: grid;
+        gap: 12px;
+      }
+      .rule {
+        background: var(--color-surface);
+        border: 1px solid var(--color-line);
+        border-radius: 16px;
+        padding: 14px 18px;
+      }
+      .rule .h {
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      .rule .tag {
+        display: inline-block;
+        font-size: 11.5px;
+        font-weight: 600;
+        color: var(--color-warn);
+        background: var(--color-warn-soft);
+        padding: 1px 8px;
+        border-radius: 999px;
+        margin-left: 6px;
+        vertical-align: 2px;
+      }
+      .example {
+        font-size: 14px;
+        color: var(--color-accent-strong);
+        background: var(--color-surface-sunken);
+        border-left: 3px solid var(--color-accent);
+        padding: 6px 10px;
+        margin-top: 8px;
+        border-radius: 0 8px 8px 0;
+      }
+      table.kinds {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 14px;
+        margin-top: 8px;
+        font-variant-numeric: tabular-nums;
+      }
+      table.kinds th,
+      table.kinds td {
+        text-align: left;
+        padding: 7px 10px;
+        border-bottom: 1px solid var(--color-line);
+        vertical-align: top;
+      }
+      table.kinds th {
+        color: var(--color-ink-muted);
+        font-weight: 500;
+      }
+      table.kinds td.new {
+        color: var(--color-accent-strong);
+        font-weight: 600;
+      }
+      table.kinds td.r,
+      table.kinds th.r {
+        text-align: right;
+        white-space: nowrap;
+      }
+      .tablewrap {
+        overflow-x: auto;
+      }
+
+      /* Data model: table cards */
+      .er {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 16px;
+        align-items: start;
+      }
+      .tbl {
+        background: var(--color-surface);
+        border: 1.5px solid var(--color-dash);
+        border-radius: 12px;
+        overflow: hidden;
+        font-size: 13px;
+      }
+      .tbl.new {
+        border: 2px dashed var(--color-accent);
+        background: var(--color-accent-soft);
+      }
+      .tbl .tn {
+        background: var(--color-line);
+        padding: 7px 12px;
+        font-family: var(--font-mono);
+        font-weight: 600;
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .tbl.new .tn {
+        background: var(--color-accent);
+        color: #fff;
+      }
+      .tbl .tn span {
+        font-family: var(--font-sans);
+        font-weight: 400;
+        color: var(--color-ink-muted);
+      }
+      .tbl.new .tn span {
+        color: var(--color-accent-soft);
+      }
+      .tbl .f {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 5px 12px;
+        border-top: 1px solid var(--color-line);
+        font-family: var(--font-mono);
+      }
+      .tbl .f .ty {
+        font-family: var(--font-sans);
+        color: var(--color-ink-muted);
+        text-align: right;
+      }
+      .tbl .f.del {
+        background: var(--color-warn-soft);
+        outline: 2px dashed var(--color-warn-bar);
+        outline-offset: -2px;
+        color: var(--color-warn);
+      }
+      .tbl .f.del > span:first-child {
+        text-decoration: line-through;
+      }
+      .tbl .f.link {
+        color: var(--color-accent-strong);
+      }
+      .formula {
+        font-size: 14px;
+        background: var(--color-surface);
+        border: 1px solid var(--color-line);
+        border-radius: 14px;
+        padding: 10px 14px;
+        margin-top: 12px;
+      }
+      .formula b {
+        color: var(--color-accent-strong);
+      }
+      .formula s {
+        color: var(--color-warn);
+      }
+      .lookup {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+        margin-top: 12px;
+      }
+      .who {
+        background: var(--color-surface);
+        border: 1px solid var(--color-line);
+        border-radius: 16px;
+        padding: 18px;
+        display: grid;
+        gap: 10px;
+        min-width: 0;
+      }
+      .who h3 {
+        margin: 0;
+        font-size: 16px;
+      }
+      .who .ask {
+        font-family: var(--font-mono);
+        font-size: 13.5px;
+        background: var(--color-surface-sunken);
+        border: 1px solid var(--color-line);
+        border-radius: 10px;
+        padding: 10px 12px;
+        overflow-wrap: anywhere;
+      }
+      .who .ask b {
+        color: var(--color-accent-strong);
+      }
+      .result {
+        display: inline-flex;
+        justify-self: start;
+        font-size: 14px;
+        font-weight: 500;
+        border-radius: 999px;
+        padding: 4px 12px;
+      }
+      .result.ok {
+        background: var(--color-accent-soft);
+        color: var(--color-accent-strong);
+      }
+      .result.no {
+        background: var(--color-warn-soft);
+        color: var(--color-warn);
+      }
+      .steps {
+        list-style: none;
+        margin: 12px 0 0;
+        padding: 0;
+        display: grid;
+        gap: 12px;
+        counter-reset: step;
+      }
+      .steps li {
+        counter-increment: step;
+        display: grid;
+        grid-template-columns: 40px 1fr;
+        gap: 14px;
+        background: var(--color-surface);
+        border: 1px solid var(--color-line);
+        border-radius: 16px;
+        padding: 16px 18px;
+      }
+      .steps li::before {
+        content: counter(step);
+        font: 600 24px/1 var(--font-display);
+        color: var(--color-dash);
+      }
+      .steps li.changes {
+        border-color: var(--color-warn-bar);
+      }
+      .steps li.changes::before {
+        color: var(--color-warn);
+      }
+      .steps h3 {
+        margin: 0 0 4px;
+        font-size: 16px;
+      }
+      .steps p {
+        margin: 0;
+        color: var(--color-ink-muted);
+        font-size: 15px;
+      }
+      .mchip {
+        display: inline-block;
+        font-size: 11.5px;
+        font-weight: 600;
+        color: var(--color-accent-strong);
+        background: var(--color-accent-soft);
+        border-radius: 999px;
+        padding: 1px 9px;
+        margin-left: 6px;
+        vertical-align: 2px;
+      }
+      .mchip.chg {
+        color: var(--color-warn);
+        background: var(--color-warn-soft);
+      }
+      .callout {
+        background: var(--color-warn-soft);
+        color: var(--color-warn-strong);
+        border-radius: 16px;
+        padding: 14px 18px;
+        margin-top: 16px;
+        font-size: 15px;
+      }
+      .callout h3 {
+        margin: 0 0 6px;
+        font-size: 16px;
+      }
+
+      /* Checklist */
+      .check-group {
+        margin-bottom: 18px;
+      }
+      .check {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        padding: 10px 14px;
+        background: var(--color-surface);
+        border: 1px solid var(--color-line);
+        border-radius: 14px;
+        margin: 6px 0;
+        cursor: pointer;
+      }
+      .check input {
+        margin-top: 5px;
+        accent-color: var(--color-accent);
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+      }
+      .check .sc {
+        font-weight: 600;
+      }
+      .check .st {
+        font-size: 14px;
+        color: var(--color-ink-muted);
+      }
+      .check .st .arrow {
+        color: var(--color-accent);
+        font-weight: 700;
+      }
+      .check .auto {
+        font-size: 12px;
+        color: var(--color-accent);
+        margin-left: 6px;
+        font-weight: 500;
+      }
+      .prep {
+        background: var(--color-accent-soft);
+        border-radius: 14px;
+        padding: 12px 16px;
+        font-size: 14px;
+        color: var(--color-accent-strong);
+      }
+      .prep ol {
+        margin: 6px 0 0;
+        padding-left: 20px;
+      }
+
+      .two {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+      .box2 h3 {
+        margin-top: 0;
+      }
+      .q {
+        border-top: 1px solid var(--color-line);
+        padding-top: 12px;
+        margin-top: 12px;
+      }
+      .q:first-child {
+        border-top: 0;
+        padding-top: 0;
+        margin-top: 0;
+      }
+      footer {
+        margin-top: 64px;
+        font-size: 13px;
+        color: var(--color-ink-muted);
+      }
+
+      @media (max-width: 720px) {
+        h1 {
+          font-size: 30px;
+        }
+        h2 {
+          font-size: 22px;
+        }
+        .two {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="top">
+        <span class="dot"></span>Dear Money · обзор фичи
+      </header>
+      <h1>Остаток на жизнь копится</h1>
+      <p class="lead">
+        «Осталось на жизнь» работает как кошелёк: то, что не потрачено, не
+        пропадает с приходом новых денег, а новый доход прибавляется к остатку.
+        Сумма в день считается по числам аванса и зарплаты, которые достаточно
+        указать один раз.
+      </p>
+      <div class="chips">
+        <span class="chip ok">Сделана, ждёт влития</span>
+        <span class="chip">Задачи: 12 из 12</span>
+        <span class="chip"
+          >177 тестов расчётов и 42 сценария в браузере зелёные</span
+        >
+        <span class="chip ok"
+          >Изменение <code>daily-running-balance</code>, ветка
+          <code>daily-running-balance</code></span
+        >
+      </div>
+
+      <!-- 1 -->
+      <h2><span class="num">1</span>Коротко</h2>
+      <ul class="points">
+        <li>
+          Сейчас каждый новый доход начинает «Осталось на жизнь» с нуля. После
+          изменения остаток переносится: и плюс, и минус.
+        </li>
+        <li>
+          На «Пришли деньги» вместо даты «Следующие деньги придут» — два поля:
+          «Аванс приходит __ числа» и «Зарплата приходит __ числа». Числа
+          запоминаются.
+        </li>
+        <li>
+          «≈ N ₽ в день» считается до ближайшего из этих чисел. Оба пустые —
+          строки «в день» нет.
+        </li>
+        <li>
+          На карточке «Осталось на жизнь» остаются только сумма, «в день» и
+          «Пополнить»: «потрачено X из Y» и полоски больше нет. На главной
+          полоска тоже убирается.
+        </li>
+        <li>
+          Статус: <b>сделана</b>, ещё не влита в main. Все 12 задач отмечены.
+          Автотесты (программы, которые сами проходят сценарий и сверяют
+          результат) проверяют расчёты на числах из требований и весь путь в
+          настоящем браузере.
+        </li>
+      </ul>
+
+      <!-- 2 -->
+      <h2><span class="num">2</span>Что появится на экранах</h2>
+      <p class="muted small">
+        Наброски, не точные макеты. Новое обведено зелёным пунктиром, изменённое
+        — оранжевым, убранное зачёркнуто. Числа выдуманные, из сценариев.
+      </p>
+
+      <div class="screens">
+        <div class="pair">
+          <div>
+            <p class="screen-title">«Пришли деньги»</p>
+            <div class="device">
+              <div class="cap">← Пришли деньги</div>
+              <div class="subcard">
+                <div class="lbl">Сколько пришло</div>
+                <div class="input">150 000 ₽</div>
+                <div class="pills">
+                  <span class="pill on">Зарплата</span
+                  ><span class="pill">Аванс</span
+                  ><span class="pill">Другое</span>
+                </div>
+                <div class="gone">Следующие деньги придут: 25.11.2026</div>
+                <div class="is-new">
+                  <span class="new-tag">новое</span>
+                  <div class="daysrow">
+                    <div>
+                      <div class="lbl" style="font-size: 14px">
+                        Аванс приходит
+                      </div>
+                      <div class="input">25 числа</div>
+                    </div>
+                    <div>
+                      <div class="lbl" style="font-size: 14px">
+                        Зарплата приходит
+                      </div>
+                      <div class="input">10 числа</div>
+                    </div>
+                  </div>
+                  <div class="expl" style="margin-top: 6px">
+                    По этим числам посчитаю, сколько можно тратить в день
+                  </div>
+                </div>
+              </div>
+              <div class="cap">Как я разложу — как раньше…</div>
+              <div class="btn">Разложить</div>
+            </div>
+            <ul class="callouts">
+              <li>
+                Поля необязательные. Любое можно оставить пустым или стереть.
+              </li>
+              <li>
+                В следующий раз поля уже заполнены прошлыми числами. Сохраняются
+                они только по «Разложить».
+              </li>
+              <li>0 или 32 — «Число от 1 до 31», доход не сохраняется.</li>
+            </ul>
+          </div>
+
+          <div>
+            <p class="screen-title">«Траты»: карточка «Осталось на жизнь»</p>
+            <div class="device">
+              <div class="stitle">Повседневные траты</div>
+              <div class="is-chg">
+                <span class="new-tag chg">изменено</span>
+                <div class="green">
+                  <div class="krow">
+                    <span class="k">Осталось на жизнь до 25 ноября</span
+                    ><span class="info">i</span>
+                  </div>
+                  <div class="vrow">
+                    <span class="v">66 770 ₽</span
+                    ><span class="pop">Пополнить</span>
+                  </div>
+                  <div class="perday">≈ 4 451 ₽ в день</div>
+                  <div class="gone">полоска · потрачено 19 480 из 86 250 ₽</div>
+                </div>
+              </div>
+              <p class="cap" style="margin: 4px 0 0">
+                Если числа аванса и зарплаты не указаны:
+              </p>
+              <div class="green">
+                <div class="krow">
+                  <span class="k">Осталось на жизнь</span
+                  ><span class="info">i</span>
+                </div>
+                <div class="vrow">
+                  <span class="v">66 770 ₽</span
+                  ><span class="pop">Пополнить</span>
+                </div>
+              </div>
+            </div>
+            <ul class="callouts">
+              <li>
+                В заголовке — дата ближайших денег, по ней же считается «в
+                день».
+              </li>
+              <li>
+                Остаток в минусе — строка «в день» остаётся, с минусом: «≈ −200
+                ₽ в день».
+              </li>
+              <li>
+                «i» открывает плашку с новым текстом: «Это деньги, оставшиеся
+                после распределения по конвертам».
+              </li>
+              <li>
+                Остальной экран «Траты» не меняется: «Потрачено в ноябре»,
+                категории, последние траты, переводы.
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="pair">
+          <div>
+            <p class="screen-title">Главная: карточка «На жизнь осталось»</p>
+            <div class="device">
+              <div class="is-chg">
+                <span class="new-tag chg">изменено</span>
+                <div class="home-card">
+                  <div class="r">
+                    <span>На жизнь осталось</span><span>66 770 ₽</span>
+                  </div>
+                  <div class="gone">полоска израсходованного</div>
+                  <div class="w">Транспорт превышен на 2 230 ₽</div>
+                </div>
+              </div>
+            </div>
+            <ul class="callouts">
+              <li>
+                Сумма та же, что на экране «Траты». Строки о превышенных лимитах
+                остаются.
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3 -->
+      <h2><span class="num">3</span>Как это работает</h2>
+      <div class="rules">
+        <div class="rule">
+          <div class="h">
+            Новый доход прибавляется к остатку<span class="tag"
+              >новое правило</span
+            >
+          </div>
+          <p>
+            «Осталось на жизнь» = всё, что при раскладках ушло на повседневные
+            траты, плюс пополнения из конвертов, минус переводы в конверты и
+            повседневные траты.
+          </p>
+          <div class="example">
+            На жизнь осталось 12 000 → разложили зарплату, на повседневные 119
+            225 → стало 131 225 ₽. Сейчас было бы 119 225.
+          </div>
+        </div>
+        <div class="rule">
+          <div class="h">
+            Минус тоже переносится<span class="tag">новое правило</span>
+          </div>
+          <p>Перерасход не забывается: новый доход сначала его покрывает.</p>
+          <div class="example">
+            На жизнь −2 000 → пришло 119 225 на повседневные → стало 117 225 ₽.
+          </div>
+        </div>
+        <div class="rule">
+          <div class="h">
+            Переводы и траты меняют остаток сразу, дата не важна
+          </div>
+          <p>
+            Как и раньше: новое — на свою сумму, правка — на разницу, удаление —
+            возвращает сумму. Теперь это действует и для старых записей до
+            прошлого дохода.
+          </p>
+          <div class="example">
+            Осталось 154 225 с пополнением 5 000 от 3 ноября. Исправили его на 6
+            000 → 155 225. Удалили → 149 225, а 5 000 вернулись в «Маникюр».
+          </div>
+        </div>
+        <div class="rule">
+          <div class="h">Траты до первой раскладки не считаются</div>
+          <p>
+            Пока ни один доход не разложен, «на жизнь» нет. Трата, внесённая
+            тогда, остаток не уменьшает, и её удаление его не меняет.
+          </p>
+        </div>
+        <div class="rule">
+          <div class="h">
+            Ближайшие деньги — по числам аванса и зарплаты<span class="tag"
+              >новое правило</span
+            >
+          </div>
+          <p>
+            Берётся ближайший день после сегодня с одним из указанных чисел. В
+            сам день денег считается уже следующая дата. Если такого числа в
+            месяце нет, берётся последний день месяца. Пустое поле не
+            учитывается.
+          </p>
+          <div class="tablewrap">
+            <table class="kinds">
+              <tr>
+                <th>Сегодня</th>
+                <th>Аванс</th>
+                <th>Зарплата</th>
+                <th>Ближайшие деньги</th>
+                <th class="r">Дней</th>
+              </tr>
+              <tr>
+                <td>10 ноября</td>
+                <td>25</td>
+                <td>10</td>
+                <td class="new">25 ноября</td>
+                <td class="r">15</td>
+              </tr>
+              <tr>
+                <td>26 ноября</td>
+                <td>25</td>
+                <td>10</td>
+                <td class="new">10 декабря</td>
+                <td class="r">14</td>
+              </tr>
+              <tr>
+                <td>25 ноября</td>
+                <td>25</td>
+                <td>10</td>
+                <td class="new">10 декабря</td>
+                <td class="r">15</td>
+              </tr>
+              <tr>
+                <td>10 ноября</td>
+                <td>—</td>
+                <td>25</td>
+                <td class="new">25 ноября</td>
+                <td class="r">15</td>
+              </tr>
+              <tr>
+                <td>10 ноября</td>
+                <td>—</td>
+                <td>31</td>
+                <td class="new">30 ноября</td>
+                <td class="r">20</td>
+              </tr>
+              <tr>
+                <td>любой</td>
+                <td>—</td>
+                <td>—</td>
+                <td>нет</td>
+                <td class="r">—</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+        <div class="rule">
+          <div class="h">Сумма в день</div>
+          <p>
+            Остаток делится на число дней до ближайших денег: сегодня считается,
+            день денег — нет. Округление до рубля.
+          </p>
+          <div class="example">
+            66 770 ₽ на 15 дней → ≈ 4 451 ₽ в день. 28 000 ₽ на 14 дней → ≈ 2
+            000 ₽ в день.
+          </div>
+          <div class="example">
+            В минусе строка не прячется: −3 000 ₽ на 15 дней → ≈ −200 ₽ в день.
+          </div>
+        </div>
+        <div class="rule">
+          <div class="h">Без чисел — без «в день»</div>
+          <p>
+            Оба поля пустые: «Осталось на жизнь» показывается, заголовок без
+            даты, строки «в день» нет.
+          </p>
+        </div>
+        <div class="rule">
+          <div class="h">Числа запоминаются</div>
+          <p>
+            По «Разложить» числа сохраняются и в следующий раз уже стоят в
+            полях. Стёрли число и разложили — поле останется пустым. При первой
+            раскладке оба поля пустые.
+          </p>
+        </div>
+      </div>
+
+      <!-- 4 -->
+      <h2><span class="num">4</span>Модель данных до и после</h2>
+      <p>
+        Модель данных — какие таблицы лежат в базе и какие в них поля.
+        Появляется одна маленькая таблица с числами аванса и зарплаты. Из
+        доходов убирается поле с датой следующих денег. Журнал «на жизнь» не
+        меняется, меняется только то, как по нему считают.
+      </p>
+
+      <h3>Сейчас</h3>
+      <div class="er">
+        <div class="tbl">
+          <div class="tn">incomes <span>доходы</span></div>
+          <div class="f"><span>id</span></div>
+          <div class="f"><span>user_id</span><span class="ty">чей</span></div>
+          <div class="f">
+            <span>date, amount, kind</span
+            ><span class="ty">когда, сколько, вид</span>
+          </div>
+          <div class="f">
+            <span>next_income_date</span
+            ><span class="ty">дата следующих денег</span>
+          </div>
+          <div class="f">
+            <span>to_daily</span><span class="ty">на жизнь</span>
+          </div>
+        </div>
+        <div class="tbl">
+          <div class="tn">daily_moves <span>журнал «на жизнь»</span></div>
+          <div class="f"><span>id</span></div>
+          <div class="f"><span>user_id</span><span class="ty">чей</span></div>
+          <div class="f link">
+            <span>income_id → incomes</span><span class="ty">период</span>
+          </div>
+          <div class="f">
+            <span>source</span><span class="ty">перевод или трата</span>
+          </div>
+          <div class="f">
+            <span>amount</span><span class="ty">на сколько, со знаком</span>
+          </div>
+        </div>
+      </div>
+      <div class="formula">
+        «Осталось на жизнь» = to_daily <s>последнего дохода</s> + строки журнала
+        <s>последнего дохода</s>. «В день» — до <s>next_income_date</s>.
+      </div>
+
+      <h3>После</h3>
+      <div class="legend">
+        <span><i class="sw"></i>новое</span>
+        <span><i class="sw chg"></i>убирается</span>
+        <span><i class="sw old"></i>как было</span>
+      </div>
+      <div class="er">
+        <div class="tbl">
+          <div class="tn">incomes <span>доходы</span></div>
+          <div class="f"><span>id</span></div>
+          <div class="f"><span>user_id</span><span class="ty">чей</span></div>
+          <div class="f">
+            <span>date, amount, kind</span
+            ><span class="ty">когда, сколько, вид</span>
+          </div>
+          <div class="f del">
+            <span>next_income_date</span><span class="ty">удаляется</span>
+          </div>
+          <div class="f">
+            <span>to_daily</span><span class="ty">на жизнь</span>
+          </div>
+        </div>
+        <div class="tbl">
+          <div class="tn">daily_moves <span>как было</span></div>
+          <div class="f"><span>id</span></div>
+          <div class="f"><span>user_id</span><span class="ty">чей</span></div>
+          <div class="f link">
+            <span>income_id → incomes</span><span class="ty">остаётся</span>
+          </div>
+          <div class="f">
+            <span>source</span><span class="ty">перевод или трата</span>
+          </div>
+          <div class="f">
+            <span>amount</span><span class="ty">на сколько, со знаком</span>
+          </div>
+        </div>
+        <div class="tbl new">
+          <div class="tn">pay_days <span>числа денег</span></div>
+          <div class="f">
+            <span>user_id</span
+            ><span class="ty">чьи, одна строка на человека</span>
+          </div>
+          <div class="f">
+            <span>advance_day</span
+            ><span class="ty">аванс, 1–31 или пусто</span>
+          </div>
+          <div class="f">
+            <span>salary_day</span
+            ><span class="ty">зарплата, 1–31 или пусто</span>
+          </div>
+        </div>
+      </div>
+      <div class="formula">
+        «Осталось на жизнь» = to_daily <b>всех доходов</b> + <b>все</b> строки
+        журнала. «В день» — до ближайшего дня из <b>pay_days</b>.
+      </div>
+      <ul class="points">
+        <li>
+          <b>pay_days</b> — числа аванса и зарплаты. У каждого пользователя не
+          больше одной строки. База не пропустит число меньше 1 или больше 31.
+        </li>
+        <li>
+          Остаток нигде не хранится, а каждый раз считается заново по доходам и
+          журналу. Поэтому исправленная старая трата сразу меняет остаток.
+        </li>
+        <li>
+          Журнал пишется как раньше. Связь с доходом в нём остаётся, хотя для
+          остатка больше не нужна.
+        </li>
+      </ul>
+
+      <h3>Как запрос находит свои данные и не находит чужие</h3>
+      <p>
+        В <code>pay_days</code>, как и в остальных таблицах, есть
+        <code>user_id</code>, и каждый запрос добавляет условие «и пользователь
+        — тот, кто вошёл». Пример: у пользователя A аванс 25 числа.
+      </p>
+      <div class="lookup">
+        <div class="who">
+          <h3>Вошёл A</h3>
+          <div class="ask">найди числа денег <b>пользователя A</b></div>
+          <span class="result ok">Нашлись: в полях 25 и 10</span>
+        </div>
+        <div class="who">
+          <h3>Вошёл B</h3>
+          <div class="ask">найди числа денег <b>пользователя B</b></div>
+          <span class="result no">Чисел A не видно: поля пустые</span>
+        </div>
+      </div>
+      <p class="small muted">
+        Так же с остатком: складываются только доходы и строки журнала того, кто
+        вошёл.
+      </p>
+
+      <h3>Миграции</h3>
+      <p>
+        Миграция — скрипт, который меняет устройство базы. Здесь одна миграция
+        из двух шагов. Она запускается перед стартом новой версии; если упала,
+        новая версия не стартует.
+      </p>
+      <ol class="steps">
+        <li>
+          <div>
+            <h3>
+              Новая таблица <code>pay_days</code
+              ><span class="mchip">не меняет данные</span>
+            </h3>
+            <p>Пустая таблица. Доходы, траты, переводы и журнал не трогает.</p>
+          </div>
+        </li>
+        <li class="changes">
+          <div>
+            <h3>
+              Удалить поле <code>next_income_date</code> у доходов<span
+                class="mchip chg"
+                >удаляет данные</span
+              >
+            </h3>
+            <p>
+              Сохранённые даты следующих денег пропадут. Суммы доходов,
+              раскладки и остатки конвертов не меняются. Удаление согласовано с
+              вами.
+            </p>
+          </div>
+        </li>
+      </ol>
+      <div class="tablewrap card" style="padding: 8px 14px; margin-top: 16px">
+        <table class="kinds">
+          <tr>
+            <th>Что в базе</th>
+            <th>После миграции</th>
+          </tr>
+          <tr>
+            <td>Доходы, раскладки, траты, переводы, журнал</td>
+            <td>как были</td>
+          </tr>
+          <tr>
+            <td>Даты следующих денег у доходов</td>
+            <td class="new">удалены</td>
+          </tr>
+          <tr>
+            <td>Числа аванса и зарплаты</td>
+            <td class="new">пусто, пока не заполните на «Пришли деньги»</td>
+          </tr>
+          <tr>
+            <td>«Осталось на жизнь»</td>
+            <td class="new">
+              вырастет на остатки прошлых доходов (или уменьшится на прошлый
+              перерасход)
+            </td>
+          </tr>
+          <tr>
+            <td>«≈ N ₽ в день»</td>
+            <td class="new">не видно, пока не укажете числа</td>
+          </tr>
+        </table>
+      </div>
+      <div class="callout">
+        <h3>Как откатиться</h3>
+        <p>
+          Прошлая версия приложения читает поле <code>next_income_date</code>,
+          поэтому после миграции она без него не запустится. Для отката нужно
+          сначала вернуть это поле пустым (отдельной миграцией), потом поставить
+          прошлую версию. Старые даты не вернутся: «в день» появится после
+          следующей раскладки с датой. Таблицу <code>pay_days</code> можно не
+          удалять. Сам откат запускаешь только ты.
+        </p>
+      </div>
+
+      <!-- 5 -->
+      <h2><span class="num">5</span>Как проверить руками</h2>
+      <div class="prep">
+        <b>Подготовка.</b> Это можно будет проверить после реализации.
+        <ol>
+          <li>
+            Запустить приложение локально, данные —
+            <code>data/sample-seed.json</code> (см. README).
+          </li>
+          <li>
+            Числа в сценариях выдуманные. На своих данных смотри, на сколько
+            меняется сумма.
+          </li>
+          <li>
+            Сценарии с «сегодня 26 ноября» руками не подстроить: подбирай числа
+            аванса и зарплаты от сегодняшнего дня. Точные даты из сценариев
+            проверят автотесты.
+          </li>
+          <li>Галочки на странице только для удобства и не сохраняются.</li>
+        </ol>
+      </div>
+
+      <div class="check-group">
+        <h3>Остаток копится</h3>
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Нет раскладки</div>
+            <div class="st">
+              На пустой базе открыть «Траты»
+              <span class="arrow">→</span> вместо карточки приглашение разложить
+              деньги, оно ведёт на «Пришли деньги».
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Доход прибавляется к остатку<span class="auto">автотест ✓</span>
+            </div>
+            <div class="st">
+              Запомнить «Осталось на жизнь» → разложить ещё доход, посмотреть на
+              экране, сколько уходит на повседневные
+              <span class="arrow">→</span> остаток = прежний + эта сумма, а не
+              только она.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Минус переносится<span class="auto">автотест ✓</span>
+            </div>
+            <div class="st">
+              Перевести из «на жизнь» в конверт больше остатка → остаток в
+              минусе → разложить доход <span class="arrow">→</span> остаток =
+              минус + доля дохода на повседневные.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Переводы меняют остаток<span class="auto">автотест ✓</span>
+            </div>
+            <div class="st">
+              Пополнить «на жизнь» на 5 000, потом перевести из «на жизнь» в
+              конверт 2 000 <span class="arrow">→</span> остаток вырос на 3 000.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Пополнение задним числом<span class="auto">автотест ✓</span>
+            </div>
+            <div class="st">
+              Пополнить на 5 000 с датой раньше последнего дохода
+              <span class="arrow">→</span> остаток вырос на 5 000.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Пополнение до нового дохода остаётся<span class="auto"
+                >автотест ✓</span
+              >
+            </div>
+            <div class="st">
+              Пополнить на 5 000 из «Маникюра» → разложить новый доход
+              <span class="arrow">→</span> остаток = прежний с пополнением +
+              доля дохода; в «Маникюре» по-прежнему на 5 000 меньше.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Правка старого пополнения<span class="auto">автотест ✓</span>
+            </div>
+            <div class="st">
+              После нового дохода открыть то пополнение и исправить 5 000 на 6
+              000 <span class="arrow">→</span> остаток +1 000, в «Маникюре» ещё
+              на 1 000 меньше.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Удаление старого пополнения<span class="auto">автотест ✓</span>
+            </div>
+            <div class="st">
+              Удалить это пополнение <span class="arrow">→</span> остаток меньше
+              на его сумму, деньги вернулись в «Маникюр».
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Смена только даты пополнения</div>
+            <div class="st">
+              У пополнения поменять только дату
+              <span class="arrow">→</span> остаток тот же.
+            </div>
+          </div></label
+        >
+      </div>
+
+      <div class="check-group">
+        <h3>Сумма в день</h3>
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Сумма в день<span class="auto">автотест ✓</span>
+            </div>
+            <div class="st">
+              Разложить доход с авансом и зарплатой, одно из чисел — через
+              несколько дней <span class="arrow">→</span> заголовок «Осталось на
+              жизнь до &lt;эта дата&gt;», «≈ N ₽ в день» = остаток / дней до неё
+              (сегодня считается), до рубля.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Ближайшая — в следующем месяце<span class="auto">автотест ✓</span>
+            </div>
+            <div class="st">
+              Оба числа меньше сегодняшнего <span class="arrow">→</span> в
+              заголовке дата следующего месяца.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Сегодня день денег<span class="auto">автотест ✓</span>
+            </div>
+            <div class="st">
+              Одно число = сегодняшнее <span class="arrow">→</span> в заголовке
+              не сегодня, а следующая дата.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Указано только одно число<span class="auto">автотест ✓</span>
+            </div>
+            <div class="st">
+              Стереть аванс, оставить зарплату
+              <span class="arrow">→</span> «в день» считается до зарплаты.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Числа больше, чем дней в месяце<span class="auto"
+                >автотест ✓</span
+              >
+            </div>
+            <div class="st">
+              Зарплата 31 числа, в ноябре <span class="arrow">→</span> «до 30
+              ноября».
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Числа не указаны<span class="auto">автотест ✓</span>
+            </div>
+            <div class="st">
+              Стереть оба числа и разложить <span class="arrow">→</span>
+              заголовок «Осталось на жизнь» без даты, сумма есть, строки «в
+              день» нет.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Остаток в минусе<span class="auto">автотест ✓</span>
+            </div>
+            <div class="st">
+              Перевести из «на жизнь» в конверт больше остатка
+              <span class="arrow">→</span> строка «в день» осталась и показывает
+              сумму с минусом, например «≈ −200 ₽ в день».
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Пояснение под «i»<span class="auto">автотест ✓</span>
+            </div>
+            <div class="st">
+              Нажать «i» на карточке <span class="arrow">→</span> плашка «Это
+              деньги, оставшиеся после распределения по конвертам» с крестиком;
+              закрывается крестиком, нажатием на экран или сама через 8 секунд.
+            </div>
+          </div></label
+        >
+      </div>
+
+      <div class="check-group">
+        <h3>Карточка и траты</h3>
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Середина месяца<span class="auto">автотест ✓</span>
+            </div>
+            <div class="st">
+              Открыть «Траты» <span class="arrow">→</span> на карточке нет
+              «потрачено X из Y» и полоски; на главной «На жизнь осталось» с той
+              же суммой и без полоски.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Подсказка для повседневной траты</div>
+            <div class="st">
+              «Внести трату» → повседневная 1 250
+              <span class="arrow">→</span> под формой «На жизнь останется» на 1
+              250 меньше остатка.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Трата задним числом<span class="auto">автотест ✓</span>
+            </div>
+            <div class="st">
+              Повседневная трата 1 000 с датой раньше последнего дохода
+              <span class="arrow">→</span> остаток меньше на 1 000.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Удаление старой траты<span class="auto">автотест ✓</span>
+            </div>
+            <div class="st">
+              Удалить повседневную трату 2 000 до последнего дохода
+              <span class="arrow">→</span> остаток больше на 2 000.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Правка старой траты<span class="auto">автотест ✓</span>
+            </div>
+            <div class="st">
+              Исправить такую трату 2 000 на 2 500
+              <span class="arrow">→</span> остаток меньше на 500.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Смена только даты траты</div>
+            <div class="st">
+              Поменять у траты только дату <span class="arrow">→</span> остаток
+              тот же.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Подсказка при правке траты</div>
+            <div class="st">
+              Открыть трату 1 250 и исправить на 1 500
+              <span class="arrow">→</span> «На жизнь останется» на 250 меньше
+              нынешнего остатка.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Трата до первой раскладки<span class="auto">автотест ✓</span>
+            </div>
+            <div class="st">
+              На пустой базе внести повседневную трату → разложить первый доход
+              <span class="arrow">→</span> остаток = доля дохода, трата его не
+              уменьшила; её удаление остаток не меняет.
+            </div>
+          </div></label
+        >
+      </div>
+
+      <div class="check-group">
+        <h3>Числа на «Пришли деньги»</h3>
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Первая раскладка<span class="auto">автотест ✓</span>
+            </div>
+            <div class="st">
+              После выкатки открыть «Пришли деньги»
+              <span class="arrow">→</span> оба поля пустые.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Числа запоминаются<span class="auto">автотест ✓</span>
+            </div>
+            <div class="st">
+              Указать 25 и 10 → «Разложить» → снова открыть «Пришли деньги»
+              <span class="arrow">→</span> в полях 25 и 10.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Число стёрто<span class="auto">автотест ✓</span>
+            </div>
+            <div class="st">
+              Стереть аванс → «Разложить» → открыть снова
+              <span class="arrow">→</span> аванс пустой, зарплата 10.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Неверное число<span class="auto">автотест ✓</span>
+            </div>
+            <div class="st">
+              Ввести 32 (или 0) → «Разложить»
+              <span class="arrow">→</span> «Число от 1 до 31», доход не
+              сохранён.
+            </div>
+          </div></label
+        >
+      </div>
+
+      <div class="check-group">
+        <h3>Переводы</h3>
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Пополнение из «Маникюра»<span class="auto">автотест ✓</span>
+            </div>
+            <div class="st">
+              «Пополнить» → 5 000 из «Маникюра»
+              <span class="arrow">→</span> остаток на «Траты» и на главной +5
+              000, в «Маникюре» −5 000, строки «потрачено» нет.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">
+              Остаток на жизнь в «Подушку»<span class="auto">автотест ✓</span>
+            </div>
+            <div class="st">
+              Перевести 6 770 из «на жизнь» в «Подушку»
+              <span class="arrow">→</span> остаток −6 770, в «Подушке» +6 770.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Дата перевода и «переводы — не траты»</div>
+            <div class="st">
+              Перевод задним числом меняет остатки так же, как сегодняшним;
+              пополнение не попадает в «Потрачено в ноябре», категории и
+              последние траты <span class="arrow">→</span> всё как раньше.
+            </div>
+          </div></label
+        >
+      </div>
+
+      <!-- 6 -->
+      <h2><span class="num">6</span>Что агент решил сам</h2>
+      <div class="two">
+        <div class="card box2">
+          <h3>Продуктовые — стоит просмотреть</h3>
+          <p class="small muted">
+            Вы решили: числа месяца один раз, на карточке только сумма, минус
+            переносится, «в день» в минусе остаётся, новый текст «i», старое
+            поле удаляется. Остальное ниже — додумано.
+          </p>
+          <ul class="points small">
+            <li>
+              На главной у «На жизнь осталось» тоже убрана полоска: без бюджета
+              ей нечего показывать.
+            </li>
+            <li>Указано одно число — «в день» считается до него.</li>
+            <li>
+              В сам день денег «в день» считается уже до следующей даты (25-го —
+              до 10-го).
+            </li>
+            <li>Числа нет в месяце (31-е в ноябре) — последний день месяца.</li>
+            <li>Числа сохраняются только по «Разложить».</li>
+            <li>Текст ошибки: «Число от 1 до 31».</li>
+            <li>
+              Подпись под полями: «По этим числам посчитаю, сколько можно
+              тратить в день».
+            </li>
+            <li>
+              Числа не связаны с видом дохода (зарплата / аванс / другое): они
+              нужны только для «в день». Отдельного экрана настроек для них нет.
+            </li>
+          </ul>
+        </div>
+        <div class="card box2">
+          <h3>Технические — на экраны не влияют</h3>
+          <ul class="points small">
+            <li>
+              Остаток считается по уже существующему журналу «на жизнь»:
+              переносить старые данные не нужно.
+            </li>
+            <li>
+              Числа лежат в отдельной таблице <code>pay_days</code>, а не в
+              таблице входа: так проще потом добавить других пользователей.
+            </li>
+            <li>
+              Числа сохраняются вместе с доходом, за один раз: либо оба
+              сохранятся, либо ничего.
+            </li>
+            <li>
+              Поле даты следующих денег удаляется из базы, а не просто перестаёт
+              использоваться.
+            </li>
+            <li>
+              Связь журнала с доходом остаётся, хотя для остатка больше не
+              нужна.
+            </li>
+            <li>
+              Ближайшая дата, остаток и сумма в день считаются в
+              <code>src/domain/</code> и проверяются тестами на числах из
+              сценариев. Округление — в общем модуле денег.
+            </li>
+            <li>«Сегодня» — по часовому поясу приложения, как для дат трат.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 7 -->
+      <h2><span class="num">7</span>Что осталось неясным</h2>
+      <div class="card">
+        <p>
+          Открытых вопросов нет. Последние три решены: в минусе строка «в день»
+          остаётся, пояснение под «i» — «Это деньги, оставшиеся после
+          распределения по конвертам», старое поле с датой удаляется.
+        </p>
+      </div>
+
+      <footer>
+        Собрано по <code>openspec/changes/daily-running-balance/</code> и коду в
+        ветке <code>daily-running-balance</code>. Страница только показывает,
+        ничего не меняет.
+      </footer>
+    </div>
+  </body>
+</html>

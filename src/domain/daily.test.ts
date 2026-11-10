@@ -3,13 +3,13 @@ import {
   categoryStatus,
   daysUntil,
   dailyMove,
+  dailyRemaining,
   dailySummary,
   expenseDailyEffect,
   isInMonth,
   monthSpending,
   monthStart,
-  periodBudget,
-  periodSpent,
+  nextPayDate,
   remainingAfterExpense,
 } from "./daily";
 import { rub } from "./test-fixtures";
@@ -57,47 +57,157 @@ describe("remainingAfterExpense", () => {
 });
 
 describe("dailySummary", () => {
-  it("mid-month: budget 86 250, spent 19 480 → 66 770 left", () => {
-    const s = dailySummary({
-      budget: rub(86250),
-      spent: rub(19480),
-      today: "2026-10-21",
-      nextIncomeDate: "2026-11-05",
-    });
-    expect(s.remaining).toBe(rub(66770));
-    expect(s.spent).toBe(rub(19480));
-    expect(s.budget).toBe(rub(86250));
-  });
+  const summary = (
+    remainingRub: number,
+    today: string,
+    payDays: (number | null)[],
+  ) => dailySummary({ remaining: rub(remainingRub), today, payDays });
 
-  it("per day: 66 770 over 15 days including today → ≈ 4 451", () => {
-    const s = dailySummary({
-      budget: rub(86250),
-      spent: rub(19480),
-      today: "2026-10-21",
-      nextIncomeDate: "2026-11-05",
-    });
-    expect(s.daysLeft).toBe(15);
+  it("66 770 left, 10 Nov, advance 25 and salary 10 → until 25 Nov, ≈ 4 451 a day", () => {
+    const s = summary(66770, "2026-11-10", [25, 10]);
+    expect(s.remaining).toBe(rub(66770));
+    expect(s.nextPayDate).toBe("2026-11-25");
     expect(s.perDay).toBe(rub(4451));
   });
 
-  it("no next income date → no per-day line", () => {
-    const s = dailySummary({
-      budget: rub(1000),
-      spent: 0,
-      today: "2026-10-21",
-      nextIncomeDate: null,
-    });
-    expect(s.perDay).toBeNull();
+  it("26 Nov: the nearest money is 10 Dec, 14 days → 28 000 is ≈ 2 000 a day", () => {
+    const s = summary(28000, "2026-11-26", [25, 10]);
+    expect(s.nextPayDate).toBe("2026-12-10");
+    expect(s.perDay).toBe(rub(2000));
   });
 
-  it("next income date already passed → no per-day line", () => {
-    const s = dailySummary({
-      budget: rub(1000),
-      spent: 0,
-      today: "2026-11-06",
-      nextIncomeDate: "2026-11-05",
-    });
+  it("25 Nov is a pay day: 15 days to 10 Dec → 30 000 is ≈ 2 000 a day", () => {
+    const s = summary(30000, "2026-11-25", [25, 10]);
+    expect(s.nextPayDate).toBe("2026-12-10");
+    expect(s.perDay).toBe(rub(2000));
+  });
+
+  it("only the salary day 25 is set: 30 000 over 15 days → ≈ 2 000", () => {
+    const s = summary(30000, "2026-11-10", [null, 25]);
+    expect(s.nextPayDate).toBe("2026-11-25");
+    expect(s.perDay).toBe(rub(2000));
+  });
+
+  it("salary day 31 in November → 30 Nov, 20 days → 40 000 is ≈ 2 000 a day", () => {
+    const s = summary(40000, "2026-11-10", [null, 31]);
+    expect(s.nextPayDate).toBe("2026-11-30");
+    expect(s.perDay).toBe(rub(2000));
+  });
+
+  it("a negative balance keeps the per-day line: −3 000 over 15 days → ≈ −200", () => {
+    const s = summary(-3000, "2026-11-10", [25, 10]);
+    expect(s.remaining).toBe(rub(-3000));
+    expect(s.perDay).toBe(rub(-200));
+  });
+
+  it("no days set → no date and no per-day line, the balance stays", () => {
+    const s = summary(66770, "2026-11-10", [null, null]);
+    expect(s.remaining).toBe(rub(66770));
+    expect(s.nextPayDate).toBeNull();
     expect(s.perDay).toBeNull();
+  });
+});
+
+describe("dailyRemaining", () => {
+  const remaining = (toDaily: number[], moves: number[]) =>
+    dailyRemaining({ toDaily: toDaily.map(rub), moves: moves.map(rub) });
+
+  it("12 000 left + a new income with 119 225 for daily life = 131 225", () => {
+    expect(remaining([12000, 119225], [])).toBe(rub(131225));
+  });
+
+  it("−2 000 carries over: −2 000 + 119 225 = 117 225", () => {
+    expect(remaining([-2000, 119225], [])).toBe(rub(117225));
+  });
+
+  it("86 250 + 5 000 top-up − 2 000 moved to an envelope = 89 250", () => {
+    expect(remaining([86250], [5000, -2000])).toBe(rub(89250));
+  });
+
+  it("a top-up with an old date: 86 250 + 5 000 = 91 250", () => {
+    expect(remaining([86250], [5000])).toBe(rub(91250));
+  });
+
+  it("a top-up before a new income stays: 30 000 + 5 000 + 119 225 = 154 225", () => {
+    expect(remaining([30000, 119225], [5000])).toBe(rub(154225));
+  });
+
+  it("the old top-up 5 000 edited to 6 000 → 155 225", () => {
+    expect(remaining([30000, 119225], [5000, 1000])).toBe(rub(155225));
+  });
+
+  it("the old top-up 5 000 deleted → 149 225", () => {
+    expect(remaining([30000, 119225], [5000, -5000])).toBe(rub(149225));
+  });
+
+  it("a back-dated daily expense 1 000 out of 100 000 → 99 000", () => {
+    expect(remaining([100000], [-1000])).toBe(rub(99000));
+  });
+
+  it("an old expense 2 000 deleted → 102 000", () => {
+    expect(remaining([100000], [2000])).toBe(rub(102000));
+  });
+
+  it("an old expense 2 000 edited to 2 500 → 99 500", () => {
+    expect(remaining([100000], [-500])).toBe(rub(99500));
+  });
+
+  it("6 770 moved from «на жизнь» to an envelope: 86 250 − 6 770 = 79 480", () => {
+    expect(remaining([86250], [-6770])).toBe(rub(79480));
+  });
+
+  it("70 000 moved when 66 770 is left → −3 230", () => {
+    expect(remaining([66770], [-70000])).toBe(rub(-3230));
+  });
+
+  it("no income, no rows → 0", () => {
+    expect(remaining([], [])).toBe(0);
+  });
+});
+
+describe("nextPayDate", () => {
+  it("10 Nov, advance 25 and salary 10 → 25 Nov", () => {
+    expect(nextPayDate("2026-11-10", [25, 10])).toBe("2026-11-25");
+  });
+
+  it("26 Nov, advance 25 and salary 10 → 10 Dec", () => {
+    expect(nextPayDate("2026-11-26", [25, 10])).toBe("2026-12-10");
+  });
+
+  it("25 Nov is a pay day itself → the next one, 10 Dec", () => {
+    expect(nextPayDate("2026-11-25", [25, 10])).toBe("2026-12-10");
+  });
+
+  it("10 Nov, no advance, salary 25 → 25 Nov", () => {
+    expect(nextPayDate("2026-11-10", [null, 25])).toBe("2026-11-25");
+  });
+
+  it("10 Nov, no advance, salary 31 → 30 Nov, the last day of the month", () => {
+    expect(nextPayDate("2026-11-10", [null, 31])).toBe("2026-11-30");
+  });
+
+  it("both empty → no date", () => {
+    expect(nextPayDate("2026-11-10", [null, null])).toBeNull();
+  });
+
+  it("31 Dec, day 10 → 10 Jan of the next year", () => {
+    expect(nextPayDate("2026-12-31", [10, null])).toBe("2027-01-10");
+  });
+
+  it("15 Jan, day 30 → 30 Jan", () => {
+    expect(nextPayDate("2027-01-15", [30, null])).toBe("2027-01-30");
+  });
+
+  it("31 Jan, day 30 → 28 Feb (not a leap year)", () => {
+    expect(nextPayDate("2027-01-31", [30, null])).toBe("2027-02-28");
+  });
+
+  it("31 Jan, day 30 in a leap year → 29 Feb", () => {
+    expect(nextPayDate("2028-01-31", [30, null])).toBe("2028-02-29");
+  });
+
+  it("30 Nov, day 31 → 31 Dec: 30 Nov is the last day, already today", () => {
+    expect(nextPayDate("2026-11-30", [null, 31])).toBe("2026-12-31");
   });
 });
 
@@ -306,111 +416,5 @@ describe("dailyMove for expenses", () => {
     expect(dailyMove({ effect: expenseDailyEffect(null), journaled: 0 })).toBe(
       0,
     );
-  });
-});
-
-describe("periodBudget", () => {
-  const budget = (toDaily: number, moves: number[]) =>
-    periodBudget({ toDaily: rub(toDaily), transferMoves: moves.map(rub) });
-
-  it("86 250 + 5 000 top-up − 2 000 moved to an envelope = 89 250", () => {
-    expect(budget(86250, [5000, -2000])).toBe(rub(89250));
-  });
-
-  it("a top-up with an old date: 86 250 + 5 000 = 91 250", () => {
-    expect(budget(86250, [5000])).toBe(rub(91250));
-  });
-
-  it("an old top-up of 5 000 edited to 6 000: 119 225 + 1 000 = 120 225", () => {
-    expect(budget(119225, [1000])).toBe(rub(120225));
-  });
-
-  it("an old top-up of 5 000 deleted: 119 225 − 5 000 = 114 225", () => {
-    expect(budget(119225, [-5000])).toBe(rub(114225));
-  });
-
-  it("only the date changed (no rows), or a new period: 119 225", () => {
-    expect(budget(119225, [])).toBe(rub(119225));
-  });
-});
-
-describe("periodSpent", () => {
-  it("rows of expenses: −19 225 → spent 19 225", () => {
-    expect(periodSpent([rub(-19225)])).toBe(rub(19225));
-  });
-
-  it("a back-dated expense 1 000 → 20 225, left 99 000", () => {
-    const spent = periodSpent([rub(-19225), rub(-1000)]);
-    expect(spent).toBe(rub(20225));
-    expect(
-      dailySummary({
-        budget: rub(119225),
-        spent,
-        today: "2026-11-20",
-        nextIncomeDate: null,
-      }).remaining,
-    ).toBe(rub(99000));
-  });
-
-  it("an old expense of 2 000 deleted → 17 225, left 102 000", () => {
-    const spent = periodSpent([rub(-19225), rub(2000)]);
-    expect(spent).toBe(rub(17225));
-    expect(
-      dailySummary({
-        budget: rub(119225),
-        spent,
-        today: "2026-11-20",
-        nextIncomeDate: null,
-      }).remaining,
-    ).toBe(rub(102000));
-  });
-
-  it("an old expense of 2 000 edited to 2 500 → 19 725, left 99 500", () => {
-    const spent = periodSpent([rub(-19225), rub(-500)]);
-    expect(spent).toBe(rub(19725));
-    expect(
-      dailySummary({
-        budget: rub(119225),
-        spent,
-        today: "2026-11-20",
-        nextIncomeDate: null,
-      }).remaining,
-    ).toBe(rub(99500));
-  });
-
-  it("no rows → 0", () => {
-    expect(periodSpent([])).toBe(0);
-  });
-});
-
-describe("dailySummary with transfers", () => {
-  const left = (budgetRub: number, spentRub: number) =>
-    dailySummary({
-      budget: rub(budgetRub),
-      spent: rub(spentRub),
-      today: "2026-11-20",
-      nextIncomeDate: null,
-    });
-
-  it("top-up 5 000: budget 91 250, spent 19 480 → left 71 770", () => {
-    const budget = periodBudget({
-      toDaily: rub(86250),
-      transferMoves: [rub(5000)],
-    });
-    expect(budget).toBe(rub(91250));
-    expect(left(91250, 19480).remaining).toBe(rub(71770));
-  });
-
-  it("6 770 moved from «на жизнь» to an envelope: budget 79 480 → left 60 000", () => {
-    const budget = periodBudget({
-      toDaily: rub(86250),
-      transferMoves: [rub(-6770)],
-    });
-    expect(budget).toBe(rub(79480));
-    expect(left(79480, 19480).remaining).toBe(rub(60000));
-  });
-
-  it("70 000 moved when 66 770 is left → −3 230", () => {
-    expect(left(86250 - 70000, 19480).remaining).toBe(rub(-3230));
   });
 });

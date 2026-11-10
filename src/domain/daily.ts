@@ -13,6 +13,43 @@ export function daysUntil(today: string, date: string): number {
   return dayNumber(date) - dayNumber(today);
 }
 
+function daysInMonth(year: number, month: number): number {
+  return new Date(Date.UTC(year, month, 0)).getUTCDate();
+}
+
+function isoDate(year: number, month: number, day: number): string {
+  const pad = (n: number, width: number) => String(n).padStart(width, "0");
+  return `${pad(year, 4)}-${pad(month, 2)}-${pad(day, 2)}`;
+}
+
+/**
+ * The nearest day after today that has one of the given days of the month
+ * (the advance and the salary day; an empty one is skipped). A day the month
+ * does not have (31 in November) is the last day of that month. A day equal
+ * to today does not count: today's money is already in the balance.
+ */
+export function nextPayDate(
+  today: string,
+  days: (number | null)[],
+): string | null {
+  const [year, month, todayDay] = today.split("-").map(Number);
+  const nextYear = month === 12 ? year + 1 : year;
+  const nextMonth = month === 12 ? 1 : month + 1;
+  const dates: string[] = [];
+  for (const day of days) {
+    if (day === null) continue;
+    const inThisMonth = Math.min(day, daysInMonth(year, month));
+    if (inThisMonth > todayDay) {
+      dates.push(isoDate(year, month, inThisMonth));
+    } else {
+      const inNextMonth = Math.min(day, daysInMonth(nextYear, nextMonth));
+      dates.push(isoDate(nextYear, nextMonth, inNextMonth));
+    }
+  }
+  // ISO dates sort the same as calendar dates.
+  return dates.sort()[0] ?? null;
+}
+
 /** First day of the calendar month of the given date, "YYYY-MM-01". */
 export function monthStart(today: string): string {
   return `${today.slice(0, 7)}-01`;
@@ -59,50 +96,39 @@ export function dailyMove(input: {
   return input.effect - input.journaled;
 }
 
-/** Budget of the current period: the income's share plus transfer rows. */
-export function periodBudget(input: {
-  toDaily: number;
-  transferMoves: number[];
+/**
+ * «Осталось на жизнь»: the shares of all incomes meant for daily life plus
+ * every journal row (transfers and daily expenses, whatever their date).
+ * Leftovers and overspending carry over from one income to the next.
+ */
+export function dailyRemaining(input: {
+  toDaily: number[];
+  moves: number[];
 }): number {
-  return input.transferMoves.reduce((sum, m) => sum + m, input.toDaily);
-}
-
-/** Spent in the current period: expense rows are negative, spent is positive. */
-export function periodSpent(expenseMoves: number[]): number {
-  return expenseMoves.reduce((sum, m) => sum - m, 0);
+  const sum = (values: number[]) => values.reduce((a, b) => a + b, 0);
+  return sum(input.toDaily) + sum(input.moves);
 }
 
 export interface DailySummary {
-  budget: number;
-  spent: number;
   remaining: number;
-  daysLeft: number | null;
-  /** Rounded to whole rubles; null when there is no future income date. */
+  /** The nearest day with the advance or the salary; null when none is set. */
+  nextPayDate: string | null;
+  /** Rounded to whole rubles, negative when overspent; null without a date. */
   perDay: number | null;
 }
 
 export function dailySummary(input: {
-  budget: number;
-  spent: number;
+  remaining: number;
   today: string;
-  nextIncomeDate: string | null;
+  /** Advance and salary days of the month; empty ones are null. */
+  payDays: (number | null)[];
 }): DailySummary {
-  const remaining = input.budget - input.spent;
-  const daysLeft =
-    input.nextIncomeDate === null
-      ? null
-      : daysUntil(input.today, input.nextIncomeDate);
+  const next = nextPayDate(input.today, input.payDays);
   const perDay =
-    daysLeft !== null && daysLeft > 0
-      ? roundToRubles(divRound(remaining, daysLeft))
-      : null;
-  return {
-    budget: input.budget,
-    spent: input.spent,
-    remaining,
-    daysLeft,
-    perDay,
-  };
+    next === null
+      ? null
+      : roundToRubles(divRound(input.remaining, daysUntil(input.today, next)));
+  return { remaining: input.remaining, nextPayDate: next, perDay };
 }
 
 /**

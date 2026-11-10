@@ -28,8 +28,8 @@ export const dynamic = "force-dynamic";
 export default async function DailyPage() {
   const userId = await requireUserId();
   const today = todayIso();
-  // The «Осталось на жизнь» card counts the current period (journal);
-  // categories and the month total count from the 1st of the month.
+  // «Осталось на жизнь» is a running balance; categories and the month
+  // total count from the 1st of the month.
   const monthSince = monthStart(today);
   const [categories, dailyView, monthSpent, recent, dailyTransfers] =
     await Promise.all([
@@ -40,25 +40,22 @@ export default async function DailyPage() {
       loadTransfers(userId, { daily: true }),
     ]);
   const summary = dailyView?.summary ?? null;
-  const income = dailyView?.income ?? null;
 
   return (
     <Screen>
       <ScreenTitle>Повседневные траты</ScreenTitle>
 
-      {summary && income ? (
+      {summary ? (
         <section className="flex flex-col gap-3 rounded-[20px] bg-accent p-[18px] text-white">
           <div className="flex flex-col gap-1">
             <div className="flex items-start justify-between gap-2">
               <div className="text-[15px] text-accent-soft">
                 Осталось на жизнь
-                {income.nextIncomeDate &&
-                  ` до ${formatDay(income.nextIncomeDate, today)}`}
+                {summary.nextPayDate &&
+                  ` до ${formatDay(summary.nextPayDate, today)}`}
               </div>
               <InfoTip>
-                Это всё, что осталось от зарплаты после конвертов, с
-                пополнениями из конвертов. Траты из конвертов эту сумму не
-                уменьшают, но видны в категориях
+                Это деньги, оставшиеся после распределения по конвертам
               </InfoTip>
             </div>
             <div className="flex items-center justify-between gap-2">
@@ -76,21 +73,11 @@ export default async function DailyPage() {
               </Link>
             </div>
           </div>
-          <Bar
-            share={summary.budget > 0 ? summary.spent / summary.budget : 0}
-            tone="white"
-            track="accent-strong"
-            label={`Потрачено ${formatMoney(summary.spent)} из ${formatMoney(summary.budget)}`}
-          />
-          <div className="flex flex-wrap justify-between gap-2 text-sm text-accent-soft">
-            <div>
-              потрачено {formatMoney(summary.spent, { currency: false })} из{" "}
-              {formatMoney(summary.budget)}
+          {summary.perDay !== null && (
+            <div className="text-sm text-accent-soft">
+              ≈ {formatMoney(summary.perDay)} в день
             </div>
-            {summary.perDay !== null && (
-              <div>≈ {formatMoney(summary.perDay)} в день</div>
-            )}
-          </div>
+          )}
         </section>
       ) : (
         <Link

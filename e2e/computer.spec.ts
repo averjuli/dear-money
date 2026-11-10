@@ -336,7 +336,7 @@ test("1440 px: the transfer screen and the «i» note", async ({ page }) => {
   // The note opens under the «i» inside the screen and closes by a tap outside.
   await page.goto("/daily");
   await page.getByRole("button", { name: "Пояснение" }).click();
-  const note = page.getByText(/^Это всё, что осталось от зарплаты/);
+  const note = page.getByText(/^Это деньги, оставшиеся после распределения/);
   await expect(note).toBeVisible();
   const noteBox = await box(note);
   const inner = await page.evaluate(() => window.innerWidth);
@@ -394,8 +394,22 @@ test("income is short: uncheck a wallet, it gets nothing, the rest is saved", as
   );
   await expect(page.getByTestId("to-daily")).toHaveText(rub("0"));
 
+  // The days saved with the first allocation are filled in.
+  await expect(page.getByLabel("Аванс приходит")).toHaveValue("25");
+  await expect(page.getByLabel("Зарплата приходит")).toHaveValue("10");
+  // A wrong day stops the saving.
+  await page.getByLabel("Зарплата приходит").fill("0");
+  await page.getByRole("button", { name: "Разложить" }).click();
+  await expect(page.getByText("Число от 1 до 31")).toBeVisible();
+  await expect(page).toHaveURL("/income");
+  // The advance day is erased, the salary day stays.
+  await page.getByLabel("Зарплата приходит").fill("10");
+  await page.getByLabel("Аванс приходит").fill("");
+
   await page.getByRole("button", { name: "Разложить" }).click();
   await expect(page).toHaveURL("/");
+  // Nothing went to daily life, and what was left is not wiped out.
+  await expect(page.getByTestId("daily-remaining")).toHaveText(rub("111 995"));
   // After the salary Clothes held 33 700 + 4 800 and got nothing now; Goals WB held 60 900 + 7 800 and gets 1 075 more.
   await expect(page.getByRole("link", { name: /^Clothes/ })).toContainText(
     rub("38 500"),
@@ -406,6 +420,10 @@ test("income is short: uncheck a wallet, it gets nothing, the rest is saved", as
   await expect(page.getByTestId("total-in-envelopes")).toHaveText(
     rub("277 225"),
   );
+  // The erased day stays erased, the other one is remembered.
+  await page.goto("/income");
+  await expect(page.getByLabel("Аванс приходит")).toHaveValue("");
+  await expect(page.getByLabel("Зарплата приходит")).toHaveValue("10");
 });
 
 test("income: a wallet with only full envelopes keeps its contributions above the ceiling", async ({
@@ -434,6 +452,31 @@ test("income: a wallet with only full envelopes keeps its contributions above th
     ),
   ).toBeVisible();
   await expect(page.getByText(/уйдут на повседневные/)).toHaveCount(0);
+});
+
+test("both days erased: the balance grows, no date and no per-day line", async ({
+  page,
+}) => {
+  const amount = (text: string) =>
+    Number(text.replace(/[^\d−-]/g, "").replace("−", "-"));
+  await login(page);
+  await page.goto("/daily");
+  const before = amount(await page.getByTestId("daily-left").innerText());
+  await page.goto("/income");
+  await page.getByLabel("Сколько пришло").fill("150 000");
+  const toDaily = amount(await page.getByTestId("to-daily").innerText());
+  await page.getByLabel("Зарплата приходит").fill("");
+  await page.getByRole("button", { name: "Разложить" }).click();
+  await expect(page).toHaveURL("/");
+
+  // The new income is added to what was left.
+  await page.goto("/daily");
+  const after = amount(await page.getByTestId("daily-left").innerText());
+  expect(after).toBe(before + toDaily);
+  await expect(
+    page.getByText("Осталось на жизнь", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText(/ в день$/)).toHaveCount(0);
 });
 
 test("settings through the menu: install guide and logout", async ({

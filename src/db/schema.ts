@@ -7,6 +7,7 @@ import {
   integer,
   pgEnum,
   pgTable,
+  smallint,
   text,
   timestamp,
   uniqueIndex,
@@ -113,7 +114,6 @@ export const incomes = pgTable(
     date: date("date").notNull(),
     amount: integer("amount").notNull(),
     kind: incomeKind("kind").notNull(),
-    nextIncomeDate: date("next_income_date"),
     toEnvelopes: integer("to_envelopes").notNull(),
     toDaily: integer("to_daily").notNull(),
     createdAt: createdAt(),
@@ -121,6 +121,33 @@ export const incomes = pgTable(
   (t) => [
     index("incomes_user_idx").on(t.userId),
     check("incomes_amount_check", sql`${t.amount} > 0`),
+  ],
+);
+
+/**
+ * The days of the month when the advance and the salary usually arrive, one
+ * row per user. «≈ N ₽ в день» counts down to the nearest of these days.
+ * A missing row or an empty day means the day is not set.
+ */
+export const payDays = pgTable(
+  "pay_days",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: userId(),
+    advanceDay: smallint("advance_day"),
+    salaryDay: smallint("salary_day"),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    uniqueIndex("pay_days_user_idx").on(t.userId),
+    check(
+      "pay_days_advance_day_check",
+      sql`${t.advanceDay} is null or ${t.advanceDay} between 1 and 31`,
+    ),
+    check(
+      "pay_days_salary_day_check",
+      sql`${t.salaryDay} is null or ${t.salaryDay} between 1 and 31`,
+    ),
   ],
 );
 

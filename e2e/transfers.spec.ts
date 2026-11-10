@@ -81,13 +81,6 @@ async function dailyLeft(page: Page): Promise<number> {
   return parseRub(await page.getByTestId("daily-left").innerText());
 }
 
-/** «потрачено X из Y ₽» on the card: [X, Y]. */
-async function spentOfBudget(page: Page): Promise<[number, number]> {
-  const text = await page.getByText(/^потрачено .* из /).innerText();
-  const [spent, budget] = text.replace(/^потрачено\s+/, "").split(" из ");
-  return [parseRub(spent), parseRub(budget)];
-}
-
 /** Chooses one side of a transfer; opens the list if it is closed. */
 async function pick(page: Page, which: "Откуда" | "Куда", name: string) {
   const group = page.getByRole("group", { name: which, exact: true });
@@ -212,7 +205,6 @@ test("«на жизнь»: top-up from an envelope, fix, back to an envelope, de
   const m0 = await envelopeBalance(page, "Self-care", "Маникюр");
   const o0 = await envelopeBalance(page, "Clothes", "Одежда");
   const d0 = await dailyLeft(page);
-  const [x0, y0] = await spentOfBudget(page);
   const month0 = await page.getByTestId("month-spent").innerText();
   const expenses0 = await page.locator('a[href^="/expenses/"]').count();
   await expect(page.getByTestId("transfers")).toHaveCount(0);
@@ -238,7 +230,9 @@ test("«на жизнь»: top-up from an envelope, fix, back to an envelope, de
 
   // Back-dated, yet in the current «на жизнь»; it is not an expense.
   await expect(page.getByTestId("daily-left")).toHaveText(money(d0 + 5000));
-  expect(await spentOfBudget(page)).toEqual([x0, y0 + 5000]);
+  // The card has only the balance and the per-day line, no «потрачено X из Y».
+  await expect(page.getByText(/потрачено .* из /)).toHaveCount(0);
+  await expect(page.getByText(/^≈ .* в день$/)).toBeVisible();
   await expect(page.getByTestId("month-spent")).toHaveText(month0);
   expect(await page.locator('a[href^="/expenses/"]').count()).toBe(expenses0);
   const topUp = transferRow(page, "Из конверта «Маникюр»");
@@ -300,14 +294,14 @@ test("«на жизнь»: top-up from an envelope, fix, back to an envelope, de
   await page.getByRole("button", { name: "Перевести" }).click();
   await expect(page).toHaveURL("/daily");
   await expect(page.getByTestId("daily-left")).toHaveText(money(-10000));
-  expect(await spentOfBudget(page)).toEqual([x0, y0 - d0 - 10000]);
+  // In the red the per-day line stays, with a minus.
+  await expect(page.getByText(/^≈ −.* в день$/)).toBeVisible();
   const out = transferRow(page, "В конверт «Подушка»");
   await expect(out).toContainText(money(-(d0 + 10000)));
   await out.click();
   await deleteOpenTransfer(page, "вернутся на жизнь");
   await expect(page).toHaveURL("/daily");
   await expect(page.getByTestId("daily-left")).toHaveText(money(d0));
-  expect(await spentOfBudget(page)).toEqual([x0, y0]);
   await expect(page.getByTestId("month-spent")).toHaveText(month0);
   await expect(page.getByTestId("transfers")).toHaveCount(0);
 });
@@ -401,14 +395,13 @@ test("protection: other people's envelopes, unknown transfers, a date in the fut
   await expect(page.getByRole("button", { name: "Перевести" })).toBeDisabled();
 });
 
-test("daily expense back-dated: «на жизнь» and «потрачено» change at once", async ({
+test("daily expense back-dated: «на жизнь» changes at once", async ({
   page,
 }) => {
   await login(page);
   const d0 = await dailyLeft(page);
-  const [x0, y0] = await spentOfBudget(page);
 
-  // A day before today is before the allocation of the income.
+  // The day of the expense does not matter: «на жизнь» changes at once.
   await page.getByRole("link", { name: "Внести трату" }).click();
   const today = (await page.getByLabel("Дата").getAttribute("max"))!;
   await page.getByLabel("Сумма").fill("1 000");
@@ -420,7 +413,6 @@ test("daily expense back-dated: «на жизнь» and «потрачено» c
   await page.getByRole("button", { name: "Сохранить" }).click();
   await expect(page).toHaveURL("/daily");
   await expect(page.getByTestId("daily-left")).toHaveText(money(d0 - 1000));
-  expect(await spentOfBudget(page)).toEqual([x0 + 1000, y0]);
 
   // Fix the amount: the hint counts the difference with the old one.
   const row = page
@@ -434,7 +426,6 @@ test("daily expense back-dated: «на жизнь» and «потрачено» c
   await page.getByRole("button", { name: "Сохранить" }).click();
   await expect(page).toHaveURL("/daily");
   await expect(page.getByTestId("daily-left")).toHaveText(money(d0 - 1500));
-  expect(await spentOfBudget(page)).toEqual([x0 + 1500, y0]);
 
   // Only the date: nothing changes.
   await row.click();
@@ -454,7 +445,6 @@ test("daily expense back-dated: «на жизнь» and «потрачено» c
   await page.getByRole("button", { name: "Удалить", exact: true }).click();
   await expect(page).toHaveURL("/daily");
   await expect(page.getByTestId("daily-left")).toHaveText(money(d0));
-  expect(await spentOfBudget(page)).toEqual([x0, y0]);
 });
 
 test("the «i» note on «Осталось на жизнь» opens and closes", async ({
@@ -464,14 +454,16 @@ test("the «i» note on «Осталось на жизнь» opens and closes", 
   await page.clock.install();
   await login(page);
   await page.goto("/daily");
-  const note = page.getByText(/^Это всё, что осталось от зарплаты/);
+  const note = page.getByText(/^Это деньги, оставшиеся после распределения/);
   const open = page.getByRole("button", { name: "Пояснение" });
 
   // No paragraph under the card; the note is behind «i».
   await expect(note).toHaveCount(0);
   await open.click();
   await expect(note).toBeVisible();
-  await expect(note).toContainText("с пополнениями из конвертов");
+  await expect(note).toHaveText(
+    "Это деньги, оставшиеся после распределения по конвертам",
+  );
   await page.screenshot({ path: test.info().outputPath("info-note.png") });
 
   // The cross.
