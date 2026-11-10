@@ -1,0 +1,17 @@
+# Never in the image: secrets and real data
+.env
+.env.*
+**/*.local.json
+
+# Rebuilt inside the image
+node_modules
+.next
+*.tsbuildinfo
+
+# Not needed to build or run the app
+.git
+.github
+.claude
+design
+test-results
+playwright-report

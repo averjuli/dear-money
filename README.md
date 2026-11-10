@@ -71,13 +71,63 @@ pnpm format:check
 
 ## Выкатка
 
-Тот же VPS, что у CRM и лендинга, свой поддомен и своя база. Merge в main → CI собирает образ → на сервере миграции → новый образ → проверка `/health`. Подробности появятся в `deploy/` на фиче 10.
+Тот же VPS, что у CRM и лендинга, свой поддомен и своя база в отдельном контейнере Postgres. Выкатка автоматическая: чтобы выкатить новую версию, достаточно влить PR в main.
 
-Что делаю сама: выбираю поддомен и добавляю запись DNS, кладу `.env` на сервер.
+Что делаю сама: записи DNS, первая настройка сервера с `sudo`, строки в `.env` на сервере, ручной откат.
+
+### Как это работает
+
+1. На каждый PR GitHub Actions проверяет код (lint, формат, типы, Vitest, Playwright) и пробно собирает образ: `.github/workflows/ci.yml`
+2. После merge в main те же проверки идут ещё раз. Потом собирается образ с тегом SHA коммита и уходит в GHCR (`ghcr.io/averjuli/dear-money`): `.github/workflows/deploy.yml`
+3. GitHub Actions заходит на сервер по ключу деплоя и запускает `dear-money-deploy deploy <SHA>` (скрипт `deploy/dear-money-deploy.sh`). Он делает резервную копию базы, применяет миграции в разовом контейнере из нового образа, запускает новый образ и проверяет `https://app.dearmoney.space/health`
+4. Упали миграции: новый образ не стартует, работает прежний. Не прошла проверка `/health`: выкатка красная во вкладке Actions. Сам ничего не откатывается, откат только вручную
+5. На сервере остаются два образа, текущий и предыдущий, и 10 последних резервных копий базы
+
+Ход выкатки виден во вкладке Actions на GitHub, workflow «Deploy».
+
+### На сервере
+
+| Что | Где |
+|---|---|
+| Приложение и его база | `/opt/dear-money`, compose-проект `dear-money` |
+| Настройки и пароли | `/opt/dear-money/.env`, права 600, читает только root |
+| Приложение слушает | `127.0.0.1:3001`, снаружи через nginx |
+| Резервные копии базы | `/var/backups/dear-money` |
+| Логи контейнеров | не больше 3 файлов по 10 МБ |
+
+Команды, на сервере под `crmapp`:
+
+```
+sudo dear-money-deploy status     # что запущено, текущая и предыдущая версии, /health
+sudo dear-money-deploy logs       # последние 200 строк лога приложения
+sudo dear-money-deploy rollback   # вернуть предыдущую версию, только вручную
+sudo dear-money-deploy backup     # резервная копия базы
+sudo dear-money-deploy seed       # тестовые данные из data/sample-seed.json, повтор не создаёт дублей
+```
+
+Секреты GitHub для выкатки: `DEPLOY_HOST` (адрес сервера), `DEPLOY_SSH_KEY` (ключ деплоя), `DEPLOY_KNOWN_HOSTS` (отпечатки сервера). Публичная часть ключа лежит у `crmapp` в `~/.ssh/authorized_keys` с подписью `github-actions-deploy dear-money`, и этот ключ может запускать только `dear-money-deploy`.
+
+### `.env` на сервере
+
+`/opt/dear-money/.env`, правится через `sudo nano /opt/dear-money/.env`:
+
+```
+POSTGRES_USER=dear_money
+POSTGRES_DB=dear_money
+POSTGRES_PASSWORD=
+AUTH_USERNAME=
+AUTH_PASSWORD_HASH=
+AUTH_SECRET=
+```
+
+- `POSTGRES_PASSWORD` - результат `openssl rand -hex 24`. Только буквы и цифры: пароль идёт в строку подключения к базе
+- `AUTH_USERNAME` и `AUTH_PASSWORD_HASH` - как в `.env` на компьютере, тогда логин и пароль те же
+- `AUTH_SECRET` - результат `openssl rand -hex 32`, свой для сервера
+- `APP_TIME_ZONE` необязателен, по умолчанию `Europe/Moscow`
 
 ### Адреса и сертификат
 
-- `dearmoney.space` - главная (потом лендинг), `app.dearmoney.space` - приложение. Пока приложения на сервере нет, на обоих адресах заглушка из `deploy/stub/`.
+- `dearmoney.space` - главная (потом лендинг), заглушка из `deploy/stub/`. `app.dearmoney.space` - приложение: nginx передаёт запросы контейнеру, а пока приложение не запущено, показывает `deploy/unavailable.html`.
 - Один сертификат Let's Encrypt на оба адреса, имя `dearmoney.space`. Продлевается сам: на сервере общий `certbot.timer` раз в полдня проверяет все сертификаты, после продления nginx перезагружается хуком из `/etc/letsencrypt/renewal-hooks/deploy`.
 - http перенаправляется на https. Порты контейнеров открываем только на `127.0.0.1`, наружу ходим через nginx.
 
@@ -94,3 +144,14 @@ sudo bash dear-money-setup/setup-nginx-tls.sh <почта для писем от
 Скрипт только добавляет своё: сайты nginx `dearmoney-http` и `dearmoney-https`, папки `/var/www/dearmoney.space` и `/var/www/app.dearmoney.space`, сертификат. Чужие сайты, ключи и контейнеры не трогает, Docker только проверяет. Если nginx не принял конфиг, скрипт откатывает свои файлы. Запускать повторно можно: готовые страницы и https-сайт он не перезаписывает.
 
 Почта в репозиторий не попадает: её передаём аргументом.
+
+Потом, тоже один раз, автовыкатка:
+
+```
+scp -r deploy crmapp@<IP сервера>:dear-money-setup
+ssh crmapp@<IP сервера>
+sudo bash dear-money-setup/install-on-server.sh
+sudo nano /opt/dear-money/.env     # строки из раздела «.env на сервере»
+```
+
+Скрипт создаёт `/opt/dear-money` с пустым `.env` и команду `dear-money-deploy`, разрешает `crmapp` запускать её через `sudo` без пароля и переключает `app.dearmoney.space` с заглушки на приложение. Чужое не трогает. Если nginx не принял конфиг, скрипт возвращает прежний. Запускать повторно можно: готовый `.env` он не перезаписывает.

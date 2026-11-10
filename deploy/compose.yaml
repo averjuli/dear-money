@@ -1,0 +1,66 @@
+# Production on the server: the app and its own PostgreSQL, compose project "dear-money".
+# Every deploy copies deploy/ to /opt/dear-money/deploy. Run it only through dear-money-deploy,
+# which sets APP_TAG. Secrets come from /opt/dear-money/.env (root only), see README.md.
+name: dear-money
+
+# Container logs: at most 3 files of 10 MB each
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: "3"
+
+services:
+  db:
+    # Same image as docker-compose.yml on the computer
+    image: postgres:18.6-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+    # No published port: only the app container reaches the database
+    volumes:
+      # Postgres 18+ images keep data under /var/lib/postgresql
+      - db-data:/var/lib/postgresql
+    healthcheck:
+      # Over TCP: while a new database initializes, Postgres listens on its socket only
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -h 127.0.0.1 -U $${POSTGRES_USER} -d $${POSTGRES_DB}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    logging: *logging
+
+  app:
+    # Built by GitHub Actions and tagged with the commit SHA; dear-money-deploy pulls it, compose never does
+    image: ghcr.io/averjuli/dear-money:${APP_TAG:?run through dear-money-deploy, it sets APP_TAG}
+    pull_policy: never
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      AUTH_USERNAME: ${AUTH_USERNAME:?set AUTH_USERNAME in .env}
+      AUTH_PASSWORD_HASH: ${AUTH_PASSWORD_HASH:?set AUTH_PASSWORD_HASH in .env}
+      AUTH_SECRET: ${AUTH_SECRET:?set AUTH_SECRET in .env}
+      APP_TIME_ZONE: ${APP_TIME_ZONE:-Europe/Moscow}
+    ports:
+      # nginx proxies app.dearmoney.space here; 3000 on the server belongs to the CRM
+      - "127.0.0.1:3001:3000"
+    healthcheck:
+      test:
+        ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+      start_interval: 2s
+    logging: *logging
+
+volumes:
+  db-data:
