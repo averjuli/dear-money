@@ -97,6 +97,21 @@ export function dailyMove(input: {
 }
 
 /**
+ * The journal amount to write for a saved or deleted item. With an income it
+ * is `dailyMove`. With no incomes nothing is added for an item the journal
+ * has not seen yet (it is counted whole when the next income is allocated),
+ * but an item with rows keeps being tracked, so what it did stays in the sum.
+ */
+export function dailyMoveToRecord(input: {
+  effect: number;
+  journaled: number;
+  hasIncome: boolean;
+}): number {
+  if (!input.hasIncome && input.journaled === 0) return 0;
+  return dailyMove(input);
+}
+
+/**
  * «Осталось на жизнь»: the shares of all incomes meant for daily life plus
  * every journal row (transfers and daily expenses, whatever their date).
  * Leftovers and overspending carry over from one income to the next.

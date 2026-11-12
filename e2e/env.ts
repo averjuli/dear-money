@@ -21,6 +21,17 @@ export const DEMO_EMAIL = "demo@example.test";
 /** Another user with own data that must never show up for the demo user. */
 export const OTHER_EMAIL = "someone-else@example.test";
 
+/**
+ * Users of the income-history scenarios, each with own data so that the
+ * scenarios do not touch the demo data: a wallet with two envelopes, a copy of
+ * the demo data, and a user who owns an income that others must never reach.
+ */
+export const AB_EMAIL = "ab-user@example.test";
+export const DEMO_COPY_EMAIL = "demo-copy@example.test";
+export const INCOME_OWNER_EMAIL = "income-owner@example.test";
+export const AB_AUTH_FILE = "e2e/.auth/ab.json";
+export const DEMO_COPY_AUTH_FILE = "e2e/.auth/demo-copy.json";
+
 /** Where the mail catcher from docker-compose.yml listens. */
 export const MAILPIT_URL = process.env.MAILPIT_URL ?? "http://localhost:8025";
 const SMTP_HOST = process.env.E2E_SMTP_HOST ?? "localhost";

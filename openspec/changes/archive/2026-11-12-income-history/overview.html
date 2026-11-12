@@ -1,0 +1,2056 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>История доходов — обзор</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Unbounded:wght@500;600&display=swap"
+    />
+    <style>
+      /* Values copied from src/app/globals.css (@theme) */
+      :root {
+        --color-bg: #edf1ee;
+        --color-surface: #ffffff;
+        --color-surface-sunken: #f4f7f5;
+        --color-ink: #14211b;
+        --color-ink-muted: #55635c;
+        --color-accent: #1b6b4d;
+        --color-accent-strong: #14523b;
+        --color-accent-soft: #dcebe3;
+        --color-warn: #a34d14;
+        --color-warn-strong: #8a4315;
+        --color-warn-soft: #fbeadd;
+        --color-warn-bar: #c46a2b;
+        --color-line: #e3e9e5;
+        --color-dash: #9db5a9;
+        --font-sans: "Golos Text", system-ui, sans-serif;
+        --font-display: "Unbounded", "Golos Text", sans-serif;
+        --radius-card: 20px;
+        --radius-card-lg: 24px;
+        --radius-control: 14px;
+        --radius-button: 16px;
+        --radius-bar: 4px;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--color-bg);
+        color: var(--color-ink);
+        font-family: var(--font-sans);
+        font-size: 16px;
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+      }
+      .page {
+        max-width: 880px;
+        margin: 0 auto;
+        padding: 40px 16px 80px;
+      }
+      header.top {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-family: var(--font-display);
+        font-size: 16px;
+        color: var(--color-accent);
+      }
+      .dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--color-accent);
+        flex-shrink: 0;
+      }
+      h1 {
+        font-family: var(--font-display);
+        font-weight: 600;
+        font-size: 38px;
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+        margin: 16px 0 12px;
+      }
+      h2 {
+        font-family: var(--font-display);
+        font-weight: 600;
+        font-size: 26px;
+        letter-spacing: -0.01em;
+        margin: 56px 0 16px;
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+      }
+      h2 .num {
+        font-size: 15px;
+        color: var(--color-accent);
+      }
+      h3 {
+        font-weight: 600;
+        font-size: 18px;
+        margin: 28px 0 10px;
+      }
+      p {
+        margin: 8px 0;
+      }
+      .lead {
+        font-size: 18px;
+        color: var(--color-ink-muted);
+        max-width: 680px;
+      }
+      .muted {
+        color: var(--color-ink-muted);
+      }
+      .small {
+        font-size: 14px;
+      }
+      code {
+        font-family: ui-monospace, Menlo, monospace;
+        font-size: 0.86em;
+        background: var(--color-surface-sunken);
+        border: 1px solid var(--color-line);
+        padding: 1px 5px;
+        border-radius: 4px;
+      }
+      ul.points {
+        padding-left: 20px;
+        margin: 8px 0;
+      }
+      ul.points li {
+        margin: 4px 0;
+      }
+      .card {
+        background: var(--color-surface);
+        border-radius: var(--radius-card);
+        padding: 20px 24px;
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 16px;
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        border-radius: 999px;
+        background: var(--color-surface);
+        font-size: 14px;
+      }
+      .chip.ok {
+        background: var(--color-accent-soft);
+        color: var(--color-accent-strong);
+      }
+      .chip.warn {
+        background: var(--color-warn-soft);
+        color: var(--color-warn-strong);
+      }
+
+      /* Screen sketches */
+      .screens {
+        display: grid;
+        gap: 32px;
+      }
+      .screen-title {
+        font-weight: 600;
+        font-size: 17px;
+        margin: 0 0 8px;
+      }
+      .device {
+        background: var(--color-bg);
+        border: 1px solid var(--color-dash);
+        border-radius: var(--radius-card-lg);
+        padding: 20px 16px;
+        max-width: 420px;
+      }
+      .s-title {
+        font-family: var(--font-display);
+        font-weight: 600;
+        font-size: 22px;
+        margin: 0 0 14px;
+      }
+      .s-back {
+        font-size: 14px;
+        color: var(--color-ink-muted);
+        margin-bottom: 6px;
+      }
+      .s-sub {
+        font-size: 13px;
+        color: var(--color-ink-muted);
+      }
+      .s-big {
+        font-family: var(--font-display);
+        font-weight: 600;
+        font-size: 30px;
+        margin: 2px 0 8px;
+      }
+      .s-section {
+        font-weight: 600;
+        font-size: 16px;
+        margin: 16px 0 8px;
+      }
+      .s-card {
+        background: var(--color-surface);
+        border-radius: var(--radius-card);
+        padding: 4px 16px;
+      }
+      .s-card.pad {
+        padding: 14px 16px;
+      }
+      .s-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 52px;
+        border-bottom: 1px solid var(--color-line);
+        font-size: 15px;
+      }
+      .s-row:last-child {
+        border-bottom: 0;
+      }
+      .s-row .grow {
+        flex: 1;
+        min-width: 0;
+        padding: 6px 0;
+      }
+      .s-row .meta {
+        font-size: 13px;
+        color: var(--color-ink-muted);
+      }
+      .s-row .amt {
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .s-row.indent {
+        padding-left: 14px;
+        min-height: 44px;
+      }
+      .s-row.wallet {
+        font-weight: 600;
+      }
+      .s-field {
+        background: var(--color-surface-sunken);
+        border-radius: var(--radius-control);
+        padding: 10px 14px;
+        font-size: 15px;
+        margin-bottom: 8px;
+      }
+      .s-chips {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 8px;
+      }
+      .s-chip {
+        border-radius: 999px;
+        padding: 4px 12px;
+        font-size: 13px;
+        background: var(--color-surface);
+      }
+      .s-chip.on {
+        background: var(--color-accent-soft);
+        color: var(--color-accent-strong);
+      }
+      .s-btn {
+        display: block;
+        text-align: center;
+        background: var(--color-accent);
+        color: #fff;
+        border-radius: var(--radius-button);
+        padding: 12px;
+        font-weight: 600;
+        margin-top: 12px;
+      }
+      .s-link {
+        color: var(--color-accent);
+        font-weight: 600;
+        font-size: 15px;
+        text-align: center;
+        padding: 12px 0 2px;
+      }
+      .s-del {
+        color: var(--color-warn);
+        font-weight: 500;
+        text-align: center;
+        padding: 14px 0 0;
+      }
+      .s-skip {
+        text-align: center;
+        font-size: 13px;
+        color: var(--color-ink-muted);
+        padding: 8px 0;
+      }
+      .s-menu {
+        display: flex;
+        justify-content: space-around;
+        background: var(--color-surface);
+        border-radius: var(--radius-card);
+        padding: 8px;
+        margin-top: 16px;
+        font-size: 12px;
+        color: var(--color-ink-muted);
+      }
+      .s-menu .on {
+        color: var(--color-accent);
+        font-weight: 600;
+      }
+      .dialog {
+        background: var(--color-surface);
+        border-radius: var(--radius-card);
+        padding: 16px;
+        box-shadow: 0 12px 30px -14px rgba(20, 33, 27, 0.4);
+        margin-top: 14px;
+      }
+      .dialog .t {
+        font-weight: 600;
+        font-size: 17px;
+      }
+      .dialog .d {
+        font-size: 14px;
+        color: var(--color-ink-muted);
+        margin: 6px 0 12px;
+      }
+      .dialog .btns {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+      }
+      .dialog .b {
+        border-radius: var(--radius-control);
+        padding: 8px 14px;
+        font-size: 14px;
+        background: var(--color-surface-sunken);
+      }
+      .dialog .b.warn {
+        background: var(--color-warn);
+        color: #fff;
+      }
+      .is-new {
+        position: relative;
+        outline: 2px dashed var(--color-accent);
+        outline-offset: 5px;
+        border-radius: 14px;
+        margin-top: 18px;
+      }
+      .new-tag {
+        position: absolute;
+        top: -15px;
+        right: 10px;
+        background: var(--color-accent);
+        color: #fff;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        padding: 2px 8px;
+        border-radius: 999px;
+        z-index: 1;
+      }
+      .callouts {
+        margin: 10px 0 0;
+        padding-left: 20px;
+        font-size: 14px;
+        color: var(--color-ink-muted);
+        max-width: 680px;
+      }
+      .callouts li {
+        margin: 3px 0;
+      }
+
+      /* Rules */
+      .rules {
+        display: grid;
+        gap: 12px;
+      }
+      .rule {
+        background: var(--color-surface);
+        border-radius: var(--radius-card);
+        padding: 14px 18px;
+      }
+      .rule .h {
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      .example {
+        font-size: 14px;
+        color: var(--color-ink-muted);
+        background: var(--color-surface-sunken);
+        border-left: 3px solid var(--color-accent);
+        padding: 6px 10px;
+        margin-top: 8px;
+        border-radius: 0 8px 8px 0;
+      }
+      .rule.pending {
+        background: var(--color-warn-soft);
+      }
+      .rule.pending .example {
+        border-left-color: var(--color-warn);
+        background: var(--color-surface);
+      }
+
+      /* Data model */
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 20px;
+        font-size: 14px;
+        color: var(--color-ink-muted);
+        margin: 10px 0;
+      }
+      .legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .sw {
+        width: 14px;
+        height: 14px;
+        border-radius: 4px;
+        border: 1.5px solid var(--color-dash);
+        background: var(--color-surface-sunken);
+      }
+      .sw.new {
+        border-color: var(--color-accent);
+        background: var(--color-accent-soft);
+      }
+      .schema {
+        background: var(--color-surface);
+        border-radius: var(--radius-card);
+        overflow-x: auto;
+        margin: 8px 0 12px;
+      }
+      .schema svg {
+        display: block;
+        width: 100%;
+        min-width: 720px;
+        height: auto;
+      }
+      .scroll-hint {
+        display: none;
+        font-size: 13px;
+        color: var(--color-ink-muted);
+      }
+      .box {
+        fill: var(--color-surface-sunken);
+        stroke: var(--color-dash);
+        stroke-width: 1.5;
+      }
+      .head {
+        fill: var(--color-line);
+      }
+      .tname {
+        font:
+          500 14px ui-monospace,
+          Menlo,
+          monospace;
+        fill: var(--color-ink);
+      }
+      .tru {
+        font: 400 13px var(--font-sans);
+        fill: var(--color-ink-muted);
+      }
+      .row {
+        font:
+          400 13px ui-monospace,
+          Menlo,
+          monospace;
+        fill: var(--color-ink);
+      }
+      .row .ru {
+        font-family: var(--font-sans);
+        fill: var(--color-ink-muted);
+      }
+      .row.hl,
+      .row.hl .ru {
+        fill: var(--color-accent-strong);
+        font-weight: 600;
+      }
+      .rowbg {
+        fill: var(--color-accent-soft);
+        stroke: var(--color-accent);
+        stroke-dasharray: 4 3;
+      }
+      .link {
+        fill: none;
+        stroke: var(--color-ink-muted);
+        stroke-width: 1.5;
+      }
+      .link.new {
+        stroke: var(--color-accent);
+        stroke-width: 2;
+      }
+      .link.bad {
+        stroke: var(--color-warn);
+        stroke-width: 2;
+      }
+      .arrow {
+        fill: var(--color-ink-muted);
+      }
+      .arrow.new {
+        fill: var(--color-accent);
+      }
+      .arrow.bad {
+        fill: var(--color-warn);
+      }
+      .note {
+        font: 400 13px var(--font-sans);
+        fill: var(--color-ink-muted);
+      }
+      .note.new {
+        fill: var(--color-accent);
+        font-weight: 500;
+      }
+      .note.bad {
+        fill: var(--color-warn);
+        font-weight: 500;
+      }
+      .lookup {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+        margin: 12px 0;
+      }
+      .who {
+        background: var(--color-surface);
+        border-radius: var(--radius-card);
+        padding: 18px 20px;
+        display: grid;
+        gap: 10px;
+        min-width: 0;
+      }
+      .who .ask {
+        font-family: ui-monospace, Menlo, monospace;
+        font-size: 13px;
+        background: var(--color-surface-sunken);
+        border-radius: 10px;
+        padding: 10px 12px;
+        overflow-wrap: anywhere;
+      }
+      .who .ask b {
+        color: var(--color-accent);
+        font-weight: 600;
+      }
+      .result {
+        justify-self: start;
+        font-size: 14px;
+        font-weight: 500;
+        border-radius: 999px;
+        padding: 4px 12px;
+      }
+      .result.ok {
+        background: var(--color-accent-soft);
+        color: var(--color-accent-strong);
+      }
+      .result.no {
+        background: var(--color-warn-soft);
+        color: var(--color-warn-strong);
+      }
+      .mig {
+        background: var(--color-surface);
+        border-radius: var(--radius-card);
+        padding: 16px 20px;
+        border-left: 4px solid var(--color-accent);
+        margin: 12px 0;
+      }
+      .mig .k {
+        font-family: ui-monospace, Menlo, monospace;
+        font-size: 14px;
+        color: var(--color-accent-strong);
+        font-weight: 600;
+      }
+      .mig .tag {
+        display: inline-block;
+        font-size: 12px;
+        background: var(--color-accent-soft);
+        color: var(--color-accent-strong);
+        border-radius: 999px;
+        padding: 1px 10px;
+        margin-left: 8px;
+      }
+
+      /* Checklist */
+      .check-group {
+        margin-bottom: 18px;
+      }
+      .check {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        padding: 10px 14px;
+        background: var(--color-surface);
+        border-radius: var(--radius-control);
+        margin: 6px 0;
+        cursor: pointer;
+      }
+      .check input {
+        margin-top: 5px;
+        accent-color: var(--color-accent);
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+      }
+      .check .sc {
+        font-weight: 600;
+      }
+      .check .st {
+        font-size: 14px;
+        color: var(--color-ink-muted);
+      }
+      .check .st .arrow-t {
+        color: var(--color-accent);
+        font-weight: 700;
+      }
+      .prep {
+        background: var(--color-accent-soft);
+        border-radius: var(--radius-control);
+        padding: 12px 16px;
+        font-size: 14px;
+        color: var(--color-accent-strong);
+      }
+
+      .two {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+      .box-card h3 {
+        margin-top: 0;
+      }
+      .pending-card {
+        background: var(--color-warn-soft);
+        border-radius: var(--radius-card);
+        padding: 20px 24px;
+        color: var(--color-warn-strong);
+      }
+      .pending-card p,
+      .pending-card li {
+        color: var(--color-ink);
+      }
+      footer {
+        margin-top: 64px;
+        font-size: 13px;
+        color: var(--color-ink-muted);
+      }
+
+      @media (max-width: 720px) {
+        h1 {
+          font-size: 30px;
+        }
+        h2 {
+          font-size: 22px;
+        }
+        .two {
+          grid-template-columns: 1fr;
+        }
+        .scroll-hint {
+          display: block;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="top">
+        <span class="dot"></span>dear money · обзор фичи
+      </header>
+      <h1>История доходов и удаление дохода</h1>
+      <p class="lead">
+        На вкладке «Пришли деньги» видно, какие доходы уже разложены. Любой из
+        них можно открыть, посмотреть, куда ушли деньги, исправить или удалить.
+        Все раскладки после него пересчитываются, как будто ошибки не было.
+      </p>
+      <div class="chips">
+        <span class="chip">Спроектирована, ещё не сделана</span>
+        <span class="chip">Задачи: 0 из 25</span>
+        <span class="chip">Автотестов пока нет: они в плане</span>
+      </div>
+
+      <!-- 1 -->
+      <h2><span class="num">1</span>Коротко</h2>
+      <ul class="points">
+        <li>
+          Под формой «Пришли деньги» появляется блок «История»: 10 последних
+          доходов. Если их больше, ссылка «Все доходы» ведёт на полный список.
+        </li>
+        <li>
+          Нажатие на доход открывает экран «Доход»: сколько пришло и как
+          разложилось по кошелькам и конвертам.
+        </li>
+        <li>
+          Там же «Изменить»: поправить сумму, вид и галочки кошельков. Дата не
+          меняется.
+        </li>
+        <li>
+          И «Удалить доход»: конверты и «Осталось на жизнь» уменьшаются на то,
+          что дал этот доход. Траты и переводы остаются.
+        </li>
+        <li>
+          После правки или удаления все следующие доходы раскладываются заново:
+          с текущими настройками конвертов и остатками на момент каждого дохода.
+        </li>
+        <li>
+          Статус: <b>спроектирована</b>. Изменение <code>income-history</code>,
+          ветка <code>income-history</code>. Задачи не начаты. Автотесты
+          (программы, которые сами проходят сценарий и сверяют результат)
+          заложены в план: сначала тест, потом код.
+        </li>
+      </ul>
+
+      <!-- 2 -->
+      <h2><span class="num">2</span>Что появится на экранах</h2>
+      <p class="muted small">
+        Наброски, не точные макеты. Новое обведено пунктиром. Числа из
+        демо-данных, выдуманные.
+      </p>
+
+      <div class="screens">
+        <div>
+          <p class="screen-title">«Пришли деньги»</p>
+          <div class="device">
+            <div class="s-title">Пришли деньги</div>
+            <div class="s-sub">Сколько пришло</div>
+            <div class="s-field">150 000 ₽</div>
+            <div class="s-chips">
+              <span class="s-chip on">Зарплата</span
+              ><span class="s-chip">Аванс</span
+              ><span class="s-chip">Другое</span>
+            </div>
+            <div class="s-skip">… раскладка и «Разложить» — как сейчас …</div>
+
+            <div class="is-new">
+              <span class="new-tag">новое</span>
+              <div class="s-section">История</div>
+              <div class="s-card">
+                <div class="s-row">
+                  <div class="grow">
+                    <div>Зарплата · 10 ноября</div>
+                    <div class="meta">
+                      в конверты 30 775 ₽ · на жизнь 119 225 ₽
+                    </div>
+                  </div>
+                  <div class="amt">150 000 ₽</div>
+                </div>
+                <div class="s-row">
+                  <div class="grow">
+                    <div>Аванс · 25 октября</div>
+                    <div class="meta">
+                      в конверты 30 775 ₽ · на жизнь 49 225 ₽
+                    </div>
+                  </div>
+                  <div class="amt">80 000 ₽</div>
+                </div>
+                <div class="s-row">
+                  <div class="grow">
+                    <div>Другое · 18 октября</div>
+                    <div class="meta">в конверты 7 500 ₽ · на жизнь 0 ₽</div>
+                  </div>
+                  <div class="amt">7 500 ₽</div>
+                </div>
+                <div class="s-skip">… всего до 10 строк …</div>
+              </div>
+              <div class="s-link">Все доходы →</div>
+            </div>
+
+            <div class="s-menu">
+              <span>Конверты</span><span>Траты</span
+              ><span class="on">Пришли деньги</span><span>Настройки</span>
+            </div>
+          </div>
+          <ul class="callouts">
+            <li>
+              Новые сверху. При одной дате выше тот доход, что внесли позже.
+            </li>
+            <li>Дата как в «Переводах»: «сегодня», «вчера» или «10 ноября».</li>
+            <li>Пока доходов нет, блока нет совсем.</li>
+            <li>Ссылка «Все доходы» есть, только если доходов больше 10.</li>
+          </ul>
+        </div>
+
+        <div>
+          <p class="screen-title">«Все доходы» — новый экран</p>
+          <div class="device is-new" style="margin-top: 18px">
+            <span class="new-tag">новое</span>
+            <div class="s-back">← Пришли деньги</div>
+            <div class="s-title">Все доходы</div>
+            <div class="s-card">
+              <div class="s-row">
+                <div class="grow">
+                  <div>Зарплата · 10 ноября</div>
+                  <div class="meta">
+                    в конверты 30 775 ₽ · на жизнь 119 225 ₽
+                  </div>
+                </div>
+                <div class="amt">150 000 ₽</div>
+              </div>
+              <div class="s-skip">… все доходы, без ограничения …</div>
+              <div class="s-row">
+                <div class="grow">
+                  <div>Зарплата · 10 марта</div>
+                  <div class="meta">
+                    в конверты 30 775 ₽ · на жизнь 99 225 ₽
+                  </div>
+                </div>
+                <div class="amt">130 000 ₽</div>
+              </div>
+            </div>
+          </div>
+          <ul class="callouts">
+            <li>Те же строки, что в «Истории», весь список целиком.</li>
+            <li>Нижнего меню на этом экране нет, только стрелка «назад».</li>
+          </ul>
+        </div>
+
+        <div>
+          <p class="screen-title">«Доход» — новый экран</p>
+          <div class="device is-new" style="margin-top: 18px">
+            <span class="new-tag">новое</span>
+            <div class="s-back">← назад</div>
+            <div class="s-sub">Зарплата · 10 ноября</div>
+            <div class="s-big">150 000 ₽</div>
+            <div class="s-card">
+              <div class="s-row">
+                <div class="grow">В конверты</div>
+                <div class="amt">30 775 ₽</div>
+              </div>
+              <div class="s-row">
+                <div class="grow">На повседневные траты</div>
+                <div class="amt">119 225 ₽</div>
+              </div>
+            </div>
+            <div class="s-section">Раскладка</div>
+            <div class="s-card">
+              <div class="s-row wallet">
+                <div class="grow">Clothes</div>
+                <div class="amt">4 800 ₽</div>
+              </div>
+              <div class="s-row indent">
+                <div class="grow">Одежда</div>
+                <div class="amt">4 500 ₽</div>
+              </div>
+              <div class="s-row indent">
+                <div class="grow">Украшения</div>
+                <div class="amt">300 ₽</div>
+              </div>
+              <div class="s-row wallet">
+                <div class="grow">Self-care</div>
+                <div class="amt">5 925 ₽</div>
+              </div>
+              <div class="s-row indent">
+                <div class="grow">
+                  <div>Косметология</div>
+                  <div class="meta">взнос 750 ₽ + излишек 3 725 ₽</div>
+                </div>
+                <div class="amt">4 475 ₽</div>
+              </div>
+              <div class="s-row indent">
+                <div class="grow">… другие конверты Self-care …</div>
+              </div>
+              <div class="s-skip">… Miscellaneous, Long term, Goals WB …</div>
+            </div>
+            <div class="s-btn">Изменить</div>
+            <div class="s-del">Удалить доход</div>
+
+            <div class="dialog">
+              <div class="t">Удалить доход?</div>
+              <div class="d">
+                Из конвертов уйдёт 30 775 ₽, из денег на жизнь 119 225 ₽.
+                Следующие раскладки пересчитаются: 2. Траты и переводы
+                останутся.
+              </div>
+              <div class="btns">
+                <span class="b">Отмена</span><span class="b warn">Удалить</span>
+              </div>
+            </div>
+          </div>
+          <ul class="callouts">
+            <li>
+              Кошельки идут в вашем порядке, конверты по приоритету. Кто ничего
+              не получил, того нет: полных «Здоровья», «Маникюра», «Стрижки» и
+              «Косметики» в списке нет.
+            </li>
+            <li>
+              Если конверт удалили после раскладки, появляется строка «В
+              удалённые конверты X ₽».
+            </li>
+            <li>
+              «Назад» и удаление возвращают туда, откуда открыли доход: на
+              «Пришли деньги» или «Все доходы».
+            </li>
+            <li>Чужой доход по ссылке не откроется: «доход не найден».</li>
+            <li>
+              Строки «Следующие раскладки пересчитаются» нет, если это самый
+              новый доход.
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <p class="screen-title">Правка дохода — новый экран</p>
+          <div class="device is-new" style="margin-top: 18px">
+            <span class="new-tag">новое</span>
+            <div class="s-back">← Доход</div>
+            <div class="s-title">Изменить доход</div>
+            <div class="s-sub">Сколько пришло</div>
+            <div class="s-field">20 000 ₽</div>
+            <div class="s-chips">
+              <span class="s-chip">Зарплата</span
+              ><span class="s-chip">Аванс</span
+              ><span class="s-chip on">Другое</span>
+            </div>
+            <div class="s-section">Как я разложу</div>
+            <div class="s-card">
+              <div class="s-row">
+                <div class="grow">☐ Clothes</div>
+                <div class="amt">0 ₽</div>
+              </div>
+              <div class="s-row">
+                <div class="grow">☑ Self-care</div>
+                <div class="amt">5 925 ₽</div>
+              </div>
+              <div class="s-row">
+                <div class="grow">☑ Miscellaneous</div>
+                <div class="amt">6 550 ₽</div>
+              </div>
+              <div class="s-row">
+                <div class="grow">☑ Long term</div>
+                <div class="amt">5 700 ₽</div>
+              </div>
+              <div class="s-row">
+                <div class="grow">☑ Goals WB</div>
+                <div class="amt">1 825 ₽</div>
+              </div>
+            </div>
+            <div class="s-skip">
+              … предупреждение «Не хватает …» как сейчас …
+            </div>
+            <div
+              class="dialog"
+              style="box-shadow: none; background: var(--color-warn-soft)"
+            >
+              <div class="d" style="margin: 0; color: var(--color-warn-strong)">
+                Следующие раскладки пересчитаются: 2
+              </div>
+            </div>
+            <div class="s-btn">Сохранить</div>
+          </div>
+          <ul class="callouts">
+            <li>
+              Это форма «Пришли деньги», уже заполненная: сумма, вид и галочки,
+              которые доход запомнил.
+            </li>
+            <li>
+              Полей «Аванс приходит» и «Зарплата приходит» здесь нет. Дату
+              поменять нельзя.
+            </li>
+            <li>
+              Предпросмотр считает так, будто доход раскладывают заново в тот
+              момент, когда его внесли, но с текущими настройками конвертов.
+            </li>
+            <li>
+              «Сохранить» недоступна, пока сумма пустая или 0. После неё вы
+              снова на экране дохода.
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 3 -->
+      <h2><span class="num">3</span>Как это работает</h2>
+      <div class="rules">
+        <div class="rule">
+          <div class="h">Удаление забирает то, что дал доход</div>
+          <p>
+            Каждый конверт уменьшается ровно на ту сумму, которую в него положил
+            этот доход, вместе с излишком. «Осталось на жизнь» уменьшается на
+            долю дохода на повседневные траты.
+          </p>
+          <div class="example">
+            Зарплата 150 000 положила в «Косметологию» 4 475, там стало −22 925.
+            Удалили зарплату → в «Косметологии» снова −27 400, «Всего в
+            конвертах» снова 230 350 ₽.
+          </div>
+        </div>
+        <div class="rule">
+          <div class="h">Можно уйти в минус</div>
+          <p>
+            Если деньги уже потрачены, удаление всё равно проходит, просто
+            остаток становится отрицательным. Как и сейчас, минус показывается
+            цветом предупреждения.
+          </p>
+          <div class="example">
+            На жизнь осталось 66 770, доход дал на жизнь 119 225 → после
+            удаления −52 455 ₽.<br />В «Одежде» 900 после траты, доход положил в
+            неё 4 500 → после удаления −3 600, статус «минус».
+          </div>
+        </div>
+        <div class="rule">
+          <div class="h">Правка дохода: сумма, вид, галочки</div>
+          <p>
+            Исправленный доход раскладывается заново по обычным правилам. Если
+            доля на жизнь изменилась, «Осталось на жизнь» меняется на разницу.
+          </p>
+          <div class="example">
+            Зарплата 150 000 исправлена на 160 000 → в конверты по-прежнему 30
+            775, на жизнь 129 225 вместо 119 225 → «Осталось на жизнь» на 10 000
+            ₽ больше.<br />Сменили только вид («Зарплата» → «Аванс») → суммы не
+            меняются.
+          </div>
+        </div>
+        <div class="rule">
+          <div class="h">
+            После правки или удаления следующие доходы раскладываются заново
+          </div>
+          <p>
+            Каждый следующий доход считается так, будто его раскладывают в тот
+            момент, когда его внесли: остатки конвертов — по всему, что было
+            внесено до него (траты, переводы, доходы), с их нынешними суммами.
+          </p>
+          <div class="example">
+            Кошелёк: A (цена 1 000, копить на 1 раз, было 500) и B (цена 800, на
+            1 раз, было 0). Два дохода по 10 000. Первый дал A 500 и B 400; ко
+            второму A уже полный, и его взнос 500 ушёл излишком в B. Итог: A 1
+            000, B 1 300.<br />
+            <b>Исправили первый на 300:</b> A получает 300 и не становится
+            полным. Второй пересчитывается: A 500, B 400. Итог: A 1 300, B 400,
+            на жизнь на 9 100 ₽ меньше.<br />
+            <b>Удалили первый:</b> второй даёт A 500, B 400. Итог: A 1 000, B
+            400.
+          </div>
+        </div>
+        <div class="rule">
+          <div class="h">Траты между доходами учитываются</div>
+          <div class="example">
+            В том же кошельке после первого дохода из A потратили 600, потом
+            пришёл второй. Удалили первый → ко второму в A было 500 − 600 =
+            −100, A неполный и получает 500. Итог: A 400, B 400.
+          </div>
+        </div>
+        <div class="rule">
+          <div class="h">Настройки конвертов — текущие</div>
+          <p>
+            Прежние цены и приоритеты база не помнит. Пересчёт берёт настройки,
+            порядок кошельков и приоритеты, какие они сейчас.
+          </p>
+          <div class="example">
+            Между двумя доходами подорожал маникюр. Исправили первый доход → оба
+            пересчитались по новой цене маникюра.<br />Просто поменять цену без
+            правки дохода — старые раскладки не меняются, как и сейчас.
+          </div>
+        </div>
+        <div class="rule">
+          <div class="h">
+            Конверт, созданный позже дохода, от него ничего не получает
+          </div>
+          <div class="example">
+            После первого дохода создали конверт C, второй доход дал ему 1 000.
+            Исправили первый на 12 000 → C от первого по-прежнему ничего, в C 1
+            000.
+          </div>
+        </div>
+        <div class="rule">
+          <div class="h">Галочки кошельков запоминаются</div>
+          <p>
+            Новый доход помнит, с каких кошельков сняли галочку. При пересчёте
+            используется тот же выбор. У доходов, разложенных до этой фичи,
+            считается, что были отмечены все кошельки.
+          </p>
+          <div class="example">
+            Зарплата 150 000, потом 20 000 со снятой Clothes. Исправили зарплату
+            на 160 000 → у второго дохода по-прежнему Clothes 0, Self-care 5
+            925, Miscellaneous 6 550, Long term 5 700, Goals WB 1 825.
+          </div>
+        </div>
+        <div class="rule">
+          <div class="h">Деньги удалённых конвертов не трогаются</div>
+          <p>
+            Что доход когда-то положил в уже удалённый конверт, при пересчёте
+            остаётся как было и не возвращается на жизнь. Ввести сумму меньше
+            этой нельзя.
+          </p>
+          <div class="example">
+            Зарплата положила в «Одежду» 4 500, «Одежду» удалили. Исправляете
+            зарплату на 4 000 → «Не меньше 4 500 ₽: столько ушло в удалённые
+            конверты».
+          </div>
+        </div>
+        <div class="rule">
+          <div class="h">Что правка и удаление не трогают</div>
+          <ul class="points">
+            <li>
+              Траты и переводы: они остаются, «Потрачено в ноябре» прежнее.
+            </li>
+            <li>Числа «Аванс приходит» и «Зарплата приходит».</li>
+            <li>Более ранние доходы и их раскладку.</li>
+          </ul>
+        </div>
+        <div class="rule">
+          <div class="h">Удалён единственный доход</div>
+          <p>
+            Экраны выглядят как до первой раскладки: на «Траты» приглашение
+            разложить деньги, кнопки «Пополнить» нет, «На жизнь» нельзя выбрать
+            в переводе. Но траты и переводы «на жизнь», внесённые после того
+            дохода, не забываются: следующий доход их учтёт.
+          </p>
+          <div class="example">
+            Доход разложен → трата 2 000 → доход удалён → новый доход дал на
+            жизнь 100 000 → «Осталось на жизнь» 98 000 ₽.<br />Если трату в
+            промежутке удалить — 100 000 ₽, если исправить на 2 500 — 97 500 ₽.
+          </div>
+        </div>
+      </div>
+
+      <!-- 4 -->
+      <h2><span class="num">4</span>Модель данных до и после</h2>
+      <p>
+        Модель данных — какие таблицы лежат в базе и как они связаны. Новых
+        таблиц нет. Два изменения: у дохода появляется поле с запомненными
+        галочками, и меняется связь журнала «на жизнь» с доходом.
+      </p>
+      <ul class="points small muted">
+        <li>
+          <b>incomes</b> — доходы. <b>allocations</b> — строки раскладки: какой
+          доход, в какой конверт, сколько.
+        </li>
+        <li>
+          <b>daily_moves</b> — журнал «на жизнь»: каждая трата и перевод
+          оставляют там запись, на сколько изменился остаток. Каждая запись
+          привязана к доходу, после которого её внесли.
+        </li>
+      </ul>
+
+      <h3>Сейчас</h3>
+      <p class="scroll-hint">Схему можно листать вбок.</p>
+      <div class="schema">
+        <svg
+          viewBox="0 0 880 520"
+          role="img"
+          aria-label="Схема сейчас: incomes, allocations, envelopes, daily_moves"
+        >
+          <defs>
+            <marker
+              id="m1"
+              viewBox="0 0 10 10"
+              refX="9"
+              refY="5"
+              markerWidth="8"
+              markerHeight="8"
+              orient="auto-start-reverse"
+            >
+              <path d="M0 0 L10 5 L0 10 z" class="arrow" />
+            </marker>
+            <marker
+              id="m1b"
+              viewBox="0 0 10 10"
+              refX="9"
+              refY="5"
+              markerWidth="8"
+              markerHeight="8"
+              orient="auto-start-reverse"
+            >
+              <path d="M0 0 L10 5 L0 10 z" class="arrow bad" />
+            </marker>
+          </defs>
+          <path class="link" d="M290 162 H586" marker-end="url(#m1)" />
+          <text class="note" x="438" y="150" text-anchor="middle">
+            строки его раскладки
+          </text>
+          <text class="note" x="438" y="182" text-anchor="middle">
+            удаляются вместе с доходом
+          </text>
+          <path class="link" d="M715 300 V254" marker-end="url(#m1)" />
+          <text class="note" x="728" y="282">в какой конверт</text>
+          <path class="link bad" d="M165 250 V296" marker-end="url(#m1b)" />
+          <text class="note bad" x="180" y="272">
+            записи журнала тоже удалятся
+          </text>
+          <text class="note bad" x="180" y="290">
+            вместе с доходом — это ошибка
+          </text>
+
+          <rect class="box" x="40" y="30" width="250" height="220" rx="12" />
+          <path
+            class="head"
+            d="M52 30 H278 A12 12 0 0 1 290 42 V66 H40 V42 A12 12 0 0 1 52 30 Z"
+          />
+          <text class="tname" x="56" y="53">incomes</text>
+          <text class="tru" x="274" y="53" text-anchor="end">доходы</text>
+          <text class="row" x="56" y="90">id</text>
+          <text class="row" x="56" y="114">
+            user_id
+            <tspan class="ru">— чей</tspan>
+          </text>
+          <text class="row" x="56" y="138">date, kind</text>
+          <text class="row" x="56" y="162">amount</text>
+          <text class="row" x="56" y="186">to_envelopes</text>
+          <text class="row" x="56" y="210">to_daily</text>
+          <text class="row" x="56" y="234">created_at</text>
+
+          <rect class="box" x="590" y="30" width="250" height="220" rx="12" />
+          <path
+            class="head"
+            d="M602 30 H828 A12 12 0 0 1 840 42 V66 H590 V42 A12 12 0 0 1 602 30 Z"
+          />
+          <text class="tname" x="606" y="53">allocations</text>
+          <text class="tru" x="824" y="53" text-anchor="end">раскладка</text>
+          <text class="row" x="606" y="90">id</text>
+          <text class="row" x="606" y="114">user_id</text>
+          <text class="row" x="606" y="138">income_id</text>
+          <text class="row" x="606" y="162">envelope_id</text>
+          <text class="row" x="606" y="186">amount</text>
+          <text class="row" x="606" y="210">
+            kind
+            <tspan class="ru">— взнос/излишек</tspan>
+          </text>
+          <text class="row" x="606" y="234">source_envelope_id</text>
+
+          <rect class="box" x="40" y="300" width="250" height="196" rx="12" />
+          <path
+            class="head"
+            d="M52 300 H278 A12 12 0 0 1 290 312 V336 H40 V312 A12 12 0 0 1 52 300 Z"
+          />
+          <text class="tname" x="56" y="323">daily_moves</text>
+          <text class="tru" x="274" y="323" text-anchor="end">журнал</text>
+          <text class="row" x="56" y="360">id</text>
+          <text class="row" x="56" y="384">user_id</text>
+          <text class="row" x="56" y="408">
+            income_id
+            <tspan class="ru">— обязателен</tspan>
+          </text>
+          <text class="row" x="56" y="432">source</text>
+          <text class="row" x="56" y="456">transfer_id, expense_id</text>
+          <text class="row" x="56" y="480">
+            amount
+            <tspan class="ru">— ±</tspan>
+          </text>
+
+          <rect class="box" x="590" y="300" width="250" height="148" rx="12" />
+          <path
+            class="head"
+            d="M602 300 H828 A12 12 0 0 1 840 312 V336 H590 V312 A12 12 0 0 1 602 300 Z"
+          />
+          <text class="tname" x="606" y="323">envelopes</text>
+          <text class="tru" x="824" y="323" text-anchor="end">конверты</text>
+          <text class="row" x="606" y="360">id</text>
+          <text class="row" x="606" y="384">user_id, wallet_id</text>
+          <text class="row" x="606" y="408">name, priority</text>
+          <text class="row" x="606" y="432">… настройки …</text>
+        </svg>
+      </div>
+
+      <h3>После</h3>
+      <div class="legend">
+        <span><i class="sw new"></i>новое</span>
+        <span><i class="sw"></i>как было</span>
+      </div>
+      <p class="scroll-hint">Схему можно листать вбок.</p>
+      <div class="schema">
+        <svg
+          viewBox="0 0 880 520"
+          role="img"
+          aria-label="Схема после: у incomes новое поле skipped_wallet_ids, у daily_moves связь с incomes становится необязательной"
+        >
+          <defs>
+            <marker
+              id="m2"
+              viewBox="0 0 10 10"
+              refX="9"
+              refY="5"
+              markerWidth="8"
+              markerHeight="8"
+              orient="auto-start-reverse"
+            >
+              <path d="M0 0 L10 5 L0 10 z" class="arrow" />
+            </marker>
+            <marker
+              id="m2n"
+              viewBox="0 0 10 10"
+              refX="9"
+              refY="5"
+              markerWidth="8"
+              markerHeight="8"
+              orient="auto-start-reverse"
+            >
+              <path d="M0 0 L10 5 L0 10 z" class="arrow new" />
+            </marker>
+          </defs>
+          <path class="link" d="M290 162 H586" marker-end="url(#m2)" />
+          <text class="note" x="438" y="132" text-anchor="middle">
+            строки его раскладки:
+          </text>
+          <text class="note" x="438" y="150" text-anchor="middle">
+            при правке или удалении
+          </text>
+          <text class="note new" x="438" y="182" text-anchor="middle">
+            пересчитываются заново
+          </text>
+          <text class="note new" x="438" y="200" text-anchor="middle">
+            у этого и следующих доходов
+          </text>
+          <path class="link" d="M715 300 V254" marker-end="url(#m2)" />
+          <text class="note" x="728" y="282">в какой конверт</text>
+          <path class="link new" d="M165 250 V296" marker-end="url(#m2n)" />
+          <text class="note new" x="180" y="272">записи журнала остаются,</text>
+          <text class="note new" x="180" y="290">
+            ссылка на доход становится пустой
+          </text>
+
+          <rect class="box" x="40" y="30" width="250" height="220" rx="12" />
+          <path
+            class="head"
+            d="M52 30 H278 A12 12 0 0 1 290 42 V66 H40 V42 A12 12 0 0 1 52 30 Z"
+          />
+          <text class="tname" x="56" y="53">incomes</text>
+          <text class="tru" x="274" y="53" text-anchor="end">доходы</text>
+          <text class="row" x="56" y="90">id</text>
+          <text class="row" x="56" y="114">
+            user_id
+            <tspan class="ru">— чей</tspan>
+          </text>
+          <text class="row" x="56" y="138">date, kind</text>
+          <text class="row" x="56" y="162">amount</text>
+          <text class="row" x="56" y="186">to_envelopes, to_daily</text>
+          <text class="row" x="56" y="210">created_at</text>
+          <rect class="rowbg" x="44" y="218" width="242" height="24" rx="4" />
+          <text class="row hl" x="56" y="234">
+            skipped_wallet_ids
+            <tspan class="ru">— галочки</tspan>
+          </text>
+
+          <rect class="box" x="590" y="30" width="250" height="220" rx="12" />
+          <path
+            class="head"
+            d="M602 30 H828 A12 12 0 0 1 840 42 V66 H590 V42 A12 12 0 0 1 602 30 Z"
+          />
+          <text class="tname" x="606" y="53">allocations</text>
+          <text class="tru" x="824" y="53" text-anchor="end">раскладка</text>
+          <text class="row" x="606" y="90">id</text>
+          <text class="row" x="606" y="114">user_id</text>
+          <text class="row" x="606" y="138">income_id</text>
+          <text class="row" x="606" y="162">envelope_id</text>
+          <text class="row" x="606" y="186">amount</text>
+          <text class="row" x="606" y="210">
+            kind
+            <tspan class="ru">— взнос/излишек</tspan>
+          </text>
+          <text class="row" x="606" y="234">source_envelope_id</text>
+
+          <rect class="box" x="40" y="300" width="250" height="196" rx="12" />
+          <path
+            class="head"
+            d="M52 300 H278 A12 12 0 0 1 290 312 V336 H40 V312 A12 12 0 0 1 52 300 Z"
+          />
+          <text class="tname" x="56" y="323">daily_moves</text>
+          <text class="tru" x="274" y="323" text-anchor="end">журнал</text>
+          <text class="row" x="56" y="360">id</text>
+          <text class="row" x="56" y="384">user_id</text>
+          <rect class="rowbg" x="44" y="392" width="242" height="24" rx="4" />
+          <text class="row hl" x="56" y="408">
+            income_id
+            <tspan class="ru">— может быть пустым</tspan>
+          </text>
+          <text class="row" x="56" y="432">source</text>
+          <text class="row" x="56" y="456">transfer_id, expense_id</text>
+          <text class="row" x="56" y="480">
+            amount
+            <tspan class="ru">— ±</tspan>
+          </text>
+
+          <rect class="box" x="590" y="300" width="250" height="148" rx="12" />
+          <path
+            class="head"
+            d="M602 300 H828 A12 12 0 0 1 840 312 V336 H590 V312 A12 12 0 0 1 602 300 Z"
+          />
+          <text class="tname" x="606" y="323">envelopes</text>
+          <text class="tru" x="824" y="323" text-anchor="end">конверты</text>
+          <text class="row" x="606" y="360">id</text>
+          <text class="row" x="606" y="384">user_id, wallet_id</text>
+          <text class="row" x="606" y="408">name, priority</text>
+          <text class="row" x="606" y="432">… настройки …</text>
+        </svg>
+      </div>
+      <ul class="points">
+        <li>
+          <b>skipped_wallet_ids</b> — список кошельков, с которых при раскладке
+          сняли галочку. Пустой список — отмечены все. Нужен, чтобы пересчёт
+          повторил ваш выбор.
+        </li>
+        <li>
+          Остаток конверта нигде не хранится, а каждый раз считается из
+          начального остатка, строк раскладки, трат и переводов. Поэтому
+          достаточно заменить строки раскладки на пересчитанные, и остатки сами
+          станут правильными.
+        </li>
+        <li>
+          Правка и удаление вместе с пересчётом сохраняются в базу целиком за
+          один раз: наполовину пересчитаться не может.
+        </li>
+        <li>
+          «Осталось на жизнь» тоже считается: доли всех доходов на жизнь плюс
+          все записи журнала. Удалили доход — его доля пропала, записи журнала
+          остались.
+        </li>
+        <li>
+          Если журнал не поправить, удаление дохода стёрло бы и записи о тратах
+          за его период, и «Осталось на жизнь» неожиданно выросло бы. Поэтому
+          связь меняется.
+        </li>
+      </ul>
+
+      <h3>Как запрос находит только ваш доход</h3>
+      <div class="lookup">
+        <div class="who">
+          <b>Вы открываете свой доход</b>
+          <div class="ask">доход с номером <b>a1…</b> и хозяином <b>вы</b></div>
+          <span class="result ok">нашёлся → экран «Доход»</span>
+        </div>
+        <div class="who">
+          <b>Кто-то подставил номер вашего дохода в адрес</b>
+          <div class="ask">
+            доход с номером <b>a1…</b> и хозяином <b>другой человек</b>
+          </div>
+          <span class="result no">не нашёлся → «доход не найден»</span>
+        </div>
+      </div>
+      <p class="small muted">
+        Правка и удаление спрашивают базу так же: номер дохода и хозяин. Чужой
+        доход не исправится и не удалится, остатки не изменятся. Пересчёт тоже
+        берёт только ваши доходы, траты, переводы и конверты.
+      </p>
+
+      <h3>Миграция</h3>
+      <p class="small muted">
+        Миграция — скрипт, который меняет устройство базы. При выкатке он
+        запускается после бэкапа и до старта новой версии.
+      </p>
+      <div class="mig">
+        <div>
+          <span class="k">drizzle/0005_…sql</span
+          ><span class="tag">данные не меняет</span>
+        </div>
+        <p>
+          1. У <code>daily_moves.income_id</code> снимается «обязательно», а
+          правило «удалить вместе с доходом» заменяется на «оставить запись,
+          ссылку сделать пустой».
+        </p>
+        <p>
+          2. У <code>incomes</code> появляется поле
+          <code>skipped_wallet_ids</code>, у всех уже разложенных доходов —
+          пустой список.
+        </p>
+        <p class="small muted">
+          Существующие записи по смыслу не меняются. Уже разложенные доходы
+          получают пустой список галочек, то есть «отмечены все»: так вы и
+          решили. После выкатки всё считается так же, как до неё, пока вы не
+          исправите или не удалите доход.
+        </p>
+      </div>
+      <p>
+        <b>Откат:</b> если вернуть прошлую версию приложения, она будет работать
+        как раньше. Новое поле она не читает, ссылку на доход всегда заполняет,
+        исправлять и удалять доходы не умеет. Доходы, которые вы успели
+        исправить, она покажет с новыми суммами. Базу откатывать не нужно.
+      </p>
+
+      <!-- 5 -->
+      <h2><span class="num">5</span>Как проверить руками</h2>
+      <div class="prep">
+        <b>Подготовка.</b> Запустите приложение локально (см. README). Войдите
+        под выдуманным адресом и загрузите на него демо-данные:
+        <code>pnpm db:seed data/demo-seed.json --email &lt;этот адрес&gt;</code
+        >. Повторная загрузка дублей не создаёт. Для проверки «единственного
+        дохода» войдите под ещё одним выдуманным адресом: там всё пусто. Галочки
+        на этой странице только для удобства и не сохраняются.
+      </div>
+
+      <div class="check-group">
+        <h3>История доходов</h3>
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Доход в истории</div>
+            <div class="st">
+              Разложить зарплату 150 000 → открыть «Пришли деньги»
+              <span class="arrow-t">→</span> в «Истории» строка «Зарплата», 150
+              000 ₽, «в конверты 30 775 ₽ · на жизнь 119 225 ₽». В тот же день
+              вместо даты «сегодня», через день «вчера», потом дата.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Порядок</div>
+            <div class="st">
+              Разложить подряд два дохода: зарплату, потом «Другое»
+              <span class="arrow-t">→</span> «Другое» выше зарплаты: при одной
+              дате выше внесённый позже.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Доходов ещё нет</div>
+            <div class="st">
+              Под новым пустым адресом открыть «Пришли деньги»
+              <span class="arrow-t">→</span> блока «История» нет.
+            </div>
+          </div></label
+        >
+      </div>
+
+      <div class="check-group">
+        <h3>Все доходы</h3>
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Ровно 10 доходов</div>
+            <div class="st">
+              Разложить 10 небольших доходов «Другое»
+              <span class="arrow-t">→</span> в «Истории» все 10, ссылки «Все
+              доходы» нет.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Больше 10 доходов</div>
+            <div class="st">
+              Разложить ещё 2 <span class="arrow-t">→</span> в «Истории» 10
+              строк и «Все доходы» → нажать <span class="arrow-t">→</span> все
+              12, новые сверху.
+            </div>
+          </div></label
+        >
+      </div>
+
+      <div class="check-group">
+        <h3>Экран дохода</h3>
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Раскладка зарплаты</div>
+            <div class="st">
+              На свежих демо-данных разложить 150 000 → открыть её из «Истории»
+              <span class="arrow-t">→</span> «Зарплата», 150 000 ₽, «В конверты
+              30 775 ₽», «На повседневные траты 119 225 ₽»; в Self-care 5 925 ₽,
+              «Косметология» 4 475 ₽ с подписью «взнос 750 ₽ + излишек 3 725 ₽»;
+              «Здоровья», «Маникюра», «Стрижки», «Косметики» нет.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Кошелёк без денег</div>
+            <div class="st">
+              Разложить 20 000, сняв галочку с Clothes → открыть этот доход
+              <span class="arrow-t">→</span> кошелька Clothes на экране нет.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Конверт удалён после раскладки</div>
+            <div class="st">
+              После зарплаты 150 000 удалить конверт «Одежда» → открыть зарплату
+              <span class="arrow-t">→</span> в Clothes 300 ₽, только
+              «Украшения»; строка «В удалённые конверты 4 500 ₽»; «В конверты»
+              по-прежнему 30 775 ₽.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Чужой доход</div>
+            <div class="st">
+              Скопировать адрес экрана дохода → войти под другим адресом →
+              открыть скопированный адрес
+              <span class="arrow-t">→</span> «доход не найден», сумм не видно.
+            </div>
+          </div></label
+        >
+      </div>
+
+      <div class="check-group">
+        <h3>Удаление дохода</h3>
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Подтверждение</div>
+            <div class="st">
+              Разложить зарплату 150 000 и после неё ещё два дохода → у зарплаты
+              нажать «Удалить доход» <span class="arrow-t">→</span> окно: из
+              конвертов уйдёт 30 775 ₽, из денег на жизнь 119 225 ₽, следующие
+              раскладки пересчитаются: 2, траты и переводы останутся.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Подтверждение у последнего дохода</div>
+            <div class="st">
+              Нажать «Удалить доход» у самого нового дохода
+              <span class="arrow-t">→</span> строки о пересчёте в окне нет.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Отказ</div>
+            <div class="st">
+              В окне нажать «Отмена» <span class="arrow-t">→</span> доход на
+              месте, суммы прежние.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Удаление зарплаты</div>
+            <div class="st">
+              Удалить зарплату 150 000 <span class="arrow-t">→</span>
+              «Косметология» −27 400, «Одежда» 6 400, «Украшения» 27 300, «Всего
+              в конвертах» 230 350 ₽, зарплаты нет в «Истории».
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Остаток на жизнь уменьшается</div>
+            <div class="st">
+              Запомнить «Осталось на жизнь» до раскладки (например, 12 000) →
+              разложить 150 000 (стало 131 225) → удалить
+              <span class="arrow-t">→</span> снова 12 000 ₽.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Деньги уже потрачены</div>
+            <div class="st">
+              После раскладки (на жизнь 119 225) потратить так, чтобы осталось
+              66 770 → удалить доход <span class="arrow-t">→</span> «Осталось на
+              жизнь» −52 455 ₽ цветом предупреждения.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Конверт уходит в минус</div>
+            <div class="st">
+              После раскладки в «Одежде» 10 900 → потратить из неё 10 000 →
+              удалить доход <span class="arrow-t">→</span> в «Одежде» −3 600,
+              статус «минус».
+            </div>
+          </div></label
+        >
+      </div>
+
+      <div class="check-group">
+        <h3>Правка дохода</h3>
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Исправление суммы</div>
+            <div class="st">
+              На свежих демо-данных разложить зарплату 150 000, запомнить
+              «Осталось на жизнь» → «Изменить» → 160 000 → «Сохранить»
+              <span class="arrow-t">→</span> вы на экране дохода; в конверты 30
+              775, на жизнь 129 225; в «Истории» 160 000 ₽; «Осталось на жизнь»
+              на 10 000 ₽ больше.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Смена вида</div>
+            <div class="st">
+              Поменять вид на «Аванс» и сохранить
+              <span class="arrow-t">→</span> в «Истории» и на экране «Аванс»,
+              суммы и остатки прежние.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Форма заполнена</div>
+            <div class="st">
+              Разложить 20 000, сняв галочку с Clothes → открыть доход →
+              «Изменить» <span class="arrow-t">→</span> сумма 20 000, вид
+              выбран, у Clothes галочка снята, у остальных стоит; полей «Аванс
+              приходит» и «Зарплата приходит» нет.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Есть следующие доходы / последний доход</div>
+            <div class="st">
+              Открыть правку дохода, после которого разложено ещё два
+              <span class="arrow-t">→</span> «Следующие раскладки пересчитаются:
+              2». Открыть правку самого нового
+              <span class="arrow-t">→</span> этой строки нет.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Пустая сумма</div>
+            <div class="st">
+              Стереть сумму или ввести 0 <span class="arrow-t">→</span>
+              «Сохранить» недоступна.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Меньше, чем ушло в удалённые конверты</div>
+            <div class="st">
+              После зарплаты 150 000 удалить конверт «Одежда» → «Изменить» → 4
+              000 → «Сохранить» <span class="arrow-t">→</span> «Не меньше 4 500
+              ₽: столько ушло в удалённые конверты», доход не изменился.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Чужой доход не правится</div>
+            <div class="st">
+              Скопировать адрес правки → войти под другим адресом → открыть его
+              <span class="arrow-t">→</span> «доход не найден».
+            </div>
+          </div></label
+        >
+      </div>
+
+      <div class="check-group">
+        <h3>Пересчёт следующих раскладок (на пустом адресе)</h3>
+        <div class="prep" style="margin-bottom: 8px">
+          Создать кошелёк с двумя конвертами раз в месяц: A (цена 1 000, копить
+          на 1 раз, начальный остаток 500) и B (цена 800, на 1 раз, 0).
+          Разложить два дохода по 10 000. Проверить: в A 1 000, в B 1 300.
+        </div>
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Правка делает конверт неполным</div>
+            <div class="st">
+              Исправить первый доход на 300 <span class="arrow-t">→</span>
+              первый: A 300, B 0, на жизнь 0; второй: A 500, B 400; в A 1 300, в
+              B 400; «Осталось на жизнь» на 9 100 ₽ меньше.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Удаление делает конверт неполным</div>
+            <div class="st">
+              Вернуть исходное (удалить оба и разложить заново) → удалить первый
+              <span class="arrow-t">→</span> второй: A 500, B 400; в A 1 000, в
+              B 400; «Осталось на жизнь» на 9 100 ₽ меньше.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Трата между доходами</div>
+            <div class="st">
+              Заново: первый доход → трата 600 из A → второй доход → удалить
+              первый <span class="arrow-t">→</span> в A 400, в B 400.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Конверт создан позже дохода</div>
+            <div class="st">
+              Заново: первый доход → создать в кошельке C (цена 2 000 раз в
+              месяц, на 1 раз) → второй доход (C получил 1 000) → исправить
+              первый на 12 000 <span class="arrow-t">→</span> в C по-прежнему 1
+              000.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Настройки поменялись между доходами</div>
+            <div class="st">
+              Разложить два дохода → поменять цену конверта → исправить первый
+              доход <span class="arrow-t">→</span> оба дохода на своих экранах
+              посчитаны по новой цене.
+            </div>
+          </div></label
+        >
+      </div>
+
+      <div class="check-group">
+        <h3>Пересчёт на демо-данных</h3>
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Запомненные галочки</div>
+            <div class="st">
+              Разложить зарплату 150 000, потом 20 000 со снятой Clothes →
+              исправить зарплату на 160 000 <span class="arrow-t">→</span> у
+              второго дохода Clothes 0, Self-care 5 925, Miscellaneous 6 550,
+              Long term 5 700, Goals WB 1 825.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Удалённый конверт при пересчёте</div>
+            <div class="st">
+              Разложить зарплату 150 000 и аванс 80 000 → удалить «Одежду» →
+              исправить зарплату на 160 000 <span class="arrow-t">→</span> у
+              обоих доходов строка «В удалённые конверты 4 500 ₽»; у аванса в
+              конверты 30 775, на жизнь 49 225.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Более ранний доход</div>
+            <div class="st">
+              Разложить аванс, потом зарплату → открыть аванс, запомнить суммы →
+              исправить или удалить зарплату <span class="arrow-t">→</span>
+              экран аванса прежний.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Траты и числа остаются</div>
+            <div class="st">
+              Запомнить «Потрачено в ноябре» и числа аванса и зарплаты →
+              исправить или удалить доход <span class="arrow-t">→</span>
+              «Потрачено» прежнее, траты и переводы на месте, в полях «Пришли
+              деньги» прежние числа.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Доход, разложенный до этой фичи</div>
+            <div class="st">
+              Локально, не на сервере: на версии из main разложить доход со
+              снятой галочкой → перейти на новую версию, применить миграцию →
+              исправить этот доход <span class="arrow-t">→</span> в форме и при
+              пересчёте все кошельки отмечены. На сервере так не проверять:
+              правка пересчитает ваши настоящие раскладки.
+            </div>
+          </div></label
+        >
+      </div>
+
+      <div class="check-group">
+        <h3>Удаление единственного дохода (на пустом адресе)</h3>
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Нет доходов</div>
+            <div class="st">
+              Разложить доход → удалить его <span class="arrow-t">→</span> на
+              «Траты» приглашение разложить деньги, «Пополнить» нет; в переводе
+              «На жизнь» не выбрать.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Траты остаются в счёте</div>
+            <div class="st">
+              Разложить доход → повседневная трата 2 000 → удалить доход →
+              разложить новый, где на жизнь 100 000
+              <span class="arrow-t">→</span> «Осталось на жизнь» 98 000 ₽.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Трата удалена, пока доходов нет</div>
+            <div class="st">
+              То же, но перед новой раскладкой удалить трату 2 000
+              <span class="arrow-t">→</span> 100 000 ₽.
+            </div>
+          </div></label
+        >
+        <label class="check"
+          ><input type="checkbox" />
+          <div>
+            <div class="sc">Трата исправлена, пока доходов нет</div>
+            <div class="st">
+              То же, но перед новой раскладкой исправить трату на 2 500
+              <span class="arrow-t">→</span> 97 500 ₽.
+            </div>
+          </div></label
+        >
+      </div>
+
+      <!-- 6 -->
+      <h2><span class="num">6</span>Что агент решил сам</h2>
+      <p class="small muted">
+        Согласовано с вами: 10 последних с разбивкой и ссылка на старые; экран
+        дохода с «Удалить»; траты после единственного дохода остаются в счёте;
+        правка суммы и вида без даты; пересчёт с текущими настройками;
+        запоминать галочки (у старых доходов — все отмечены); деньги удалённых
+        конвертов не трогать; удаление тоже пересчитывает следующие доходы.
+        Остальное ниже — решения агента.
+      </p>
+      <div class="two">
+        <div class="card box-card">
+          <h3>Продуктовые — стоит просмотреть</h3>
+          <ul class="points small">
+            <li>
+              Дата в истории как в «Переводах»: «сегодня», «вчера», «10 ноября».
+            </li>
+            <li>
+              «Все доходы» — отдельный экран со всем списком сразу, без
+              подгрузки частями.
+            </li>
+            <li>Ссылка «Все доходы» только при больше чем 10 доходах.</li>
+            <li>
+              На экране дохода нет кошельков и конвертов, которые ничего не
+              получили.
+            </li>
+            <li>Строка «В удалённые конверты X ₽» для удалённых конвертов.</li>
+            <li>
+              Текст подтверждения: сколько уйдёт из конвертов и с жизни, траты и
+              переводы останутся.
+            </li>
+            <li>После удаления — возврат туда, откуда открыли доход.</li>
+            <li>Числа аванса и зарплаты правка и удаление не трогают.</li>
+            <li>
+              В форме правки нет полей «Аванс приходит» и «Зарплата приходит».
+            </li>
+            <li>
+              Предпросмотр правки считает доход на момент его внесения, с
+              текущими настройками.
+            </li>
+            <li>
+              До сохранения видно только, сколько раскладок пересчитается, а не
+              как изменится каждая.
+            </li>
+            <li>«Сохранить» возвращает на экран дохода.</li>
+            <li>
+              Сумму меньше той, что ушла в удалённые конверты, ввести нельзя.
+            </li>
+            <li>
+              Порядок «до дохода / после дохода» — по моменту внесения, а не по
+              дате траты или перевода.
+            </li>
+            <li>
+              Из «Не делать» в <code>specs/01</code> уходит «правка раскладки
+              задним числом», в «Как устроено» добавляется пункт о правке.
+            </li>
+            <li>
+              Если трату исправили или удалили, пока доходов нет, это тоже
+              учитывается (сценарии 2 000 → 100 000 и 2 500 → 97 500).
+            </li>
+          </ul>
+        </div>
+        <div class="card box-card">
+          <h3>Технические — на экраны не влияют</h3>
+          <ul class="points small">
+            <li>
+              Связь журнала с доходом становится необязательной вместо «удалять
+              вместе». Перепривязывать записи к предыдущему доходу не стали: при
+              единственном доходе привязать некуда.
+            </li>
+            <li>
+              Правка и удаление вместе с пересчётом — одно действие в базе:
+              частично сохраниться не может. На это время доходы пользователя
+              блокируются, чтобы две правки не перемешались.
+            </li>
+            <li>
+              Пересчёт — одна функция: она по очереди раскладывает заново все
+              доходы, начиная с исправленного, обычной функцией раскладки.
+              Проверять «что поменялось» по кусочкам не стали: так проще и
+              надёжнее, а доходов в месяц всего 2–3.
+            </li>
+            <li>
+              Галочки хранятся списком прямо в доходе, без отдельной таблицы.
+              Удалённый кошелёк из списка просто не находится.
+            </li>
+            <li>
+              Сколько ушло в удалённые конверты, база не хранит: это считается
+              как «всего в конверты» минус строки живых конвертов.
+            </li>
+            <li>
+              Сервер пересчитывает сам и предпросмотру из браузера не доверяет,
+              как сейчас при раскладке.
+            </li>
+            <li>
+              Счёт для экрана дохода и для окна подтверждения — отдельные
+              функции в <code>src/domain/</code> с тестами на числа из
+              сценариев.
+            </li>
+            <li>
+              Подписи «Зарплата / Аванс / Другое» переносятся в одно место,
+              чтобы форма и история брали одинаковые.
+            </li>
+            <li>
+              Адрес возврата «назад» принимается только из списка своих экранов
+              приложения.
+            </li>
+            <li>
+              Автотесты правки и удаления раскладывают в конце два своих
+              маленьких дохода и в конце их удаляют: остальные автотесты
+              работают на той же базе.
+            </li>
+            <li>Новых библиотек нет.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 7 -->
+      <h2><span class="num">7</span>Что осталось неясным</h2>
+      <div class="card">
+        <p><b>Открытых вопросов нет.</b></p>
+        <p class="small muted">
+          Все вопросы по истории, удалению, правке и пересчёту вы уже решили.
+          Решения агента — в разделе 6: если какое-то не подходит, скажите, и
+          план поправим до начала реализации.
+        </p>
+      </div>
+
+      <footer>
+        Собрано по <code>openspec/changes/income-history/</code> (proposal,
+        specs, design, tasks) после правки и пересчёта в ветке
+        <code>income-history</code>. Кода ещё нет. Страница только показывает,
+        ничего не меняет.
+      </footer>
+    </div>
+  </body>
+</html>

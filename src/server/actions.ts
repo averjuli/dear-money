@@ -17,8 +17,10 @@ import {
   wallets,
 } from "@/db/schema";
 import { planAllocation } from "@/domain/allocation";
-import { dailyMove, expenseDailyEffect } from "@/domain/daily";
+import { dailyMoveToRecord, expenseDailyEffect } from "@/domain/daily";
 import { PERIOD_UNITS, type PeriodUnit } from "@/domain/envelope";
+import { replayIncomes, type ReplayedIncome } from "@/domain/income";
+import { formatMoney } from "@/domain/money";
 import {
   canTransfer,
   transferDailyEffect,
@@ -31,6 +33,7 @@ import { normalizeEmail } from "./auth/email";
 import {
   isUuid,
   loadLatestIncome,
+  loadReplayInput,
   loadTransfer,
   loadWallets,
   toAllocationInput,
@@ -71,7 +74,9 @@ type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
  * Writes what a saved or deleted item (a transfer or a daily expense) changes
  * in «на жизнь» into the journal: the effect it has now minus what its earlier
  * rows already added, in the period of the latest income, whatever the item's
- * date. No row when nothing changes or before the first allocation.
+ * date. No row when nothing changes. With no incomes there is no period: an
+ * item the journal has not seen gets no row, one that already has rows gets
+ * a row without an income, so what it did stays in the sum.
  * Call it in the same transaction as the change itself.
  */
 async function recordDailyMove(
@@ -86,7 +91,6 @@ async function recordDailyMove(
     .where(eq(incomes.userId, userId))
     .orderBy(desc(incomes.date), desc(incomes.createdAt))
     .limit(1);
-  if (!income) return;
   const [row] = await tx
     .select({
       total: sql<number>`coalesce(sum(${dailyMoves.amount}), 0)::int`,
@@ -100,11 +104,15 @@ async function recordDailyMove(
           : eq(dailyMoves.transferId, item.id),
       ),
     );
-  const amount = dailyMove({ effect, journaled: row?.total ?? 0 });
+  const amount = dailyMoveToRecord({
+    effect,
+    journaled: row?.total ?? 0,
+    hasIncome: income !== undefined,
+  });
   if (amount === 0) return;
   await tx.insert(dailyMoves).values({
     userId,
-    incomeId: income.id,
+    incomeId: income?.id ?? null,
     source: item.source,
     expenseId: item.source === "expense" ? item.id : null,
     transferId: item.source === "transfer" ? item.id : null,
@@ -217,6 +225,7 @@ export async function allocateIncome(input: {
         kind: input.kind,
         toEnvelopes: plan.toEnvelopes,
         toDaily: plan.toDaily,
+        skippedWalletIds,
       })
       .returning({ id: incomes.id });
     if (plan.lines.length > 0) {
@@ -246,6 +255,135 @@ export async function allocateIncome(input: {
   });
   refresh();
   return { ok: true };
+}
+
+/** Locks the user's incomes so that two changes to the chain cannot interleave. */
+async function lockIncomes(tx: Tx, userId: string): Promise<void> {
+  await tx
+    .select({ id: incomes.id })
+    .from(incomes)
+    .where(eq(incomes.userId, userId))
+    .for("update");
+}
+
+/** Replaces the sums and the lines of the given incomes with the replayed ones. */
+async function saveReplayed(
+  tx: Tx,
+  userId: string,
+  replayed: ReplayedIncome[],
+): Promise<void> {
+  if (replayed.length === 0) return;
+  await tx.delete(allocations).where(
+    and(
+      eq(allocations.userId, userId),
+      inArray(
+        allocations.incomeId,
+        replayed.map((r) => r.id),
+      ),
+    ),
+  );
+  for (const one of replayed) {
+    await tx
+      .update(incomes)
+      .set({ toEnvelopes: one.toEnvelopes, toDaily: one.toDaily })
+      .where(and(eq(incomes.id, one.id), eq(incomes.userId, userId)));
+  }
+  const rows = replayed.flatMap((one) =>
+    one.lines.map((line) => ({
+      userId,
+      incomeId: one.id,
+      envelopeId: line.envelopeId,
+      amount: line.amount,
+      kind: line.kind,
+      sourceEnvelopeId: line.sourceEnvelopeId,
+    })),
+  );
+  if (rows.length > 0) await tx.insert(allocations).values(rows);
+}
+
+/**
+ * Corrects an income (the amount, the kind, the remembered checkboxes; the
+ * date stays) and lays out it and every later income again, in one transaction.
+ */
+export async function updateIncome(input: {
+  id: string;
+  amount: number;
+  kind: (typeof INCOME_KINDS)[number];
+  skippedWalletIds?: string[];
+}): Promise<ActionResult> {
+  const userId = await requireUserId();
+  if (!isUuid(input.id)) return fail("Доход не найден");
+  if (!isMoney(input.amount) || input.amount <= 0) {
+    return fail("Введите сумму больше нуля");
+  }
+  if (!INCOME_KINDS.includes(input.kind)) return fail("Неизвестный вид дохода");
+
+  const result = await getDb().transaction(
+    async (tx): Promise<ActionResult> => {
+      await lockIncomes(tx, userId);
+      const replay = await loadReplayInput(tx, userId, input.id);
+      if (!replay) return fail("Доход не найден");
+      const [target, ...later] = replay.chain;
+      if (input.amount < target.toDeleted) {
+        return fail(
+          `Не меньше ${formatMoney(target.toDeleted)}: столько ушло в удалённые конверты`,
+        );
+      }
+      const ownWalletIds = new Set(replay.wallets.map((w) => w.id));
+      const skippedWalletIds = (input.skippedWalletIds ?? []).filter(
+        (id) => isUuid(id) && ownWalletIds.has(id),
+      );
+      const replayed = replayIncomes({
+        wallets: replay.wallets,
+        envelopes: replay.envelopes,
+        events: replay.events,
+        incomes: [
+          { ...target, amount: input.amount, skippedWalletIds },
+          ...later,
+        ],
+      });
+      await tx
+        .update(incomes)
+        .set({ amount: input.amount, kind: input.kind, skippedWalletIds })
+        .where(and(eq(incomes.id, target.id), eq(incomes.userId, userId)));
+      await saveReplayed(tx, userId, replayed);
+      return { ok: true, id: target.id };
+    },
+  );
+  if (result.ok) refresh();
+  return result;
+}
+
+/**
+ * Deletes an income with its lines and lays out every later income again, in
+ * one transaction. Journal rows of «на жизнь» stay, without an income.
+ */
+export async function deleteIncome(id: string): Promise<ActionResult> {
+  const userId = await requireUserId();
+  if (!isUuid(id)) return fail("Доход не найден");
+
+  const result = await getDb().transaction(
+    async (tx): Promise<ActionResult> => {
+      await lockIncomes(tx, userId);
+      const replay = await loadReplayInput(tx, userId, id);
+      if (!replay) return fail("Доход не найден");
+      const [, ...later] = replay.chain;
+      const replayed = replayIncomes({
+        wallets: replay.wallets,
+        envelopes: replay.envelopes,
+        events: replay.events,
+        incomes: later,
+      });
+      // The lines go with the income; the journal rows lose only the link.
+      await tx
+        .delete(incomes)
+        .where(and(eq(incomes.id, id), eq(incomes.userId, userId)));
+      await saveReplayed(tx, userId, replayed);
+      return { ok: true };
+    },
+  );
+  if (result.ok) refresh();
+  return result;
 }
 
 // ---------- Expenses ----------

@@ -3,6 +3,7 @@ import {
   categoryStatus,
   daysUntil,
   dailyMove,
+  dailyMoveToRecord,
   dailyRemaining,
   dailySummary,
   expenseDailyEffect,
@@ -416,5 +417,66 @@ describe("dailyMove for expenses", () => {
     expect(dailyMove({ effect: expenseDailyEffect(null), journaled: 0 })).toBe(
       0,
     );
+  });
+});
+
+describe("dailyMoveToRecord", () => {
+  const daily = (amount: number) => ({ amount, envelopeId: null });
+
+  it("with an income it is the plain difference", () => {
+    expect(
+      dailyMoveToRecord({
+        effect: expenseDailyEffect(daily(rub(2500))),
+        journaled: rub(-2000),
+        hasIncome: true,
+      }),
+    ).toBe(rub(-500));
+    expect(
+      dailyMoveToRecord({
+        effect: expenseDailyEffect(daily(rub(1000))),
+        journaled: 0,
+        hasIncome: true,
+      }),
+    ).toBe(rub(-1000));
+  });
+
+  it("no incomes, a new expense 2 000 with no journal rows → no row", () => {
+    expect(
+      dailyMoveToRecord({
+        effect: expenseDailyEffect(daily(rub(2000))),
+        journaled: 0,
+        hasIncome: false,
+      }),
+    ).toBe(0);
+  });
+
+  it("no incomes, an expense journaled −2 000 is deleted → +2 000", () => {
+    expect(
+      dailyMoveToRecord({
+        effect: expenseDailyEffect(null),
+        journaled: rub(-2000),
+        hasIncome: false,
+      }),
+    ).toBe(rub(2000));
+  });
+
+  it("no incomes, an expense journaled −2 000 is edited to 2 500 → −500", () => {
+    expect(
+      dailyMoveToRecord({
+        effect: expenseDailyEffect(daily(rub(2500))),
+        journaled: rub(-2000),
+        hasIncome: false,
+      }),
+    ).toBe(rub(-500));
+  });
+
+  it("no incomes, an expense with no journal rows is deleted → 0", () => {
+    expect(
+      dailyMoveToRecord({
+        effect: expenseDailyEffect(null),
+        journaled: 0,
+        hasIncome: false,
+      }),
+    ).toBe(0);
   });
 });
