@@ -1,10 +1,18 @@
 import { readFileSync } from "node:fs";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
 import * as schema from "../src/db/schema";
 import { parseSeed, seedUserData } from "../src/db/seed";
-import { DEMO_EMAIL, OTHER_EMAIL, e2eEnv } from "./env";
+import {
+  AB_EMAIL,
+  DEMO_COPY_EMAIL,
+  DEMO_EMAIL,
+  INCOME_OWNER_EMAIL,
+  OTHER_EMAIL,
+  e2eEnv,
+} from "./env";
 import { clearMailbox } from "./mailpit";
 
 /** Fresh e2e database with the demo data: data/demo-seed.json. Empty mailbox. */
@@ -56,6 +64,58 @@ export default async function globalSetup() {
       },
     ],
     spendCategories: [{ id: "x-d1", name: "Чужая категория" }],
+  });
+
+  // The income-history scenarios: a copy of the demo data to change freely.
+  await seedUserData(db, DEMO_COPY_EMAIL, seed);
+  // A wallet «Wallet» with two envelopes. Half of the monthly contribution per
+  // income: Alpha 500 ₽ (balance 500 ₽ of 1 000 ₽), Beta 400 ₽ (balance 0 of 800 ₽).
+  const envelope = {
+    periodN: 1,
+    periodUnit: "month" as const,
+    contributionOverride: null,
+    timesToSave: 1,
+    walletId: "ab-w",
+  };
+  await seedUserData(db, AB_EMAIL, {
+    wallets: [{ id: "ab-w", name: "Wallet", order: 1 }],
+    envelopes: [
+      {
+        ...envelope,
+        id: "ab-a",
+        name: "Alpha",
+        priority: 1,
+        costPerTime: 100000,
+        startBalance: 50000,
+      },
+      {
+        ...envelope,
+        id: "ab-b",
+        name: "Beta",
+        priority: 2,
+        costPerTime: 80000,
+        startBalance: 0,
+      },
+    ],
+    spendCategories: [{ id: "ab-d", name: "Продукты" }],
+  });
+  // Another user with an income: its address must stay out of reach.
+  await seedUserData(db, INCOME_OWNER_EMAIL, {
+    wallets: [{ id: "io-w", name: "Owner wallet", order: 1 }],
+    envelopes: [],
+    spendCategories: [],
+  });
+  const [owner] = await db
+    .select({ id: schema.users.id })
+    .from(schema.users)
+    .where(eq(schema.users.email, INCOME_OWNER_EMAIL));
+  await db.insert(schema.incomes).values({
+    userId: owner.id,
+    date: "2026-01-10",
+    amount: 123400,
+    kind: "other",
+    toEnvelopes: 0,
+    toDaily: 123400,
   });
   await client.end();
 }

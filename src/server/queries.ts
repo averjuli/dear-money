@@ -9,8 +9,8 @@ import {
   or,
   sql,
 } from "drizzle-orm";
-import { alias } from "drizzle-orm/pg-core";
-import { getDb } from "@/db/client";
+import { alias, type AnyPgColumn } from "drizzle-orm/pg-core";
+import { getDb, type Db } from "@/db/client";
 import {
   allocations,
   envelopes,
@@ -32,6 +32,13 @@ import {
   type EnvelopeStatus,
   type PeriodUnit,
 } from "@/domain/envelope";
+import {
+  deletedEnvelopesShare,
+  envelopesAt,
+  type BalanceEvent,
+  type ReplayEnvelope,
+  type ReplayIncome,
+} from "@/domain/income";
 import type { TransferSide } from "@/domain/transfer";
 import {
   dailyRemaining,
@@ -561,4 +568,295 @@ export async function loadTransfer(
     .leftJoin(toEnvelope, eq(transfers.toEnvelopeId, toEnvelope.id))
     .where(and(eq(transfers.userId, userId), eq(transfers.id, id)));
   return row ? toTransferView(row) : null;
+}
+
+// ---------- Incomes ----------
+
+/** A query runner: the database or a transaction. */
+export type Queryable = Pick<Db, "select">;
+
+export interface IncomeRow {
+  id: string;
+  date: string;
+  kind: "salary" | "advance" | "other";
+  amount: number;
+  toEnvelopes: number;
+  toDaily: number;
+}
+
+const incomeSelect = {
+  id: incomes.id,
+  date: incomes.date,
+  kind: incomes.kind,
+  amount: incomes.amount,
+  toEnvelopes: incomes.toEnvelopes,
+  toDaily: incomes.toDaily,
+};
+
+/** Incomes of the user, newest first: by date, then the later entered. */
+export async function loadIncomes(
+  userId: string,
+  limit?: number,
+): Promise<IncomeRow[]> {
+  const query = getDb()
+    .select(incomeSelect)
+    .from(incomes)
+    .where(eq(incomes.userId, userId))
+    .orderBy(desc(incomes.date), desc(incomes.createdAt), desc(incomes.id));
+  return limit === undefined ? query : query.limit(limit);
+}
+
+export interface IncomeDetails extends IncomeRow {
+  skippedWalletIds: string[];
+  /** What the income put into envelopes that still exist. */
+  lines: {
+    envelopeId: string;
+    amount: number;
+    kind: "contribution" | "surplus";
+  }[];
+  /** Incomes entered after this one: they are laid out again on a change. */
+  nextCount: number;
+}
+
+/** One income of the user with its lines; null for a missing or foreign id. */
+export async function loadIncome(
+  userId: string,
+  id: string,
+): Promise<IncomeDetails | null> {
+  const db = getDb();
+  const [row] = await db
+    .select({
+      ...incomeSelect,
+      skippedWalletIds: incomes.skippedWalletIds,
+    })
+    .from(incomes)
+    .where(and(eq(incomes.userId, userId), eq(incomes.id, id)));
+  if (!row) return null;
+  const [lines, [next]] = await Promise.all([
+    db
+      .select({
+        envelopeId: allocations.envelopeId,
+        amount: allocations.amount,
+        kind: allocations.kind,
+      })
+      .from(allocations)
+      .where(and(eq(allocations.userId, userId), eq(allocations.incomeId, id))),
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(incomes)
+      .where(
+        and(
+          eq(incomes.userId, userId),
+          // Compared in the database: read into a Date, a timestamp loses microseconds.
+          sql`(${incomes.createdAt}, ${incomes.id}) > (select created_at, id from ${incomes} where id = ${id} and user_id = ${userId})`,
+        ),
+      ),
+  ]);
+  const income = {
+    id: row.id,
+    date: row.date,
+    kind: row.kind,
+    amount: row.amount,
+    toEnvelopes: row.toEnvelopes,
+    toDaily: row.toDaily,
+    skippedWalletIds: row.skippedWalletIds,
+  };
+  return { ...income, lines, nextCount: next?.count ?? 0 };
+}
+
+/** Microseconds since the epoch: exact order for rows made in the same millisecond. */
+const micros = (column: AnyPgColumn) =>
+  sql<string>`(extract(epoch from ${column}) * 1000000)::bigint::text`;
+
+export interface ReplayInput {
+  wallets: AllocationWallet[];
+  envelopes: ReplayEnvelope[];
+  /**
+   * Everything that moved envelope balances before the first income of the
+   * chain: expenses, transfers, and the lines of earlier incomes.
+   */
+  events: BalanceEvent[];
+  /**
+   * The income to start from and every income entered after it, oldest
+   * first, with the sums saved now.
+   */
+  chain: (ReplayIncome & {
+    kind: IncomeRow["kind"];
+    toEnvelopes: number;
+    toDaily: number;
+  })[];
+}
+
+/**
+ * The input for laying out an income and all later ones again. Null when the
+ * user has no such income. Call it with a transaction that already holds the
+ * lock on the user's incomes when the result will be written back.
+ */
+export async function loadReplayInput(
+  db: Queryable,
+  userId: string,
+  fromIncomeId: string,
+): Promise<ReplayInput | null> {
+  const [
+    walletRows,
+    envelopeRows,
+    incomeRows,
+    lineRows,
+    expenseRows,
+    transferRows,
+  ] = await Promise.all([
+    db
+      .select()
+      .from(wallets)
+      .where(eq(wallets.userId, userId))
+      .orderBy(asc(wallets.position), asc(wallets.createdAt)),
+    db
+      .select({ e: envelopes, at: micros(envelopes.createdAt) })
+      .from(envelopes)
+      .where(eq(envelopes.userId, userId)),
+    db
+      .select({
+        ...incomeSelect,
+        skippedWalletIds: incomes.skippedWalletIds,
+        at: micros(incomes.createdAt),
+      })
+      .from(incomes)
+      .where(eq(incomes.userId, userId))
+      .orderBy(asc(incomes.createdAt), asc(incomes.id)),
+    db
+      .select({
+        incomeId: allocations.incomeId,
+        envelopeId: allocations.envelopeId,
+        amount: allocations.amount,
+      })
+      .from(allocations)
+      .where(eq(allocations.userId, userId)),
+    db
+      .select({
+        envelopeId: expenses.envelopeId,
+        amount: expenses.amount,
+        at: micros(expenses.createdAt),
+      })
+      .from(expenses)
+      .where(and(eq(expenses.userId, userId), isNotNull(expenses.envelopeId))),
+    db
+      .select({
+        amount: transfers.amount,
+        fromEnvelopeId: transfers.fromEnvelopeId,
+        toEnvelopeId: transfers.toEnvelopeId,
+        at: micros(transfers.createdAt),
+      })
+      .from(transfers)
+      .where(eq(transfers.userId, userId)),
+  ]);
+
+  const start = incomeRows.findIndex((i) => i.id === fromIncomeId);
+  if (start < 0) return null;
+  const earlier = new Map(incomeRows.slice(0, start).map((i) => [i.id, i]));
+
+  const events: BalanceEvent[] = [];
+  for (const x of expenseRows) {
+    if (x.envelopeId) {
+      events.push({
+        envelopeId: x.envelopeId,
+        amount: -x.amount,
+        at: Number(x.at),
+      });
+    }
+  }
+  for (const t of transferRows) {
+    if (t.fromEnvelopeId) {
+      events.push({
+        envelopeId: t.fromEnvelopeId,
+        amount: -t.amount,
+        at: Number(t.at),
+      });
+    }
+    if (t.toEnvelopeId) {
+      events.push({
+        envelopeId: t.toEnvelopeId,
+        amount: t.amount,
+        at: Number(t.at),
+      });
+    }
+  }
+  const liveTotal = new Map<string, number>();
+  for (const line of lineRows) {
+    liveTotal.set(
+      line.incomeId,
+      (liveTotal.get(line.incomeId) ?? 0) + line.amount,
+    );
+    const income = earlier.get(line.incomeId);
+    if (income) {
+      events.push({
+        envelopeId: line.envelopeId,
+        amount: line.amount,
+        at: Number(income.at),
+      });
+    }
+  }
+
+  return {
+    wallets: walletRows.map((w) => ({
+      id: w.id,
+      name: w.name,
+      order: w.position,
+    })),
+    envelopes: envelopeRows.map(({ e, at }) => ({
+      id: e.id,
+      walletId: e.walletId,
+      name: e.name,
+      priority: e.priority,
+      costPerTime: e.costPerTime,
+      periodN: e.periodN,
+      periodUnit: e.periodUnit,
+      contributionOverride: e.contributionOverride,
+      timesToSave: e.timesToSave,
+      startBalance: e.startBalance,
+      createdAt: Number(at),
+    })),
+    events,
+    chain: incomeRows.slice(start).map((i) => ({
+      id: i.id,
+      at: Number(i.at),
+      amount: i.amount,
+      kind: i.kind,
+      skippedWalletIds: i.skippedWalletIds,
+      toDeleted: deletedEnvelopesShare(i.toEnvelopes, liveTotal.get(i.id) ?? 0),
+      toEnvelopes: i.toEnvelopes,
+      toDaily: i.toDaily,
+    })),
+  };
+}
+
+export interface IncomeEditInput {
+  amount: number;
+  kind: IncomeRow["kind"];
+  skippedWalletIds: string[];
+  wallets: AllocationWallet[];
+  /** The envelopes as they were at the moment of the income, without its lines. */
+  envelopes: AllocationEnvelope[];
+  /** What the income put into envelopes deleted since. */
+  toDeleted: number;
+  /** Incomes entered after this one. */
+  nextCount: number;
+}
+
+/** What the correction form needs; null for a missing or foreign income. */
+export async function loadIncomeEditInput(
+  userId: string,
+  id: string,
+): Promise<IncomeEditInput | null> {
+  const replay = await loadReplayInput(getDb(), userId, id);
+  if (!replay) return null;
+  const [target] = replay.chain;
+  return {
+    amount: target.amount,
+    kind: target.kind,
+    skippedWalletIds: target.skippedWalletIds,
+    wallets: replay.wallets,
+    envelopes: envelopesAt(replay.envelopes, replay.events, target.at),
+    toDeleted: target.toDeleted,
+    nextCount: replay.chain.length - 1,
+  };
 }

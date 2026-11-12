@@ -18,16 +18,15 @@ import {
   type AllocationWallet,
   type WalletSurplus,
 } from "@/domain/allocation";
-import { formatMoney, parseMoney } from "@/domain/money";
-import { countEnvelopes, quoted } from "@/lib/text";
+import { formatMoney, formatMoneyInput, parseMoney } from "@/domain/money";
+import {
+  countEnvelopes,
+  INCOME_KINDS,
+  quoted,
+  type IncomeKind,
+} from "@/lib/text";
 import { cn } from "@/lib/utils";
-import { allocateIncome } from "@/server/actions";
-
-const KINDS = [
-  { value: "salary", label: "Зарплата" },
-  { value: "advance", label: "Аванс" },
-  { value: "other", label: "Другое" },
-] as const;
+import { allocateIncome, updateIncome } from "@/server/actions";
 
 function SurplusNotice({ surplus }: { surplus: WalletSurplus }) {
   const fullCount = surplus.fullEnvelopeNames.length;
@@ -154,30 +153,56 @@ function DayField({
   );
 }
 
+/** A saved income opened for correction. */
+export interface IncomeCorrection {
+  id: string;
+  amount: number;
+  kind: IncomeKind;
+  skippedWalletIds: string[];
+  /** The part that went to envelopes deleted since; it stays as it was. */
+  toDeleted: number;
+  /** Incomes entered after this one: they are laid out again. */
+  nextCount: number;
+  /** The address of the income screen: where «Сохранить» leads. */
+  doneHref: string;
+}
+
+/**
+ * «Пришли деньги». With `correction` it is the same form filled with a saved
+ * income: no pay-day fields, «Сохранить» instead of «Разложить». Then
+ * `wallets` and `envelopes` are as they were at the moment of the income.
+ */
 export function IncomeForm({
   wallets,
   envelopes,
-  advanceDay,
-  salaryDay,
-  today,
+  advanceDay = null,
+  salaryDay = null,
+  today = "",
+  correction,
 }: {
   wallets: AllocationWallet[];
   envelopes: AllocationEnvelope[];
   /** Days saved with the previous allocation, shown filled in. */
-  advanceDay: number | null;
-  salaryDay: number | null;
-  today: string;
+  advanceDay?: number | null;
+  salaryDay?: number | null;
+  today?: string;
+  correction?: IncomeCorrection;
 }) {
   const router = useRouter();
-  const [amountText, setAmountText] = useState("");
-  const [kind, setKind] = useState<(typeof KINDS)[number]["value"]>("salary");
+  const toDeleted = correction?.toDeleted ?? 0;
+  const [amountText, setAmountText] = useState(
+    correction ? formatMoneyInput(correction.amount) : "",
+  );
+  const [kind, setKind] = useState<IncomeKind>(correction?.kind ?? "salary");
   const [advanceText, setAdvanceText] = useState(
     advanceDay === null ? "" : String(advanceDay),
   );
   const [salaryText, setSalaryText] = useState(
     salaryDay === null ? "" : String(salaryDay),
   );
-  const [skipped, setSkipped] = useState<string[]>([]);
+  const [skipped, setSkipped] = useState<string[]>(
+    correction?.skippedWalletIds ?? [],
+  );
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -187,16 +212,25 @@ export function IncomeForm({
     () => planAllocation(wallets, envelopes, 0).totalContributions,
     [wallets, envelopes],
   );
+  // What is laid out now; the money of deleted envelopes is set aside.
   const plan = useMemo(
-    () => planAllocation(wallets, envelopes, valid ? amount : 0, skipped),
-    [wallets, envelopes, amount, valid, skipped],
+    () =>
+      planAllocation(
+        wallets,
+        envelopes,
+        valid ? Math.max(amount - toDeleted, 0) : 0,
+        skipped,
+      ),
+    [wallets, envelopes, amount, valid, skipped, toDeleted],
   );
-  const envelopeShare = valid ? plan.toEnvelopes / amount : 0;
+  const toEnvelopes = plan.toEnvelopes + (valid ? toDeleted : 0);
+  const envelopeShare = valid ? toEnvelopes / amount : 0;
 
   function changeAmount(text: string) {
     setAmountText(text);
     // Once the income covers everything again, the choice starts over.
-    if ((parseMoney(text) ?? 0) >= totalContributions) setSkipped([]);
+    const laidOut = Math.max((parseMoney(text) ?? 0) - toDeleted, 0);
+    if (laidOut >= totalContributions) setSkipped([]);
   }
 
   function toggleWallet(walletId: string) {
@@ -210,6 +244,23 @@ export function IncomeForm({
   async function submit() {
     if (!valid) return;
     setError(null);
+    if (correction) {
+      setSaving(true);
+      const result = await updateIncome({
+        id: correction.id,
+        amount,
+        kind,
+        skippedWalletIds: plan.needsChoice ? skipped : [],
+      });
+      if (result.ok) {
+        router.push(correction.doneHref);
+        router.refresh();
+      } else {
+        setError(result.error);
+        setSaving(false);
+      }
+      return;
+    }
     const advance = parseDay(advanceText);
     const salary = parseDay(salaryText);
     if (advance === undefined || salary === undefined) {
@@ -256,7 +307,7 @@ export function IncomeForm({
           aria-label="Вид дохода"
           className="flex flex-wrap gap-2"
         >
-          {KINDS.map((k) => (
+          {INCOME_KINDS.map((k) => (
             <button
               key={k.value}
               type="button"
@@ -273,25 +324,27 @@ export function IncomeForm({
             </button>
           ))}
         </div>
-        <div className="flex flex-col gap-2">
-          <div className="grid grid-cols-2 gap-3">
-            <DayField
-              id="advance-day"
-              label="Аванс приходит"
-              value={advanceText}
-              onChange={setAdvanceText}
-            />
-            <DayField
-              id="salary-day"
-              label="Зарплата приходит"
-              value={salaryText}
-              onChange={setSalaryText}
-            />
+        {!correction && (
+          <div className="flex flex-col gap-2">
+            <div className="grid grid-cols-2 gap-3">
+              <DayField
+                id="advance-day"
+                label="Аванс приходит"
+                value={advanceText}
+                onChange={setAdvanceText}
+              />
+              <DayField
+                id="salary-day"
+                label="Зарплата приходит"
+                value={salaryText}
+                onChange={setSalaryText}
+              />
+            </div>
+            <div className="text-[13px] text-ink-muted">
+              По этим числам посчитаю, сколько можно тратить в день
+            </div>
           </div>
-          <div className="text-[13px] text-ink-muted">
-            По этим числам посчитаю, сколько можно тратить в день
-          </div>
-        </div>
+        )}
       </Card>
 
       {valid && (
@@ -299,10 +352,10 @@ export function IncomeForm({
           <SectionTitle>Как я разложу</SectionTitle>
           <div
             role="img"
-            aria-label={`Из ${formatMoney(amount)}: ${formatMoney(plan.toEnvelopes)} в конверты, ${formatMoney(plan.toDaily)} на повседневные траты`}
+            aria-label={`Из ${formatMoney(amount)}: ${formatMoney(toEnvelopes)} в конверты, ${formatMoney(plan.toDaily)} на повседневные траты`}
             className="flex h-3.5 gap-[3px]"
           >
-            {plan.toEnvelopes > 0 && (
+            {toEnvelopes > 0 && (
               <div
                 className="rounded-l-[6px] rounded-r-[2px] bg-accent"
                 style={{ width: `${envelopeShare * 100}%` }}
@@ -326,7 +379,7 @@ export function IncomeForm({
                 data-testid="to-envelopes"
                 className="text-base font-semibold"
               >
-                {formatMoney(plan.toEnvelopes)}
+                {formatMoney(toEnvelopes)}
               </div>
             </div>
             {plan.needsChoice && (
@@ -370,6 +423,11 @@ export function IncomeForm({
           {plan.surpluses.map((s) => (
             <SurplusNotice key={s.walletId} surplus={s} />
           ))}
+          {correction && correction.nextCount > 0 && (
+            <div className="text-[13px] text-ink-muted">
+              Следующие раскладки пересчитаются: {correction.nextCount}
+            </div>
+          )}
         </>
       )}
 
@@ -381,7 +439,13 @@ export function IncomeForm({
         onClick={submit}
         className={primaryButtonClass}
       >
-        {saving ? "Раскладываю…" : "Разложить"}
+        {correction
+          ? saving
+            ? "Сохраняю…"
+            : "Сохранить"
+          : saving
+            ? "Раскладываю…"
+            : "Разложить"}
       </button>
     </>
   );

@@ -147,3 +147,16 @@ export function transferLabel(
   if (transfer.from.kind === "deleted") return "Из удалённого конверта";
   return `Из конверта ${quoted(transfer.fromName ?? "")}`;
 }
+
+export type IncomeKind = "salary" | "advance" | "other";
+
+/** Kinds of income in the order of the chips on the «Пришли деньги» form. */
+export const INCOME_KINDS: readonly { value: IncomeKind; label: string }[] = [
+  { value: "salary", label: "Зарплата" },
+  { value: "advance", label: "Аванс" },
+  { value: "other", label: "Другое" },
+];
+
+export function incomeKindLabel(kind: IncomeKind): string {
+  return INCOME_KINDS.find((k) => k.value === kind)?.label ?? "";
+}

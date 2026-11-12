@@ -5,6 +5,8 @@ import {
   formatDay,
   formatFrequency,
   formatRelativeDay,
+  incomeKindLabel,
+  INCOME_KINDS,
   monthNamePrepositional,
   transferLabel,
 } from "./text";
@@ -81,5 +83,21 @@ describe("transferLabel", () => {
     expect(transferLabel(from, side("m"))).toBe("Из удалённого конверта");
     const to = t(side("m"), deleted, "Маникюр", null);
     expect(transferLabel(to, side("m"))).toBe("В удалённый конверт");
+  });
+});
+
+describe("income kinds", () => {
+  it("labels the three kinds", () => {
+    expect(incomeKindLabel("salary")).toBe("Зарплата");
+    expect(incomeKindLabel("advance")).toBe("Аванс");
+    expect(incomeKindLabel("other")).toBe("Другое");
+  });
+
+  it("lists the kinds in the order of the chips", () => {
+    expect(INCOME_KINDS.map((k) => k.value)).toEqual([
+      "salary",
+      "advance",
+      "other",
+    ]);
   });
 });

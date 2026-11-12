@@ -196,6 +196,11 @@ export const incomes = pgTable(
     kind: incomeKind("kind").notNull(),
     toEnvelopes: integer("to_envelopes").notNull(),
     toDaily: integer("to_daily").notNull(),
+    /** Wallets unchecked on the allocation screen; an empty list means all were checked. */
+    skippedWalletIds: uuid("skipped_wallet_ids")
+      .array()
+      .notNull()
+      .default(sql`'{}'`),
     createdAt: createdAt(),
   },
   (t) => [
@@ -329,16 +334,17 @@ export const transfers = pgTable(
 /**
  * Journal of changes to «на жизнь»: every save or delete of a transfer or of
  * a daily expense writes the difference «now − before» into the period of the
- * latest income, whatever the date of the item.
+ * latest income, whatever the date of the item. An empty `income_id` means
+ * the income was deleted, or the row was written when there were no incomes.
  */
 export const dailyMoves = pgTable(
   "daily_moves",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     userId: userId(),
-    incomeId: uuid("income_id")
-      .notNull()
-      .references(() => incomes.id, { onDelete: "cascade" }),
+    incomeId: uuid("income_id").references(() => incomes.id, {
+      onDelete: "set null",
+    }),
     source: dailyMoveSource("source").notNull(),
     transferId: uuid("transfer_id").references(() => transfers.id, {
       onDelete: "set null",
